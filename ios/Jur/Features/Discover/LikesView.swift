@@ -48,7 +48,7 @@ struct LikesView: View {
     private func tile(_ p: ProfileCard) -> some View {
         Color.q.line
             .aspectRatio(3 / 4, contentMode: .fit)
-            .overlay { AsyncImage(url: p.photoURLs.first) { $0.resizable().scaledToFill() } placeholder: { Color.q.line } }
+            .overlay { QPhoto(url: p.photoURLs.first) }
             .overlay(alignment: .bottomLeading) {
                 VStack(alignment: .leading, spacing: Sp.xxs) {
                     if p.superLikedMe == true { QTag(label: t("discover.superLikedYou"), tone: .gold, systemImage: "star.fill") }

@@ -43,6 +43,8 @@ struct PairsView: View {
                             VStack(alignment: .leading, spacing: Sp.xxs) {
                                 Text(model.likes == 1 ? t("matches.likedYouOne") : t("matches.likedYou", ["n": model.likes]))
                                     .qText(.headline)
+                                    .contentTransition(.numericText())
+                                    .animation(Motion.snappy, value: model.likes)
                                 Text(t("matches.seeWho")).qText(.footnote).foregroundStyle(Color.q.blueText)
                             }
                         }
@@ -99,13 +101,16 @@ struct MatchRowView: View {
                     Spacer()
                     if row.unread > 0 {
                         Text("\(row.unread)").qText(.label).foregroundStyle(.white)
+                            .contentTransition(.numericText())
                             .padding(.horizontal, Sp.sm).padding(.vertical, Sp.xxs)
                             .background(Color.q.blue, in: Capsule())
+                            .transition(.qPop)
                     }
                 }
             }
         }
         .padding(.vertical, Sp.xs)
+        .animation(Motion.adaptive(Motion.snappy), value: row.unread)
         .accessibilityElement(children: .combine)
     }
 

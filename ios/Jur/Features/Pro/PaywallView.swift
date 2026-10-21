@@ -14,11 +14,13 @@ struct PaywallView: View {
     @State private var welcome = false
 
     var body: some View {
-        Group {
+        ZStack {
             if welcome {
                 ProWelcomeView { dismiss() }
+                    .transition(.qStep(forward: true))
             } else {
                 paywall
+                    .transition(.qStep(forward: true))
             }
         }
         .task { await loadOfferings() }
@@ -123,7 +125,8 @@ struct PaywallView: View {
             let result = try await Purchases.shared.purchase(package: selected)
             if result.userCancelled { return }
             await waitForPro()
-            welcome = true
+            Haptics.success()
+            withMotion(Motion.smooth) { welcome = true }
         } catch {
             toasts.show(t("common.error"), error: true)
         }
@@ -136,7 +139,7 @@ struct PaywallView: View {
             _ = try await Purchases.shared.restorePurchases()
             await waitForPro()
             toasts.show(t("paywall.restored"))
-            if session.limits?.pro == true { welcome = true }
+            if session.limits?.pro == true { withMotion(Motion.smooth) { welcome = true } }
         } catch {
             toasts.show(t("common.error"), error: true)
         }

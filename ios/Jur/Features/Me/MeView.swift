@@ -122,7 +122,7 @@ struct Avatar: View {
     var size: CGFloat = 44
 
     var body: some View {
-        AsyncImage(url: url) { phase in
+        AsyncImage(url: url, transaction: Transaction(animation: Motion.fade)) { phase in
             switch phase {
             case .success(let image): image.resizable().scaledToFill()
             case .failure: Image(systemName: "person.fill").font(.q(.title2)).foregroundStyle(Color.q.hint)

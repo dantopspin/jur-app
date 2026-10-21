@@ -363,7 +363,7 @@ struct PhotoGrid: View {
                 Color.q.line
                     .aspectRatio(3 / 4, contentMode: .fit)
                     .overlay {
-                        AsyncImage(url: URL(string: url)) { img in img.resizable().scaledToFill() } placeholder: { ProgressView() }
+                        QPhoto(url: URL(string: url)) { ProgressView() }
                     }
                     .clipShape(RoundedRectangle(cornerRadius: Radius.md, style: .continuous))
                     .overlay(alignment: .topTrailing) {

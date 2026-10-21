@@ -104,6 +104,9 @@ struct DiscoverView: View {
     @State private var model = DiscoverModel()
     @State private var noteFor: ProfileCard?
     @State private var dragging = false
+    /// Bumped once a day so the picks icon bounces when there are new picks.
+    @State private var picksBounce = 0
+    @AppStorage("jur.picksSeenDay") private var picksSeenDay = ""
     @State private var fling: DeckFling?
     @State private var openEvent: EventItem?
     @Binding var showPicks: Bool
@@ -138,7 +141,9 @@ struct DiscoverView: View {
                 ToolbarItem(placement: .topBarLeading) { Lockup(size: 20) }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button { showPicks = true } label: {
-                        Image(systemName: "sparkles").accessibilityLabel(t("picks.title"))
+                        Image(systemName: "sparkles")
+                            .symbolEffect(.bounce, value: picksBounce)
+                            .accessibilityLabel(t("picks.title"))
                     }
                 }
                 ToolbarItem(placement: .topBarTrailing) { BoostButton { model.paywall = true } }
@@ -147,6 +152,13 @@ struct DiscoverView: View {
             .navigationDestination(isPresented: $showPicks) { PicksView() }
         }
         .task { if model.queue.isEmpty { await model.load() } }
+        .task {
+            let today = Fmt.calendar.startOfDay(for: .now).formatted(.iso8601.year().month().day())
+            guard picksSeenDay != today else { return }
+            try? await Task.sleep(for: .seconds(0.8))
+            picksBounce += 1
+            picksSeenDay = today
+        }
         .sheet(item: $noteFor) { card in
             NoteSheet(card: card) { note in fling = DeckFling(kind: .like, note: note) }
         }
@@ -163,7 +175,7 @@ struct DiscoverView: View {
 
     @ViewBuilder private var deck: some View {
         if model.loading {
-            ProfileCardView(card: .placeholder, compact: true).redacted(reason: .placeholder)
+            ProfileCardView(card: .placeholder, compact: true).redacted(reason: .placeholder).qShimmer()
         } else if model.failed {
             ErrorStateView(retry: { await model.load() }).frame(minHeight: 420)
         } else if !model.queue.isEmpty {
@@ -228,6 +240,8 @@ struct NoteSheet: View {
                 Text(t("note.hint")).qText(.footnote).foregroundStyle(Color.q.muted)
                 Spacer()
                 Text("\(text.count)/140").qText(.footnote).monospacedDigit().foregroundStyle(Color.q.muted)
+                    .contentTransition(.numericText())
+                    .animation(Motion.snappy, value: text.count)
             }
             Button(t("note.send")) {
                 send(text)

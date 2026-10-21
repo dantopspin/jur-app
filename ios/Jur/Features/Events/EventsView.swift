@@ -42,6 +42,7 @@ struct EventsView: View {
                         Text(t("board.segWeekend")).tag(Window.weekend)
                     }
                     .pickerStyle(.segmented)
+                    .sensoryFeedback(.selection, trigger: range)
 
                     if failed {
                         ErrorStateView(retry: { await load() }).frame(minHeight: 300)
@@ -50,6 +51,7 @@ struct EventsView: View {
                             Departure(id: UUID(), time: "19:00", title: "Падел · парная игра", place: "Padel Club", status: .onTime)
                         }, showsColumns: true)
                         .redacted(reason: .placeholder)
+                        .qShimmer()
                     } else {
                         DepartureBoard(departures: shown.map(\.departure), showsColumns: !shown.isEmpty,
                                        emptyText: t("board.empty")) { d in path.append(d.id) }
@@ -61,6 +63,7 @@ struct EventsView: View {
                 .padding(.horizontal, Layout.margin)
                 .padding(.bottom, Sp.xl)
             }
+            .animation(Motion.adaptive(Motion.smooth), value: range)
             .background(Color.q.bg)
             .navigationTitle(t("tabs.events"))
             .toolbarTitleDisplayMode(.inlineLarge)
@@ -154,7 +157,7 @@ struct EventDetailView: View {
 
     @ViewBuilder private func actions(_ e: EventItem) -> some View {
         if e.iCheckedIn {
-            QTag(label: t("events.checkedIn"), tone: .good, systemImage: "checkmark")
+            QTag(label: t("events.checkedIn"), tone: .good, systemImage: "checkmark").transition(.qPop)
         } else if e.iAmGoing {
             if e.boardingOpen && !isHost {
                 Button(t("board.codeGo")) { code = ""; codeError = false; boarding = true }.buttonStyle(.qPrimary)
@@ -165,7 +168,7 @@ struct EventDetailView: View {
                 Button(t("events.leave")) { Task { await leave() } }.buttonStyle(.qGhost).disabled(busy)
             }
         } else if e.isFull {
-            QTag(label: t("events.full"), tone: .neutral)
+            QTag(label: t("events.full"), tone: .neutral).transition(.qPop)
         } else {
             Button { Task { await join() } } label: { BusyLabel(title: t("events.join"), busy: busy) }
                 .buttonStyle(.qPrimary).disabled(busy)
@@ -179,8 +182,14 @@ struct EventDetailView: View {
             VStack(alignment: .leading, spacing: Sp.sm) {
                 Text(t("board.hostCodeTitle")).qText(.overline).foregroundStyle(Color.q.clayDeep)
                 Text(hostCode ?? "····").font(.q(.display)).tracking(8).foregroundStyle(Color.q.ink)
+                    .monospacedDigit()
+                    .contentTransition(.numericText())
+                    .animation(Motion.adaptive(Motion.smooth), value: hostCode)
                     .accessibilityLabel(hostCode.map { $0.map(String.init).joined(separator: " ") } ?? "")
                 Text(t("board.hostCodeHint", ["s": left])).qText(.footnote).foregroundStyle(Color.q.muted)
+                    .monospacedDigit()
+                    .contentTransition(.numericText(countsDown: true))
+                    .animation(Motion.snappy, value: left)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .qCard()
@@ -190,7 +199,8 @@ struct EventDetailView: View {
     }
 
     private func load() async {
-        if let fresh = try? await Backend.event(eventId) { event = fresh }
+        guard let fresh = try? await Backend.event(eventId) else { return }
+        if event == nil { event = fresh } else { withMotion(Motion.smooth) { event = fresh } }
     }
 
     private func join() async {

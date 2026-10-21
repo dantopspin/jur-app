@@ -21,6 +21,8 @@ enum Motion {
     static let fade = Animation.easeOut(duration: 0.2)
     /// The brand mark drawing its horns in (an ease-out-expo, the mark's own curve).
     static let draw = Animation.timingCurve(0.2, 0, 0, 1, duration: 0.6)
+    /// A skeleton's light sweep (loading only).
+    static let shimmer = Animation.linear(duration: 1.4)
     /// The mark loader breathing in and out (loading only).
     static let loader = Animation.timingCurve(0.2, 0, 0, 1, duration: 0.7)
 
@@ -74,6 +76,12 @@ extension AnyTransition {
     /// A status tag or small badge appearing.
     static var qPop: AnyTransition {
         Motion.reduceMotion ? .opacity : .scale(scale: 0.8).combined(with: .opacity)
+    }
+
+    /// A departure-board row updating: drops in a few points and fades.
+    static var qBoardRow: AnyTransition {
+        Motion.reduceMotion ? .opacity
+            : .asymmetric(insertion: .offset(y: -8).combined(with: .opacity), removal: .opacity)
     }
 
     /// Something rising from the composer or a bottom bar.

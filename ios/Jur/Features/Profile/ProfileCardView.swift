@@ -51,12 +51,11 @@ struct ProfileCardView: View {
             if urls.isEmpty {
                 Image(systemName: "person.fill").font(.system(size: IconSize.hero)).foregroundStyle(Color.q.blueMist)
             } else {
-                AsyncImage(url: urls[min(page, urls.count - 1)]) { img in
-                    img.resizable().scaledToFill()
-                } placeholder: { ProgressView().tint(.white) }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .clipped()
-                .id(page)
+                QPhoto(url: urls[min(page, urls.count - 1)]) { ProgressView().tint(.white) }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .clipped()
+                    .id(page)
+                    .transition(.opacity)
             }
             // Page bars + tap zones (left half back, right half forward).
             if urls.count > 1 {
@@ -65,11 +64,12 @@ struct ProfileCardView: View {
                         Capsule().fill(.white.opacity(i == page ? 1 : 0.45)).frame(height: 3)
                     }
                 }
+                .animation(Motion.snappy, value: page)
                 .padding(.horizontal, Sp.lg)
                 .padding(.top, Sp.sm)
                 HStack(spacing: 0) {
-                    Color.clear.contentShape(Rectangle()).onTapGesture { page = max(page - 1, 0) }
-                    Color.clear.contentShape(Rectangle()).onTapGesture { page = min(page + 1, urls.count - 1) }
+                    Color.clear.contentShape(Rectangle()).onTapGesture { turn(to: max(page - 1, 0)) }
+                    Color.clear.contentShape(Rectangle()).onTapGesture { turn(to: min(page + 1, urls.count - 1)) }
                 }
             }
             VStack(alignment: .leading, spacing: Sp.xs) {
@@ -85,6 +85,7 @@ struct ProfileCardView: View {
         }
         .frame(height: compact ? 380 : 460)
         .clipped()
+        .sensoryFeedback(.selection, trigger: page)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(t("chat2.photo") + " \(page + 1)/\(max(urls.count, 1))")
         .accessibilityAdjustableAction { dir in
@@ -94,6 +95,11 @@ struct ProfileCardView: View {
             @unknown default: break
             }
         }
+    }
+
+    private func turn(to new: Int) {
+        guard new != page else { return }
+        withAnimation(Motion.fade) { page = new }
     }
 
     @ViewBuilder private var words: some View {
@@ -151,6 +157,9 @@ struct ProfileView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var card: ProfileCard?
     @State private var showPassport = false
+    /// The flip's turn in degrees: 0 → 90 (edge on), swap faces, −90 → 0.
+    @State private var turn: Double = 0
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var reporting = false
     @State private var failed = false
 
@@ -159,11 +168,12 @@ struct ProfileView: View {
             if let card {
                 VStack(spacing: Sp.lg) {
                     if showPassport {
-                        PassportPage(card: card).transition(.opacity)
+                        PassportPage(card: card)
                     } else {
-                        ProfileCardView(card: card).transition(.opacity)
+                        ProfileCardView(card: card)
                     }
                 }
+                .rotation3DEffect(.degrees(turn), axis: (x: 0, y: 1, z: 0), perspective: 0.4)
                 .padding(Layout.margin)
                 .padding(.bottom, onDecide == nil ? 0 : 96)
             } else if failed {
@@ -176,9 +186,7 @@ struct ProfileView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                Button(t("passport.flip")) {
-                    withAnimation(.easeInOut(duration: 0.25)) { showPassport.toggle() }
-                }
+                Button(t("passport.flip")) { flip() }
                 .disabled(card == nil)
             }
             ToolbarItem(placement: .topBarTrailing) {
@@ -204,6 +212,20 @@ struct ProfileView: View {
             if let card { ReportSheet(name: card.name, otherId: card.id) { dismiss() } }
         }
         .task { if card == nil { card = initial; await load() } }
+    }
+
+    /// Turns the card edge-on, swaps to the other side, and turns it back face up.
+    private func flip() {
+        guard !reduceMotion else {
+            withAnimation(Motion.fade) { showPassport.toggle() }
+            return
+        }
+        withAnimation(Motion.exit) { turn = 90 } completion: {
+            showPassport.toggle()
+            turn = -90
+            Haptics.bump()
+            withAnimation(Motion.hero) { turn = 0 }
+        }
     }
 
     private func load() async {

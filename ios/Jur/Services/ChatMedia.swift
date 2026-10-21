@@ -131,9 +131,10 @@ final class VoiceRecorder {
 final class VoicePlayer: NSObject, AVAudioPlayerDelegate {
     static let shared = VoicePlayer()
     private(set) var playingPath: String?
-    private(set) var progress: Double = 0
+    /// Length of the note that's playing, so its bubble can run one linear animation
+    /// across the bar instead of being redrawn on a timer.
+    private(set) var duration: TimeInterval = 0
     private var player: AVAudioPlayer?
-    private var timer: Timer?
 
     func toggle(_ path: String) async {
         if playingPath == path { stop(); return }
@@ -144,22 +145,15 @@ final class VoicePlayer: NSObject, AVAudioPlayerDelegate {
         p.delegate = self
         p.play()
         player = p
+        duration = p.duration
         playingPath = path
-        timer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { [weak self] _ in
-            Task { @MainActor in
-                guard let self, let p = self.player, p.duration > 0 else { return }
-                self.progress = p.currentTime / p.duration
-            }
-        }
     }
 
     func stop() {
         player?.stop()
         player = nil
-        timer?.invalidate()
-        timer = nil
         playingPath = nil
-        progress = 0
+        duration = 0
     }
 
     nonisolated func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {

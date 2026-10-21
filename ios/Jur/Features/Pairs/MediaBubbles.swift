@@ -73,6 +73,8 @@ struct VoiceBubble: View {
     let message: Message
     let mine: Bool
     @State private var player = VoicePlayer.shared
+    /// 0…1 across the bar; animated linearly over the note's length while it plays.
+    @State private var fill: CGFloat = 0
 
     private var playing: Bool { player.playingPath == message.mediaPath && message.mediaPath != nil }
     private var length: String {
@@ -88,6 +90,7 @@ struct VoiceBubble: View {
             HStack(spacing: Sp.md) {
                 Image(systemName: playing ? "pause.fill" : "play.fill")
                     .font(.q(.headline))
+                    .contentTransition(.symbolEffect(.replace))
                     .frame(width: 32, height: 32)
                     .background((mine ? Color.white : Color.q.blue).opacity(mine ? 0.2 : 1), in: Circle())
                     .foregroundStyle(.white)
@@ -95,7 +98,7 @@ struct VoiceBubble: View {
                     ZStack(alignment: .leading) {
                         Capsule().fill((mine ? Color.white : Color.q.blueText).opacity(0.3))
                         Capsule().fill(mine ? Color.white : Color.q.blueText)
-                            .frame(width: g.size.width * (playing ? player.progress : 0))
+                            .frame(width: g.size.width * fill)
                     }
                 }
                 .frame(width: 110, height: 4)
@@ -106,7 +109,16 @@ struct VoiceBubble: View {
             .padding(.vertical, Sp.sm)
             .background(mine ? Color.q.blue : Color.q.card, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.qPressCard)
+        .onChange(of: playing) { _, now in
+            if now {
+                fill = 0
+                withAnimation(.linear(duration: max(player.duration, 0.1))) { fill = 1 }
+            } else {
+                withAnimation(Motion.fade) { fill = 0 }
+            }
+        }
+        .animation(Motion.snappy, value: playing)
         .accessibilityLabel(t("chat2.voice") + ", " + length)
         .accessibilityValue(playing ? t("chat2.playing") : "")
     }

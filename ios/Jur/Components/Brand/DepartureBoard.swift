@@ -59,8 +59,9 @@ struct DepartureBoard: View {
             }
             ForEach(Array(departures.enumerated()), id: \.element.id) { index, d in
                 Button { onSelect(d) } label: { row(d) }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.qPressCard)
                     .disabled(d.status == .full)
+                    .transition(.qBoardRow)
                 if index < departures.count - 1 { rule }
             }
             // The destination: the mountains at the foot of every board.

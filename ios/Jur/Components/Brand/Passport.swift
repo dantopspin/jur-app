@@ -159,7 +159,7 @@ struct PassportPage: View {
                 MarkView(size: 24, color: Color.q.feltLabel)
             }
             HStack(spacing: Sp.md) {
-                AsyncImage(url: photo) { img in img.resizable().scaledToFill() } placeholder: { Color.q.blueDeep }
+                QPhoto(url: photo, placeholder: Color.q.blueDeep)
                     .frame(width: 88, height: 110)
                     .clipShape(RoundedRectangle(cornerRadius: Radius.md, style: .continuous))
                     .accessibilityHidden(true)

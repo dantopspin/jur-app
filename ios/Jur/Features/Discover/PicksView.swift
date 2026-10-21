@@ -21,11 +21,13 @@ struct PicksView: View {
                                 .buttonStyle(.plain)
                             if let d = decided[p.id] {
                                 QTag(label: t(d == .pass ? "picks.passed" : "picks.liked"), tone: d == .pass ? .neutral : .good)
+                                    .transition(.qPop)
                             } else {
                                 HStack(spacing: Sp.md) {
                                     Button(t("discover.pass")) { Task { await decide(p, .pass) } }.buttonStyle(.q(.secondary, compact: true))
                                     Button(t("discover.like")) { Task { await decide(p, .like) } }.buttonStyle(.q(.primary, compact: true))
                                 }
+                                .transition(.opacity)
                             }
                         }
                     }
@@ -46,7 +48,8 @@ struct PicksView: View {
         do {
             let r = try await Backend.swipe(p.id, kind)
             if r.ok {
-                decided[p.id] = kind
+                withMotion(Motion.bouncy) { decided[p.id] = kind }
+                if kind == .like { Haptics.success() }
                 if r.matchId != nil { toasts.show(t("match.title")) }
             } else if r.error == "like_limit" { paywall = true }
         } catch { toasts.show(t("common.error"), error: true) }
@@ -71,9 +74,13 @@ struct BoostButton: View {
         Button { Task { await boost() } } label: {
             Image(systemName: boostedUntil != nil ? "bolt.fill" : "bolt")
                 .foregroundStyle(boostedUntil != nil ? Color.q.gold : Color.q.blueText)
+                .contentTransition(.symbolEffect(.replace))
+                // While a boost runs, the bolt breathes: it means "you're at the top now".
+                .symbolEffect(.pulse, options: .repeating, isActive: boostedUntil != nil)
                 .overlay(alignment: .topTrailing) {
                     if available > 0 && boostedUntil == nil {
                         Text("\(available)").font(.q(.label)).foregroundStyle(.white)
+                            .contentTransition(.numericText())
                             .padding(.horizontal, Sp.xs).background(Color.q.blue, in: Capsule())
                             .offset(x: 10, y: -8)
                     }
