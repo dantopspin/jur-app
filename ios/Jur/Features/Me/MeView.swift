@@ -1,44 +1,63 @@
-// Me (milestone 1): who you are, Pro status, and Settings. The full profile card,
-// prompts, badges and invites come in milestone 2.
+// Me: your header (opens your passport), profile, verification, Pro and gifts, settings.
 import SwiftUI
 
 struct MeView: View {
     @Environment(SessionStore.self) private var session
+    @State private var paywall = false
+    @State private var proWelcome = false
+    @State private var redeeming = false
 
     var body: some View {
         NavigationStack {
             List {
                 if let p = session.profile {
-                    // The header sits on the ground, not inside a row. The Passport opens from here in milestone 2.
-                    HStack(spacing: Sp.lg) {
-                        Avatar(url: p.photos.first.flatMap { URL(string: $0) }, size: 72)
-                        VStack(alignment: .leading, spacing: Sp.sm) {
-                            Text(p.name).qText(.title2).foregroundStyle(Color.q.ink).lineLimit(2)
-                            HStack(spacing: Sp.sm) {
-                                QTag(label: memberNo(p.memberNo), tone: .neutral)
-                                if p.verificationStatus == .approved {
-                                    QTag(label: t("card.verified"), tone: .blue, systemImage: "checkmark.seal.fill")
+                    NavigationLink { MyPassportView() } label: {
+                        HStack(spacing: Sp.lg) {
+                            Avatar(url: p.photos.first.flatMap { URL(string: $0) }, size: 72)
+                            VStack(alignment: .leading, spacing: Sp.sm) {
+                                Text(p.name).qText(.title2).foregroundStyle(Color.q.ink).lineLimit(2)
+                                HStack(spacing: Sp.sm) {
+                                    QTag(label: memberNo(p.memberNo), tone: .neutral)
+                                    if p.verificationStatus == .approved {
+                                        QTag(label: t("card.verified"), tone: .blue, systemImage: "checkmark.seal.fill")
+                                    }
                                 }
                             }
+                            Spacer(minLength: 0)
                         }
-                        Spacer(minLength: 0)
                     }
                     .listRowBackground(Color.clear)
-                    .listRowInsets(EdgeInsets(top: Sp.sm, leading: 0, bottom: Sp.sm, trailing: 0))
-                    .accessibilityElement(children: .combine)
-                }
-                // Plain text until the paywall exists (milestone 2); then this row becomes a
-                // NavigationLink with a chevron.
-                Section {
-                    VStack(alignment: .leading, spacing: Sp.xxs) {
-                        Text(t("me.pro")).qText(.headline).foregroundStyle(Color.q.ink)
-                        if let l = session.limits {
-                            Text(l.pro ? t("me.proActive", ["date": shortDate(l.proUntil)]) : "\(t("paywall.f1")) · \(t("paywall.f2"))")
-                                .qText(.footnote).foregroundStyle(Color.q.muted)
-                        }
+                    .listRowInsets(EdgeInsets(top: Sp.sm, leading: 0, bottom: Sp.sm, trailing: Sp.md))
+                    .accessibilityHint(t("passport.title"))
+
+                    Section {
+                        NavigationLink { EditProfileView() } label: { Label(t("me.editProfile"), systemImage: "pencil") }
+                        verificationRow(p.verificationStatus)
                     }
-                    .padding(.vertical, Sp.xxs)
-                    .accessibilityElement(children: .combine)
+                }
+
+                Section {
+                    Button {
+                        if session.limits?.pro == true { proWelcome = true } else { paywall = true }
+                    } label: {
+                        HStack {
+                            VStack(alignment: .leading, spacing: Sp.xxs) {
+                                Text(t("me.pro")).qText(.headline).foregroundStyle(Color.q.ink)
+                                if let l = session.limits {
+                                    Text(l.pro ? t("me.proActive", ["date": shortDate(l.proUntil)]) : "\(t("paywall.f1")) · \(t("paywall.f2"))")
+                                        .qText(.footnote).foregroundStyle(Color.q.muted)
+                                }
+                            }
+                            Spacer()
+                            if session.limits?.pro != true {
+                                QTag(label: t("me.getPro"), tone: .gold)
+                            }
+                            Image(systemName: "chevron.right").font(.q(.footnote).weight(.semibold)).foregroundStyle(Color.q.hint)
+                        }
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    Button { redeeming = true } label: { Label(t("cover.redeemTitle"), systemImage: "gift") }
                 }
             }
             .scrollContentBackground(.hidden)
@@ -53,6 +72,44 @@ struct MeView: View {
                 }
             }
             .refreshable { await session.refreshProfile() }
+            .sheet(isPresented: $paywall) { PaywallView() }
+            .fullScreenCover(isPresented: $proWelcome) { ProWelcomeView { proWelcome = false } }
+            .sheet(isPresented: $redeeming) { RedeemGiftSheet() }
+        }
+    }
+
+    @ViewBuilder private func verificationRow(_ status: Verification) -> some View {
+        switch status {
+        case .approved:
+            Label(t("me.verified"), systemImage: "checkmark.seal.fill").foregroundStyle(Color.q.blueText)
+        case .pending:
+            Label(t("me.verifyPending"), systemImage: "clock").foregroundStyle(Color.q.muted)
+        case .rejected:
+            NavigationLink { VerifyView() } label: { Label(t("me.verifyRejected"), systemImage: "exclamationmark.triangle") }
+        case .unverified:
+            NavigationLink { VerifyView() } label: { Label(t("me.verify"), systemImage: "checkmark.seal") }
+        }
+    }
+}
+
+/// Your own passport page (from get_profile, which includes your stamps).
+struct MyPassportView: View {
+    @Environment(SessionStore.self) private var session
+    @State private var card: ProfileCard?
+
+    var body: some View {
+        ScrollView {
+            if let card {
+                PassportPage(card: card).padding(Layout.margin)
+            } else {
+                ProgressView().padding(.top, Sp.xxl)
+            }
+        }
+        .background(Color.q.bg)
+        .navigationTitle(t("passport.title"))
+        .navigationBarTitleDisplayMode(.inline)
+        .task {
+            if let id = session.userId { card = try? await Backend.profile(id) }
         }
     }
 }
