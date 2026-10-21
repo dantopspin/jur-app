@@ -16,7 +16,7 @@ struct RootView: View {
                 ErrorStateView(retry: { await session.retry() },
                                secondary: (t("settings.signOut"), { await session.signOut() }))
             case .needsProfile:
-                OnboardingPlaceholder()
+                OnboardingView()
             case .banned:
                 ContentUnavailableView {
                     Label(t("common.error"), systemImage: "hand.raised").font(.q(.title3))
@@ -36,18 +36,3 @@ struct RootView: View {
     }
 }
 
-/// Milestone 1 stand-in: onboarding is rebuilt in milestone 2.
-private struct OnboardingPlaceholder: View {
-    @Environment(SessionStore.self) private var session
-    var body: some View {
-        ContentUnavailableView {
-            Label(t("ios.comingSoon"), systemImage: "person.crop.circle.badge.plus")
-        } description: {
-            Text(t("ios.onboardingSoon"))
-        } actions: {
-            Button(t("settings.signOut")) { Task { await session.signOut() } }
-                .buttonStyle(.q(.secondary, compact: true)).fixedSize()
-        }
-        .background(Color.q.bg)
-    }
-}
