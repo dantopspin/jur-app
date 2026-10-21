@@ -8,6 +8,7 @@ struct LikesView: View {
     @State private var likes: LikesReceived?
     @State private var failed = false
     @State private var paywall = false
+    @Namespace private var zoom
 
     private let columns = Array(repeating: GridItem(.flexible(), spacing: Sp.md), count: 2)
 
@@ -25,8 +26,9 @@ struct LikesView: View {
                         ForEach(likes.profiles) { p in
                             NavigationLink {
                                 ProfileView(id: p.id, initial: p) { kind in Task { await decide(p, kind) } }
-                            } label: { tile(p) }
-                            .buttonStyle(.plain)
+                                    .qZoomDestination(id: p.id, in: zoom)
+                            } label: { tile(p).qZoomSource(id: p.id, in: zoom) }
+                            .buttonStyle(.qPressCard)
                         }
                     }
                     .padding(Layout.margin)

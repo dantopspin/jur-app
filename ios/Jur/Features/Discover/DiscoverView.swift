@@ -119,6 +119,7 @@ struct DiscoverView: View {
                 VStack(alignment: .leading, spacing: Sp.md) {
                     if let p = session.profile {
                         Text(t(greetingKey(), ["name": p.name])).qText(.footnote).foregroundStyle(Color.q.inkSoft)
+                            .qScrollDepth()
                     }
                     if !model.tonight.isEmpty {
                         DepartureBoard(departures: model.tonight.prefix(3).map(\.departure),
@@ -126,6 +127,7 @@ struct DiscoverView: View {
                                        seeAll: openEvents) { d in
                             openEvent = model.tonight.first { $0.id == d.id }
                         }
+                        .qScrollDepth()
                     }
                     deck
                 }

@@ -113,6 +113,8 @@ struct EventDetailView: View {
     @State private var codeError = false
     @State private var hostCode: String?
     @State private var reloadTick = 0
+    /// The "showed up" stamp landing after a successful check-in.
+    @State private var stamp: StampData?
 
     private var isHost: Bool { event?.hostId != nil && event?.hostId == session.userId }
 
@@ -142,6 +144,14 @@ struct EventDetailView: View {
         }
         .background(Color.q.bg)
         .navigationBarTitleDisplayMode(.inline)
+        .overlay {
+            if let stamp {
+                StampLanding(data: stamp, city: event.map { Cities.label($0.city) }) {
+                    withMotion(Motion.fade) { self.stamp = nil }
+                }
+                .transition(.opacity)
+            }
+        }
         .task { if event == nil { event = initial }; await load() }
         .sheet(isPresented: $boarding) {
             BoardingCodeSheet(eventTitle: event.map { "\($0.title) \(Fmt.time($0.start))" } ?? "",
@@ -234,8 +244,7 @@ struct EventDetailView: View {
             let r = try await Backend.checkIn(e.id, code: code)
             if r.ok {
                 boarding = false
-                Haptics.success()
-                toasts.show(t("events.checkedIn"))
+                withMotion(Motion.fade) { stamp = StampData(kind: .showed_up, detail: Fmt.time(e.start)) }
                 await load()
                 onChange()
             } else {
@@ -325,6 +334,45 @@ struct NewEventView: View {
         } catch {
             let s = "\(error)"
             self.error = s.contains("too_many_upcoming") ? t("events.tooMany") : t("events.invalid")
+        }
+    }
+}
+
+/// Check-in's moment: the "showed up" stamp lands on a felt card with a thump, then
+/// clears itself (or on tap).
+struct StampLanding: View {
+    let data: StampData
+    var city: String?
+    let onDone: () -> Void
+    @State private var landed = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        ZStack {
+            Color.black.opacity(0.3).ignoresSafeArea()
+            VStack(spacing: Sp.lg) {
+                Stamp(data: data, city: city)
+                    .scaleEffect(landed || reduceMotion ? 1 : 1.4)
+                    .rotationEffect(.degrees(landed || reduceMotion ? 0 : -12))
+                    .opacity(landed ? 1 : 0)
+                Text(t("events.checkedIn")).qText(.headline).foregroundStyle(Color.q.feltInk)
+            }
+            .padding(Sp.xxl)
+            .background(Color.q.feltGround, in: RoundedRectangle(cornerRadius: Radius.lg, style: .continuous))
+            .qElevated()
+        }
+        .contentShape(Rectangle())
+        .onTapGesture(perform: onDone)
+        .accessibilityElement(children: .combine)
+        .accessibilityAddTraits(.isModal)
+        .task {
+            withAnimation(Motion.adaptive(Motion.bouncy)) { landed = true }
+            try? await Task.sleep(for: .seconds(0.15))
+            Haptics.thump()
+            Haptics.success()
+            Sounds.play(.checkin)
+            try? await Task.sleep(for: .seconds(1.8))
+            onDone()
         }
     }
 }

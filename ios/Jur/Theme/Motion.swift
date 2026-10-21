@@ -107,6 +107,29 @@ extension ButtonStyle where Self == QPressStyle {
     static var qPressCard: QPressStyle { QPressStyle(scale: Motion.Press.card) }
 }
 
+extension View {
+    /// Marks a thumbnail as the place a zoom transition starts (iOS 18; nothing on 17).
+    @ViewBuilder func qZoomSource<ID: Hashable>(id: ID, in namespace: Namespace.ID) -> some View {
+        if #available(iOS 18.0, *) { matchedTransitionSource(id: id, in: namespace) } else { self }
+    }
+
+    /// Opens this screen by zooming out of its thumbnail (iOS 18; today's push or cover on 17).
+    @ViewBuilder func qZoomDestination<ID: Hashable>(id: ID, in namespace: Namespace.ID) -> some View {
+        if #available(iOS 18.0, *), !Motion.reduceMotion {
+            navigationTransition(.zoom(sourceID: id, in: namespace))
+        } else { self }
+    }
+
+    /// Content that scrolls under the toolbar fades and settles back slightly.
+    func qScrollDepth() -> some View {
+        scrollTransition(.animated(Motion.smooth)) { content, phase in
+            content
+                .opacity(phase == .topLeading ? 0.4 : 1)
+                .scaleEffect(phase == .topLeading && !Motion.reduceMotion ? 0.97 : 1, anchor: .bottom)
+        }
+    }
+}
+
 /// Feedback for view state changes. One place, so the map in the motion spec holds.
 extension SensoryFeedback {
     /// A swipe crossing the like / pass line, a card flipping, a photo page.

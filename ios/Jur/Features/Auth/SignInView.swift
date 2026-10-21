@@ -10,6 +10,10 @@ struct SignInView: View {
     @State private var passwordMode = false
     @State private var error: String?
     @State private var nonce = ""
+    /// The welcome lands in order: the mark draws in, then the words, then the buttons.
+    @State private var wordsShown = false
+    @State private var buttonsShown = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @AppStorage(L10n.storageKey) private var language: String = AppLanguage.device.rawValue
 
     var body: some View {
@@ -30,6 +34,11 @@ struct SignInView: View {
                 }
                 .padding(.horizontal, Layout.margin)
                 .padding(.bottom, Sp.lg)
+            }
+            .onAppear {
+                if reduceMotion { wordsShown = true; buttonsShown = true; return }
+                withAnimation(Motion.smooth.delay(0.35)) { wordsShown = true }
+                withAnimation(Motion.smooth.delay(0.45)) { buttonsShown = true }
             }
             .onChange(of: error) { _, new in
                 if let new { AccessibilityNotification.Announcement(new).post() }
@@ -77,17 +86,21 @@ struct SignInView: View {
             Wordmark(size: 46, ink: .white, dots: Color.q.gold)
                 .accessibilityAddTraits(.isHeader)
                 .padding(.top, Sp.lg)
-            Text(t("auth.tagline"))
-                .qText(.title3)
-                .foregroundStyle(Color.q.gold)
-                .multilineTextAlignment(.center)
-                .padding(.top, Sp.md)
-            Text(t("auth.sub"))
-                .qText(.body)
-                .foregroundStyle(Color.q.blueMist)
-                .multilineTextAlignment(.center)
-                .frame(maxWidth: 300)
-                .padding(.top, Sp.sm)
+            VStack(spacing: 0) {
+                Text(t("auth.tagline"))
+                    .qText(.title3)
+                    .foregroundStyle(Color.q.gold)
+                    .multilineTextAlignment(.center)
+                    .padding(.top, Sp.md)
+                Text(t("auth.sub"))
+                    .qText(.body)
+                    .foregroundStyle(Color.q.blueMist)
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: 300)
+                    .padding(.top, Sp.sm)
+            }
+            .opacity(wordsShown ? 1 : 0)
+            .offset(y: wordsShown || reduceMotion ? 0 : 8)
         }
     }
 
@@ -127,6 +140,8 @@ struct SignInView: View {
             LegalFooter(leadKey: "auth.legalLead", trailingKey: "legal.adult", onBlue: true)
                 .padding(.top, Sp.xs)
         }
+        .opacity(buttonsShown ? 1 : 0)
+        .offset(y: buttonsShown || reduceMotion ? 0 : 12)
     }
 
     private func finishApple(_ result: Result<ASAuthorization, Error>) async {

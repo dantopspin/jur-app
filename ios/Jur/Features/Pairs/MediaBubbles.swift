@@ -12,6 +12,7 @@ struct PhotoBubble: View {
     @State private var revealed = false
     @State private var failed = false
     @State private var fullScreen = false
+    @Namespace private var zoom
 
     private var blurred: Bool { !mine && !revealed && (blurPhotos || sensitive) }
 
@@ -39,6 +40,7 @@ struct PhotoBubble: View {
         }
         .frame(width: 220, height: 280)
         .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .qZoomSource(id: message.id, in: zoom)
         .contentShape(Rectangle())
         .onTapGesture {
             guard image != nil else { return }
@@ -54,6 +56,7 @@ struct PhotoBubble: View {
                 if let image { Image(uiImage: image).resizable().scaledToFit().frame(maxWidth: .infinity, maxHeight: .infinity) }
                 CloseButton(action: { fullScreen = false }, onBlue: true).padding(Layout.margin)
             }
+            .qZoomDestination(id: message.id, in: zoom)
         }
     }
 
