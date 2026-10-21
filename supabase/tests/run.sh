@@ -9,4 +9,4 @@ createdb "$DB"
 trap 'dropdb --if-exists "$DB"' EXIT
 $PSQL -d "$DB" -f tests/supabase_stub.sql
 for f in migrations/*.sql; do $PSQL -d "$DB" -f "$f"; done
-for t in tests/backend_test.sql tests/engagement_test.sql tests/dastarkhan_test.sql tests/clubs_test.sql tests/social_test.sql tests/launch_test.sql tests/fair_test.sql tests/events_badges_test.sql; do $PSQL -d "$DB" -f "$t"; done
+for t in tests/backend_test.sql tests/engagement_test.sql tests/dastarkhan_test.sql tests/clubs_test.sql tests/social_test.sql tests/launch_test.sql tests/fair_test.sql tests/events_badges_test.sql tests/native_push_test.sql; do $PSQL -d "$DB" -f "$t"; done

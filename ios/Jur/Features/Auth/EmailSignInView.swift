@@ -85,7 +85,7 @@ struct EmailSignInView: View {
         }
         .scrollDismissesKeyboard(.interactively)
         .safeAreaInset(edge: .bottom) {
-            LegalFooter(leadKey: "auth.legal")
+            LegalFooter(leadKey: "auth.legalLead", trailingKey: "legal.adult")
                 .frame(maxWidth: .infinity)
                 .padding(.horizontal, Layout.margin)
                 .padding(.vertical, Sp.sm)

@@ -28,6 +28,7 @@ final class PairsModel {
 struct PairsView: View {
     @Bindable var model: PairsModel
     @Binding var path: [UUID]
+    @Binding var showLikes: Bool
     var goDiscover: () -> Void = {}
     @Environment(SessionStore.self) private var session
 
@@ -71,6 +72,7 @@ struct PairsView: View {
                     Task { await model.load() }
                 }
             }
+            .navigationDestination(isPresented: $showLikes) { LikesView() }
             .refreshable { await model.load() }
             .task { await model.load() }
         }

@@ -17,9 +17,15 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
 
     func application(_ application: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: Error) {}
 
-    // Show banners while the app is open, except for the chat already on screen (handled by the chat).
+    // Show banners while the app is open.
     func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification) async
         -> UNNotificationPresentationOptions { [.banner, .sound] }
+
+    // A tap on a notification: go where its "url" points.
+    func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse) async {
+        let path = response.notification.request.content.userInfo["url"] as? String ?? "/discover"
+        await MainActor.run { Router.shared.open(path: path) }
+    }
 }
 
 enum Push {

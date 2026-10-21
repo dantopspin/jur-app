@@ -77,6 +77,7 @@ struct DiscoverView: View {
     @State private var noteFor: ProfileCard?
     @State private var drag: CGSize = .zero
     @State private var openEvent: EventItem?
+    @Binding var showPicks: Bool
     var openEvents: () -> Void = {}
     var openChat: (UUID) -> Void = { _ in }
 
@@ -107,12 +108,14 @@ struct DiscoverView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) { Lockup(size: 20) }
                 ToolbarItem(placement: .topBarTrailing) {
-                    NavigationLink { LikesView() } label: {
-                        Image(systemName: "heart.text.square").accessibilityLabel(t("likes.title"))
+                    Button { showPicks = true } label: {
+                        Image(systemName: "sparkles").accessibilityLabel(t("picks.title"))
                     }
                 }
+                ToolbarItem(placement: .topBarTrailing) { BoostButton { model.paywall = true } }
             }
             .navigationDestination(item: $openEvent) { e in EventDetailView(eventId: e.id, initial: e) }
+            .navigationDestination(isPresented: $showPicks) { PicksView() }
         }
         .task { if model.queue.isEmpty { await model.load() } }
         .sheet(item: $noteFor) { card in

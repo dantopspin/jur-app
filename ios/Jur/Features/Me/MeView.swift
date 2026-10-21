@@ -32,6 +32,8 @@ struct MeView: View {
 
                     Section {
                         NavigationLink { EditProfileView() } label: { Label(t("me.editProfile"), systemImage: "pencil") }
+                        NavigationLink { PromptsEditor() } label: { Label(t("prompts.title"), systemImage: "text.quote") }
+                        NavigationLink { TravelView() } label: { Label(t("travel.title"), systemImage: "airplane") }
                         verificationRow(p.verificationStatus)
                     }
                 }

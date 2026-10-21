@@ -37,6 +37,7 @@ const en = {
     failed: "Couldn’t sign in. Check your connection and try again.",
     notConfiguredIOS: "The app isn’t connected to a server yet. Fill in Config/Secrets.xcconfig.",
     language: "Language: {name}",
+    legalLead: "By continuing you agree to our",
   },
   onboarding: {
     step: 'Step {n} of {total}',
@@ -586,6 +587,7 @@ const en = {
     terms: "Terms of Use",
     privacy: "Privacy Policy",
     lead: "By subscribing you agree to our",
+    adult: "18+ only.",
   },
   safety: {
     tapToView: "Tap to view photo",

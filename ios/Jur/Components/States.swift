@@ -74,17 +74,26 @@ struct LoadingView: View {
     }
 }
 
-/// The translated legal line with working Terms and Privacy links.
+/// The translated legal line: "<lead> Terms · Privacy" with working links, plus an optional
+/// trailing sentence ("18+ only."). The lead never names the documents itself.
 struct LegalFooter: View {
     let leadKey: String
+    var trailingKey: String?
     var onBlue = false
 
     private var attributed: AttributedString {
-        let lead = t(leadKey)
         let terms = t("legal.terms"), privacy = t("legal.privacy")
-        var text = AttributedString("\(lead) \(terms) · \(privacy)")
-        if let r = text.range(of: terms) { text[r].link = Config.termsURL; text[r].underlineStyle = .single }
-        if let r = text.range(of: privacy, options: .backwards) { text[r].link = Config.privacyURL; text[r].underlineStyle = .single }
+        var text = AttributedString("\(t(leadKey)) ")
+        var termsPart = AttributedString(terms)
+        termsPart.link = Config.termsURL
+        termsPart.underlineStyle = .single
+        var privacyPart = AttributedString(privacy)
+        privacyPart.link = Config.privacyURL
+        privacyPart.underlineStyle = .single
+        text += termsPart
+        text += AttributedString(" · ")
+        text += privacyPart
+        if let trailingKey { text += AttributedString(". " + t(trailingKey)) }
         return text
     }
 

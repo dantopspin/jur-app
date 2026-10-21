@@ -39,6 +39,7 @@ const ru: Dict = {
     failed: "Не удалось войти. Проверьте интернет и попробуйте снова.",
     notConfiguredIOS: "Приложение не подключено к серверу. Заполните Config/Secrets.xcconfig.",
     language: "Язык: {name}",
+    legalLead: "Продолжая, вы принимаете",
   },
   onboarding: {
     step: 'Шаг {n} из {total}',
@@ -588,6 +589,7 @@ const ru: Dict = {
     terms: "Условия использования",
     privacy: "Политика конфиденциальности",
     lead: "Оформляя подписку, вы принимаете",
+    adult: "Только 18+.",
   },
   safety: {
     tapToView: "Нажмите, чтобы посмотреть",

@@ -12,7 +12,7 @@ struct EventsView: View {
     @State private var failed = false
     @State private var range: Window = .today
     @State private var creating = false
-    @State private var path: [UUID] = []
+    @Binding var path: [UUID]
 
     private var canHost: Bool {
         guard let p = session.profile else { return false }

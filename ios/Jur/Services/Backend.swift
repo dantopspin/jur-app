@@ -4,7 +4,11 @@
 import Foundation
 import Supabase
 
-let supabase = SupabaseClient(supabaseURL: Config.supabaseURL, supabaseKey: Config.supabaseAnonKey)
+let supabase = SupabaseClient(
+    supabaseURL: Config.supabaseURL, supabaseKey: Config.supabaseAnonKey,
+    // Emit the stored session at launch right away (the SDK's upcoming default); requests
+    // refresh an expired token by themselves.
+    options: SupabaseClientOptions(auth: .init(emitLocalSessionAsInitialSession: true)))
 
 enum Backend {
     /// snake_case JSON from Postgres → camelCase Swift properties.

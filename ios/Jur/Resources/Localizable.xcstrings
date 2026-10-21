@@ -208,6 +208,29 @@
         }
       }
     },
+    "auth.legalLead": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "By continuing you agree to our"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Продолжая, вы принимаете"
+          }
+        },
+        "kk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Жалғастыра отырып, сіз келісесіз:"
+          }
+        }
+      }
+    },
     "auth.notConfigured": {
       "extractionState": "manual",
       "localizations": {
@@ -6759,6 +6782,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "Профильді баптау келесі нұсқада болады. Аккаунт дайын."
+          }
+        }
+      }
+    },
+    "legal.adult": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "18+ only."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Только 18+."
+          }
+        },
+        "kk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Тек 18+."
           }
         }
       }

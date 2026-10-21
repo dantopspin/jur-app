@@ -122,7 +122,7 @@ struct SignInView: View {
                     .foregroundStyle(.white)
                     .multilineTextAlignment(.center)
             }
-            LegalFooter(leadKey: "auth.legal", onBlue: true)
+            LegalFooter(leadKey: "auth.legalLead", trailingKey: "legal.adult", onBlue: true)
                 .padding(.top, Sp.xs)
         }
     }

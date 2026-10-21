@@ -40,6 +40,7 @@ const kk: Dict = {
     failed: "Кіру мүмкін болмады. Интернетті тексеріп, қайталаңыз.",
     notConfiguredIOS: "Қолданба серверге қосылмаған. Config/Secrets.xcconfig толтырыңыз.",
     language: "Тіл: {name}",
+    legalLead: "Жалғастыра отырып, сіз келісесіз:",
   },
   onboarding: {
     step: '{total} қадамның {n}-і',
@@ -589,6 +590,7 @@ const kk: Dict = {
     terms: "Пайдалану шарттары",
     privacy: "Құпиялылық саясаты",
     lead: "Жазылу арқылы сіз келісесіз:",
+    adult: "Тек 18+.",
   },
   safety: {
     tapToView: "Көру үшін басыңыз",

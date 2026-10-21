@@ -109,7 +109,6 @@ extension Backend {
 
     static func rewind() async throws -> RewindResult { try await rpc("rewind") }
     static func likesReceived() async throws -> LikesReceived { try await rpc("likes_received") }
-    static func activateBoost() async throws -> OkResult { try await rpc("activate_boost") }
 
     // MARK: matches and chat
 
@@ -213,4 +212,40 @@ extension Backend {
     static func registerPush(token: String) async throws {
         try await call("register_push_token", ["p_token": .string(token), "p_platform": .string("ios")])
     }
+}
+
+// MARK: prompts, picks, travel
+extension Backend {
+    static let promptKeys = ["perfect_sunday", "slow_down_for", "after_finish", "proudest_finish", "teach_me",
+                             "green_flag", "season_love", "first_date_idea", "training_secret"]
+
+    struct PromptRow: Codable {
+        let profileId: UUID?, position: Int?, promptKey: String, answer: String
+        enum CodingKeys: String, CodingKey { case profileId = "profile_id", position, promptKey = "prompt_key", answer }
+    }
+
+    static func myPrompts(userId: UUID) async throws -> [PromptAnswer] {
+        let r = try await supabase.from("profile_prompts").select("prompt_key, answer")
+            .eq("profile_id", value: userId.uuidString).order("position").execute()
+        return try JSONDecoder().decode([PromptRow].self, from: r.data).map { PromptAnswer(key: $0.promptKey, answer: $0.answer) }
+    }
+
+    static func savePrompts(userId: UUID, _ prompts: [PromptAnswer]) async throws {
+        try await supabase.from("profile_prompts").delete().eq("profile_id", value: userId.uuidString).execute()
+        let rows = prompts.filter { $0.answer.trimmingCharacters(in: .whitespacesAndNewlines).count >= 2 }.prefix(3)
+            .enumerated().map { PromptRow(profileId: userId, position: $0.offset, promptKey: $0.element.key,
+                                          answer: $0.element.answer.trimmingCharacters(in: .whitespacesAndNewlines)) }
+        if !rows.isEmpty { try await supabase.from("profile_prompts").insert(Array(rows)).execute() }
+    }
+
+    static func dailyPicks() async throws -> [ProfileCard] { try await rpc("daily_picks") }
+
+    struct TravelResult: Decodable { let ok: Bool; let error: String?; let until: String? }
+    static func setTravel(city: String, days: Int) async throws -> TravelResult {
+        try await rpc("set_travel", ["p_city": .string(city), "p_days": .integer(days)])
+    }
+    static func clearTravel() async throws { try await call("clear_travel") }
+
+    struct BoostResult: Decodable { let ok: Bool; let error: String?; let boostedUntil: String? }
+    static func boost() async throws -> BoostResult { try await rpc("activate_boost") }
 }
