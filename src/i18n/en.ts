@@ -522,6 +522,7 @@ const en = {
     mic: 'Record a voice message',
     micDenied: 'Allow the microphone in Settings to send voice messages.',
     read: "Read",
+    playing: "Playing",
   },
   date: {
     title: 'Suggest a date',

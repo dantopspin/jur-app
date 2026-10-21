@@ -1657,6 +1657,29 @@
         }
       }
     },
+    "chat2.playing": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Playing"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Воспроизводится"
+          }
+        },
+        "kk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ойнатылуда"
+          }
+        }
+      }
+    },
     "chat2.read": {
       "extractionState": "manual",
       "localizations": {

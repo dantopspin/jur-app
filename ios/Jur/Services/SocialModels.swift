@@ -99,8 +99,12 @@ struct Message: Decodable, Identifiable, Hashable {
     let readAt: String?
     let kind: String?
     let payload: DatePayload?
+    let mediaPath: String?
+    let mediaMs: Int?
 
     var isDate: Bool { kind == "date" }
+    var isPhoto: Bool { kind == "photo" }
+    var isVoice: Bool { kind == "voice" }
     var isMedia: Bool { kind == "photo" || kind == "voice" }
 }
 

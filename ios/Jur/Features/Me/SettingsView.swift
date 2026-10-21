@@ -6,6 +6,7 @@ struct SettingsView: View {
     @Environment(ToastCenter.self) private var toasts
     @Environment(\.openURL) private var openURL
     @AppStorage(L10n.storageKey) private var language: String = AppLanguage.device.rawValue
+    @AppStorage(ChatMedia.blurKey) private var blurPhotos = true
     @State private var confirmDelete = false
     @State private var deleting = false
 
@@ -23,6 +24,12 @@ struct SettingsView: View {
                 }
                 .pickerStyle(.menu)
                 .tint(Color.q.inkSoft)
+            }
+
+            Section {
+                Toggle(t("safety.blurSetting"), isOn: $blurPhotos)
+            } footer: {
+                Text(t("safety.footer") + " " + t("safety.footerDevice")).qText(.footnote).foregroundStyle(Color.q.muted)
             }
 
             Section {

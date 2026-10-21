@@ -1,5 +1,6 @@
 // A conversation. Text, date tickets ("ticket for two") and the nudge to stop typing
 // and meet. New messages and answers arrive live (Supabase Realtime).
+import PhotosUI
 import Supabase
 import SwiftUI
 
@@ -64,6 +65,12 @@ final class ChatModel {
         if let fresh = try? await Backend.messages(matchId) { messages = fresh }
     }
 
+    /// Photos unlock once both people have written a text message (the server enforces it too).
+    func photosUnlocked(me: UUID?) -> Bool {
+        let texts = messages.filter { ($0.kind ?? "text") == "text" }
+        return texts.contains { $0.senderId == me } && texts.contains { $0.senderId != me }
+    }
+
     /// Ten messages in a row with no date suggestion: time to meet.
     var showNudge: Bool {
         messages.count >= 10 && !messages.suffix(10).contains { $0.isDate }
@@ -85,6 +92,10 @@ struct ChatView: View {
     @State private var composing = false
     @State private var reporting = false
     @State private var confirm: Confirm?
+    @State private var pickingPhoto = false
+    @State private var photoItem: PhotosPickerItem?
+    @State private var uploading = false
+    @State private var recorder = VoiceRecorder()
     @FocusState private var focused: Bool
 
     enum Confirm: Identifiable { case block, unmatch; var id: Self { self } }
@@ -111,6 +122,8 @@ struct ChatView: View {
         .task { await model.load() }
         .task { await model.listen() }
         .onDisappear {
+            recorder.cancel()
+            VoicePlayer.shared.stop()
             Task { await model.stop() }
             onChange()
         }
@@ -196,11 +209,17 @@ struct ChatView: View {
                 onAccept: { Task { await model.respond(m, accept: true) } },
                 onDecline: { Task { await model.respond(m, accept: false) } })
             .padding(.vertical, Sp.sm)
+        } else if m.isPhoto || m.isVoice {
+            HStack {
+                if mine { Spacer(minLength: 48) }
+                if m.isPhoto { PhotoBubble(message: m, mine: mine) } else { VoiceBubble(message: m, mine: mine) }
+                if !mine { Spacer(minLength: 48) }
+            }
         } else {
             HStack {
                 if mine { Spacer(minLength: 48) }
                 VStack(alignment: mine ? .trailing : .leading, spacing: Sp.xxs) {
-                    Text(m.isMedia ? (m.kind == "photo" ? "📷 " + t("chat2.photo") : "🎙 " + t("chat2.voice")) : m.body)
+                    Text(m.body)
                         .qText(.body)
                         .foregroundStyle(mine ? .white : Color.q.ink)
                         .padding(.horizontal, Sp.md)
@@ -224,23 +243,59 @@ struct ChatView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal, Layout.margin)
             }
-            HStack(alignment: .bottom, spacing: Sp.sm) {
-                Button { composing = true } label: {
-                    Image(systemName: "calendar.badge.plus")
+            if let started = recorder.started {
+                RecordingBar(started: started, onCancel: { recorder.cancel() }, onSend: { Task { await sendVoice() } })
+                    .padding(.vertical, Sp.xs)
+                    .background(Color.q.card)
+            } else {
+                inputRow
+            }
+        }
+        .photosPicker(isPresented: $pickingPhoto, selection: $photoItem, matching: .images)
+        .onChange(of: photoItem) { _, item in
+            guard let item else { return }
+            Task { await sendPhoto(item) }
+        }
+    }
+
+    private var inputRow: some View {
+        HStack(alignment: .bottom, spacing: Sp.sm) {
+            Menu {
+                Button(t("chat2.suggest"), systemImage: "calendar.badge.plus") { composing = true }
+                Button(t("chat2.photo") + (model.photosUnlocked(me: session.userId) ? "" : " · " + t("safety.photosLocked")),
+                       systemImage: "photo") {
+                    if model.photosUnlocked(me: session.userId) { pickingPhoto = true }
+                    else { toasts.show(t("safety.photosLockedSub")) }
+                }
+            } label: {
+                Group {
+                    if uploading { ProgressView().tint(.white) } else { Image(systemName: "plus").font(.q(.headline)) }
+                }
+                .foregroundStyle(.white)
+                .frame(width: 36, height: 36)
+                .background(Color.q.blue, in: Circle())
+            }
+            .frame(minWidth: 44, minHeight: 44)
+            .disabled(uploading)
+            .accessibilityLabel(t("chat2.attach"))
+            TextField(t("chat.placeholder"), text: $draft, axis: .vertical)
+                .lineLimit(1...5)
+                .font(.q(.body))
+                .focused($focused)
+                .padding(.horizontal, Sp.md)
+                .padding(.vertical, Sp.sm)
+                .background(Color.q.bg, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+            if draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                Button { Task { await startRecording() } } label: {
+                    Image(systemName: "mic.fill")
                         .font(.q(.headline))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(Color.q.blueText)
                         .frame(width: 36, height: 36)
-                        .background(Color.q.blue, in: Circle())
+                        .background(Color.q.blueTint, in: Circle())
                 }
                 .frame(minWidth: 44, minHeight: 44)
-                .accessibilityLabel(t("chat2.suggest"))
-                TextField(t("chat.placeholder"), text: $draft, axis: .vertical)
-                    .lineLimit(1...5)
-                    .font(.q(.body))
-                    .focused($focused)
-                    .padding(.horizontal, Sp.md)
-                    .padding(.vertical, Sp.sm)
-                    .background(Color.q.bg, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                .accessibilityLabel(t("chat2.mic"))
+            } else {
                 Button { Task { await send() } } label: {
                     Image(systemName: "arrow.up")
                         .font(.q(.headline))
@@ -252,9 +307,42 @@ struct ChatView: View {
                 .disabled(!canSend)
                 .accessibilityLabel(t("chat.send"))
             }
-            .padding(.horizontal, Sp.sm)
-            .padding(.vertical, Sp.xs)
-            .background(Color.q.card)
+        }
+        .padding(.horizontal, Sp.sm)
+        .padding(.vertical, Sp.xs)
+        .background(Color.q.card)
+    }
+
+    private func sendPhoto(_ item: PhotosPickerItem) async {
+        guard let me = session.userId else { return }
+        uploading = true
+        defer { uploading = false; photoItem = nil }
+        do {
+            guard let data = try await item.loadTransferable(type: Data.self) else { return }
+            try await ChatMedia.sendPhoto(data, match: matchId, me: me)
+            await model.load()
+        } catch let e as ServerError where e.code == "photo_too_soon" {
+            toasts.show(t("safety.photosLockedSub"))
+        } catch {
+            toasts.show(t("chat.sendFailed"), error: true)
+        }
+    }
+
+    private func startRecording() async {
+        focused = false
+        if !(await recorder.start()) { toasts.show(t("chat2.micDenied"), error: true) }
+    }
+
+    private func sendVoice() async {
+        guard let me = session.userId, let rec = recorder.finish() else { return }
+        uploading = true
+        defer { uploading = false }
+        do {
+            try await ChatMedia.sendVoice(rec.url, durationMs: rec.ms, match: matchId, me: me)
+            try? FileManager.default.removeItem(at: rec.url)
+            await model.load()
+        } catch {
+            toasts.show(t("chat.sendFailed"), error: true)
         }
     }
 
