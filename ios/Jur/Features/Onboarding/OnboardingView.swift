@@ -10,6 +10,8 @@ struct OnboardingView: View {
     @Environment(SessionStore.self) private var session
     @Environment(SportsCatalog.self) private var catalog
     @State private var step: Step = .name
+    /// Which way the last step change went, so content slides the right way.
+    @State private var forward = true
     @State private var name = UserDefaults.standard.string(forKey: "jur.prefillName") ?? ""
     @State private var birth = Calendar.current.date(byAdding: .year, value: -25, to: .now) ?? .now
     @State private var gender: Gender?
@@ -32,8 +34,14 @@ struct OnboardingView: View {
         VStack(spacing: 0) {
             topBar
             ScrollView {
-                VStack(alignment: .leading, spacing: Sp.xl) {
-                    content
+                // ZStack so the leaving and arriving steps overlap instead of stacking.
+                ZStack(alignment: .topLeading) {
+                    VStack(alignment: .leading, spacing: Sp.xl) {
+                        content
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .id(step)
+                    .transition(.qStep(forward: forward))
                 }
                 .padding(.horizontal, Layout.margin)
                 .padding(.top, Sp.lg)
@@ -90,7 +98,7 @@ struct OnboardingView: View {
                     .frame(width: i == step.rawValue ? 18 : 6, height: 6)
             }
         }
-        .animation(.easeOut(duration: 0.2), value: step)
+        .animation(Motion.adaptive(Motion.smooth), value: step)
         .accessibilityElement()
         .accessibilityLabel(t("onboarding.step", ["n": min(step.rawValue + 1, 8), "total": 8]))
     }
@@ -225,15 +233,16 @@ struct OnboardingView: View {
             HStack {
                 Text(label).qText(.headline)
                 Spacer()
-                if selected { Image(systemName: "checkmark").font(.q(.headline)) }
+                if selected { Image(systemName: "checkmark").font(.q(.headline)).transition(.qPop) }
             }
             .foregroundStyle(selected ? .white : Color.q.ink)
             .padding(.horizontal, Sp.lg)
             .frame(minHeight: Layout.buttonHeight)
             .background(selected ? Color.q.blue : Color.q.card, in: RoundedRectangle(cornerRadius: Radius.md, style: .continuous))
             .contentShape(Rectangle())
+            .animation(Motion.snappy, value: selected)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.qPressCard)
         .accessibilityAddTraits(selected ? .isSelected : [])
     }
 
@@ -256,7 +265,12 @@ struct OnboardingView: View {
     }
 
     private func go(_ s: Step) {
-        withAnimation(.easeInOut(duration: 0.2)) { step = s }
+        // Set the direction first, in its own update, so the leaving step already carries
+        // the right transition when the step changes.
+        forward = s.rawValue > step.rawValue
+        DispatchQueue.main.async {
+            withMotion(Motion.smooth) { step = s }
+        }
     }
 
     private func upload(_ items: [PhotosPickerItem]) async {

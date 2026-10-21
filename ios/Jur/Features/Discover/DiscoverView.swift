@@ -29,14 +29,22 @@ final class DiscoverModel {
         }
     }
 
-    /// Optimistic: the card leaves at once; on a limit it comes back and the paywall opens.
-    func decide(_ kind: SwipeKind, note: String? = nil, toasts: ToastCenter) async {
+    /// The card that just came back (undo, a rolled-back like) and the side it returns from.
+    var returningId: UUID?
+    var returningEdge: Edge = .leading
+
+    /// Optimistic: the card leaves at once (animated); on a limit it comes back and the paywall opens.
+    func commit(_ kind: SwipeKind, note: String? = nil, toasts: ToastCenter) {
         guard let card = queue.first else { return }
-        queue.removeFirst()
+        withMotion(Motion.smooth) { _ = queue.removeFirst() }
+        Task { await send(card, kind, note: note, toasts: toasts) }
+    }
+
+    private func send(_ card: ProfileCard, _ kind: SwipeKind, note: String?, toasts: ToastCenter) async {
         do {
             let r = try await Backend.swipe(card.id, kind, note: note)
             if !r.ok {
-                queue.insert(card, at: 0)
+                restore(card, after: kind)
                 switch r.error {
                 case "like_limit": paywall = true
                 case "super_limit": toasts.show(t("discover.superLimit"), error: true)
@@ -44,18 +52,37 @@ final class DiscoverModel {
                 }
                 return
             }
-            if let id = r.matchId { match = (card, id); Haptics.success() }
+            if let id = r.matchId {
+                match = (card, id)
+                Haptics.success()
+                Sounds.play(.match)
+            } else if kind == .super || note != nil {
+                Haptics.success()
+            }
             if queue.count < 3 { await refill() }
         } catch {
-            queue.insert(card, at: 0)
+            restore(card, after: kind)
             toasts.show(t("common.error"), error: true)
         }
+    }
+
+    /// Puts a card back on top, coming in from the side it left.
+    private func restore(_ card: ProfileCard, after kind: SwipeKind) {
+        returningId = card.id
+        returningEdge = kind == .pass ? .leading : kind == .super ? .top : .trailing
+        withMotion(Motion.bouncy) { queue.insert(card, at: 0) }
     }
 
     func undo(toasts: ToastCenter) async {
         do {
             let r = try await Backend.rewind()
-            if let p = r.profile { queue.insert(p, at: 0); return }
+            if let p = r.profile {
+                returningId = p.id
+                returningEdge = .leading
+                withMotion(Motion.bouncy) { queue.insert(p, at: 0) }
+                Haptics.bump()
+                return
+            }
             switch r.error {
             case "pro_only": paywall = true
             default: toasts.show(t("undo.nothing"))
@@ -66,7 +93,8 @@ final class DiscoverModel {
     private func refill() async {
         guard let more = try? await Backend.discover() else { return }
         let have = Set(queue.map(\.id))
-        queue += more.filter { !have.contains($0.id) }
+        let fresh = more.filter { !have.contains($0.id) }
+        withMotion(Motion.smooth) { queue += fresh }
     }
 }
 
@@ -75,7 +103,8 @@ struct DiscoverView: View {
     @Environment(ToastCenter.self) private var toasts
     @State private var model = DiscoverModel()
     @State private var noteFor: ProfileCard?
-    @State private var drag: CGSize = .zero
+    @State private var dragging = false
+    @State private var fling: DeckFling?
     @State private var openEvent: EventItem?
     @Binding var showPicks: Bool
     var openEvents: () -> Void = {}
@@ -100,7 +129,7 @@ struct DiscoverView: View {
                 .padding(.horizontal, Layout.margin)
                 .padding(.bottom, 120)
             }
-            .scrollDisabled(drag != .zero)
+            .scrollDisabled(dragging)
             .background(Color.q.bg)
             .refreshable { await model.load() }
             .overlay(alignment: .bottom) { if model.current != nil { actions } }
@@ -119,7 +148,7 @@ struct DiscoverView: View {
         }
         .task { if model.queue.isEmpty { await model.load() } }
         .sheet(item: $noteFor) { card in
-            NoteSheet(card: card) { note in Task { await model.decide(.like, note: note, toasts: toasts) } }
+            NoteSheet(card: card) { note in fling = DeckFling(kind: .like, note: note) }
         }
         .sheet(isPresented: $model.paywall) { PaywallView() }
         .fullScreenCover(isPresented: Binding(get: { model.match != nil }, set: { if !$0 { model.match = nil } })) {
@@ -137,25 +166,11 @@ struct DiscoverView: View {
             ProfileCardView(card: .placeholder, compact: true).redacted(reason: .placeholder)
         } else if model.failed {
             ErrorStateView(retry: { await model.load() }).frame(minHeight: 420)
-        } else if let card = model.current {
-            ProfileCardView(card: card, compact: true)
-                .id(card.id)
-                .offset(x: drag.width, y: drag.height * 0.2)
-                .rotationEffect(.degrees(Double(drag.width / 24)))
-                .overlay(alignment: .top) { swipeHint }
-                .gesture(
-                    DragGesture(minimumDistance: 20)
-                        .onChanged { drag = $0.translation }
-                        .onEnded { v in
-                            if v.translation.width > 120 { fling(.like) }
-                            else if v.translation.width < -120 { fling(.pass) }
-                            else { withAnimation(.spring(duration: 0.3)) { drag = .zero } }
-                        }
-                )
-                .accessibilityAction(named: t("discover.like")) { fling(.like) }
-                .accessibilityAction(named: t("discover.pass")) { fling(.pass) }
-                .accessibilityAction(named: t("note.add")) { noteFor = card }
-                .transition(.asymmetric(insertion: .opacity, removal: .opacity))
+        } else if !model.queue.isEmpty {
+            SwipeDeck(cards: Array(model.queue.prefix(2)), dragging: $dragging, fling: $fling,
+                      returningId: model.returningId, returningEdge: model.returningEdge,
+                      onCommit: { kind, note in model.commit(kind, note: note, toasts: toasts) },
+                      onNote: { noteFor = $0 })
         } else {
             QEmptyState(symbol: "figure.run", title: t("discover.empty"),
                         message: t(Config.eventsEnabled ? "discover.emptySub" : "discover.emptySubApp"),
@@ -165,41 +180,21 @@ struct DiscoverView: View {
         }
     }
 
-    @ViewBuilder private var swipeHint: some View {
-        if abs(drag.width) > 40 {
-            Text(drag.width > 0 ? t("discover.like") : t("discover.pass"))
-                .qText(.title3)
-                .foregroundStyle(drag.width > 0 ? Color.q.blue : Color.q.clay)
-                .padding(.horizontal, Sp.md).padding(.vertical, Sp.sm)
-                .background(Color.q.card, in: Capsule())
-                .padding(.top, Sp.xxl)
-                .opacity(min(abs(drag.width) / 120, 1))
-        }
-    }
-
     private var actions: some View {
         HStack(spacing: Sp.lg) {
             RoundAction(symbol: "arrow.uturn.backward", size: 48, label: t("undo.title")) {
                 Task { await model.undo(toasts: toasts) }
             }
-            RoundAction(symbol: "xmark", tint: Color.q.clay, size: 64, label: t("discover.pass")) { fling(.pass) }
+            RoundAction(symbol: "xmark", tint: Color.q.clay, size: 64, label: t("discover.pass")) { fling = DeckFling(kind: .pass) }
             RoundAction(symbol: "star.fill", tint: Color.q.onGold, fill: Color.q.gold, size: 48, label: t("discover.super")) {
-                Task { await model.decide(.super, toasts: toasts) }
+                fling = DeckFling(kind: .super)
             }
-            RoundAction(symbol: "heart.fill", tint: .white, fill: Color.q.blue, size: 64, label: t("discover.like")) { fling(.like) }
+            RoundAction(symbol: "heart.fill", tint: .white, fill: Color.q.blue, size: 64, label: t("discover.like")) { fling = DeckFling(kind: .like) }
                 .simultaneousGesture(LongPressGesture(minimumDuration: 0.5).onEnded { _ in noteFor = model.current })
         }
         .padding(.bottom, Sp.lg)
     }
 
-    private func fling(_ kind: SwipeKind) {
-        withAnimation(.easeIn(duration: 0.18)) { drag = CGSize(width: kind == .like ? 600 : -600, height: 0) }
-        Task {
-            try? await Task.sleep(for: .milliseconds(180))
-            drag = .zero
-            await model.decide(kind, toasts: toasts)
-        }
-    }
 }
 
 extension ProfileCard {
@@ -248,13 +243,16 @@ struct NoteSheet: View {
     }
 }
 
-/// The match moment: the two dots meet, then both photos and "Say hi".
+/// The match moment: the two dots meet once, the photos slide together, then the
+/// words and the buttons rise in turn. Plays match.wav (from the model).
 struct MatchMoment: View {
     let other: ProfileCard
     let myPhoto: String?
     let onWrite: () -> Void
     let onKeep: () -> Void
     @State private var shown = false
+    @State private var wordsShown = false
+    @State private var buttonsShown = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
@@ -265,7 +263,7 @@ struct MatchMoment: View {
                 .ignoresSafeArea(edges: .bottom)
             VStack(spacing: Sp.xl) {
                 Spacer()
-                DotsMeeting(size: 16, color: Color.q.gold)
+                DotsMeeting(size: 16, color: Color.q.gold, once: true)
                 HStack(spacing: -Sp.lg) {
                     Avatar(url: myPhoto.flatMap { URL(string: $0) }, size: 120)
                         .overlay(Circle().stroke(Color.q.gold, lineWidth: 3))
@@ -276,22 +274,32 @@ struct MatchMoment: View {
                         .rotationEffect(.degrees(shown ? 6 : 0))
                         .offset(x: shown ? 0 : 60)
                 }
+                .opacity(shown ? 1 : 0)
                 VStack(spacing: Sp.sm) {
                     Text(t("match.title")).qText(.title1).foregroundStyle(.white).accessibilityAddTraits(.isHeader)
                     Text(t("match.sub", ["name": other.name])).qText(.body).foregroundStyle(Color.q.blueMist)
                 }
                 .multilineTextAlignment(.center)
+                .opacity(wordsShown ? 1 : 0)
+                .offset(y: wordsShown || reduceMotion ? 0 : 8)
                 Spacer()
                 VStack(spacing: Sp.md) {
                     Button(t("match.write"), action: onWrite).buttonStyle(.q(.accent))
                     Button(t("match.keep"), action: onKeep).buttonStyle(.qOnBlue)
                 }
+                .opacity(buttonsShown ? 1 : 0)
+                .offset(y: buttonsShown || reduceMotion ? 0 : 12)
             }
             .padding(Layout.margin)
-            .opacity(shown ? 1 : 0)
         }
         .onAppear {
-            if reduceMotion { shown = true } else { withAnimation(.spring(duration: 0.6, bounce: 0.3)) { shown = true } }
+            if reduceMotion {
+                withAnimation(Motion.fade) { shown = true; wordsShown = true; buttonsShown = true }
+                return
+            }
+            withAnimation(Motion.hero) { shown = true }
+            withAnimation(Motion.smooth.delay(0.3)) { wordsShown = true }
+            withAnimation(Motion.smooth.delay(0.45)) { buttonsShown = true }
         }
     }
 }

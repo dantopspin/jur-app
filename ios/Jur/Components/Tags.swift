@@ -52,11 +52,12 @@ struct QChip: View {
             .padding(.vertical, Sp.sm)
             .frame(minHeight: 36)
             .background(selected ? Color.q.blue : (onCard ? Color.q.bg : Color.q.card), in: Capsule())
+            .animation(Motion.snappy, value: selected)
             // 36 pt to the eye, 44 pt to the finger.
             .padding(.vertical, Sp.xs)
             .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.qPressCard)
         .accessibilityAddTraits(selected ? .isSelected : [])
     }
 }

@@ -42,13 +42,13 @@ struct ToastOverlay: View {
                 .padding(.vertical, Sp.md)
                 .background(.regularMaterial, in: Capsule())
                 .shadow(color: .black.opacity(0.12), radius: 12, y: 4)
-                .transition(.move(edge: .top).combined(with: .opacity))
+                .transition(Motion.reduceMotion ? .opacity : .move(edge: .top).combined(with: .opacity))
                 .accessibilityAddTraits(.isStaticText)
             }
             Spacer()
         }
         .padding(.top, Sp.sm)
-        .animation(.spring(duration: 0.35), value: toasts.current)
+        .animation(Motion.adaptive(Motion.smooth), value: toasts.current)
         .allowsHitTesting(false)
     }
 }

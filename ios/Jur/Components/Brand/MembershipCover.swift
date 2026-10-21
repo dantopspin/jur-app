@@ -47,7 +47,7 @@ struct MembershipCover: View {
         .opacity(shown ? 1 : 0)
         .onAppear {
             guard animatesIn, !reduceMotion else { shown = true; return }
-            withAnimation(.spring(duration: 0.6, bounce: 0.25)) { shown = true }
+            withAnimation(Motion.hero) { shown = true }
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("JÜR Pro, \(memberNo)")

@@ -216,7 +216,8 @@ struct ProfileView: View {
     }
 }
 
-/// A round floating action (Discover, profile decisions).
+/// A round floating action (Discover, profile decisions): presses in, and its symbol
+/// bounces on every tap.
 struct RoundAction: View {
     let symbol: String
     var tint: Color = Color.q.inkSoft
@@ -224,20 +225,23 @@ struct RoundAction: View {
     var size: CGFloat = 48
     let label: String
     let action: () -> Void
+    @State private var taps = 0
 
     var body: some View {
         Button {
             Haptics.bump()
+            taps += 1
             action()
         } label: {
             Image(systemName: symbol)
                 .font(.system(size: size * 0.38, weight: .bold))
                 .foregroundStyle(tint)
+                .symbolEffect(.bounce, value: taps)
                 .frame(width: size, height: size)
                 .background(fill, in: Circle())
                 .qElevated()
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.qPress)
         .accessibilityLabel(label)
     }
 }

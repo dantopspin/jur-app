@@ -32,10 +32,12 @@ struct Wordmark: View {
     }
 }
 
-/// The two dots meeting: a loading indicator and the match moment's opening beat.
+/// The two dots meeting: a loading indicator (looping) and the match moment's opening
+/// beat (`once`: they meet a single time and stay together).
 struct DotsMeeting: View {
     var size: CGFloat = 12
     var color: Color = Color.q.blueText
+    var once = false
     @State private var together = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -47,10 +49,15 @@ struct DotsMeeting: View {
         .frame(width: size * 4, height: size)
         .onAppear {
             guard !reduceMotion else { together = true; return }
-            withAnimation(.spring(duration: 0.8, bounce: 0.3).repeatForever(autoreverses: true)) { together = true }
+            if once {
+                withAnimation(Motion.hero) { together = true }
+            } else {
+                withAnimation(Motion.bouncy.speed(0.55).repeatForever(autoreverses: true)) { together = true }
+            }
         }
         .accessibilityElement()
-        .accessibilityLabel(t("common.loading"))
+        .accessibilityLabel(once ? "" : t("common.loading"))
+        .accessibilityHidden(once)
     }
 }
 

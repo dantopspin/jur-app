@@ -59,19 +59,35 @@ struct DateTicket: View {
         .accessibilityElement(children: .contain)
     }
 
-    @ViewBuilder private var answer: some View {
+    /// Which of the answer's states is showing (the enum carries a flag, so it isn't Equatable).
+    private var stateKey: Int {
+        switch state {
+        case .pending(let canAnswer): canAnswer ? 0 : 1
+        case .accepted: 2
+        case .declined: 3
+        }
+    }
+
+    /// Answering morphs the buttons into the status tag.
+    private var answer: some View {
+        ZStack(alignment: .leading) { answerContent }
+            .animation(Motion.adaptive(Motion.bouncy), value: stateKey)
+    }
+
+    @ViewBuilder private var answerContent: some View {
         switch state {
         case .pending(let canAnswer) where canAnswer:
             HStack(spacing: Sp.sm) {
                 Button(t("ticket.accept"), action: onAccept).buttonStyle(.q(.primary, compact: true))
                 Button(t("ticket.decline"), action: onDecline).buttonStyle(.q(.secondary, compact: true))
             }
+            .transition(.opacity)
         case .accepted:
-            QTag(label: t("date.accepted"), tone: .good, systemImage: "checkmark")
+            QTag(label: t("date.accepted"), tone: .good, systemImage: "checkmark").transition(.qPop)
         case .declined:
-            QTag(label: t("date.declined"), tone: .neutral)
+            QTag(label: t("date.declined"), tone: .neutral).transition(.qPop)
         default:
-            QTag(label: t("date.waiting"), tone: .blue)
+            QTag(label: t("date.waiting"), tone: .blue).transition(.qPop)
         }
     }
 

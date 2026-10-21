@@ -32,7 +32,7 @@ struct RootView: View {
                 MainTabView()
             }
         }
-        .animation(.easeInOut(duration: 0.25), value: session.phase)
+        .animation(Motion.adaptive(Motion.smooth), value: session.phase)
     }
 }
 

@@ -42,7 +42,7 @@ struct PhotoBubble: View {
         .contentShape(Rectangle())
         .onTapGesture {
             guard image != nil else { return }
-            if blurred { withAnimation(.easeOut(duration: 0.2)) { revealed = true } } else { fullScreen = true }
+            if blurred { withAnimation(Motion.fade) { revealed = true } } else { fullScreen = true }
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(t("chat2.photo") + (blurred ? ", " + t(sensitive ? "safety.mayContainNudity" : "safety.tapToView") : ""))
@@ -124,7 +124,12 @@ struct RecordingBar: View {
                 .font(.q(.callout)).foregroundStyle(Color.q.danger)
                 .frame(minHeight: 44)
             Spacer()
-            Circle().fill(Color.q.danger).frame(width: 10, height: 10).accessibilityHidden(true)
+            // The one loop allowed here: it means "recording".
+            Image(systemName: "circle.fill")
+                .font(.system(size: 10))
+                .foregroundStyle(Color.q.danger)
+                .symbolEffect(.pulse, options: .repeating)
+                .accessibilityHidden(true)
             TimelineView(.periodic(from: started, by: 1)) { ctx in
                 let s = Int(ctx.date.timeIntervalSince(started))
                 Text(String(format: "%d:%02d", s / 60, s % 60)).qText(.number)

@@ -19,9 +19,15 @@ final class ChatModel {
         self.other = other
     }
 
+    /// New messages animate in once the first load is done; the first load doesn't.
+    private func apply(_ fresh: [Message]) {
+        guard fresh != messages else { return }
+        if loaded { withMotion(Motion.smooth) { messages = fresh } } else { messages = fresh }
+    }
+
     func load() async {
         do {
-            messages = try await Backend.messages(matchId)
+            apply(try await Backend.messages(matchId))
             try? await Backend.markRead(matchId)
             if other == nil {
                 other = try await Backend.matches().first { $0.matchId == matchId }?.other
@@ -41,7 +47,7 @@ final class ChatModel {
         do { try await ch.subscribeWithError() } catch { return }
         for await _ in changes {
             if let fresh = try? await Backend.messages(matchId) {
-                messages = fresh
+                apply(fresh)
                 try? await Backend.markRead(matchId)
             }
         }
@@ -55,19 +61,19 @@ final class ChatModel {
     func send(_ text: String, me: UUID, replyTo: UUID? = nil) async -> Bool {
         do {
             let m = try await Backend.send(text, match: matchId, from: me, replyTo: replyTo)
-            if !messages.contains(where: { $0.id == m.id }) { messages.append(m) }
+            if !messages.contains(where: { $0.id == m.id }) { withMotion(Motion.smooth) { messages.append(m) } }
             return true
         } catch { return false }
     }
 
     func react(_ m: Message, _ reaction: String) async {
         try? await Backend.react(m.id, reaction)
-        if let fresh = try? await Backend.messages(matchId) { messages = fresh }
+        if let fresh = try? await Backend.messages(matchId) { apply(fresh) }
     }
 
     func respond(_ m: Message, accept: Bool) async {
         _ = try? await Backend.respondDate(m.id, accept: accept)
-        if let fresh = try? await Backend.messages(matchId) { messages = fresh }
+        if let fresh = try? await Backend.messages(matchId) { apply(fresh) }
     }
 
     /// Photos unlock once both people have written a text message (the server enforces it too).
@@ -190,6 +196,7 @@ struct ChatView: View {
                     }
                     ForEach(model.messages) { m in
                         bubble(m).id(m.id)
+                            .transition(.qBubble(mine: m.senderId == session.userId))
                     }
                 }
                 .padding(.horizontal, Layout.margin)
@@ -198,7 +205,7 @@ struct ChatView: View {
             .defaultScrollAnchor(.bottom)
             .scrollDismissesKeyboard(.interactively)
             .onChange(of: model.messages.last?.id) { _, id in
-                if let id { withAnimation { proxy.scrollTo(id, anchor: .bottom) } }
+                if let id { withMotion(Motion.smooth) { proxy.scrollTo(id, anchor: .bottom) } }
             }
         }
         .safeAreaInset(edge: .bottom) { composer }
@@ -212,7 +219,7 @@ struct ChatView: View {
                 when: p.when.flatMap { Date.iso($0) }.map(Fmt.dayTime) ?? "",
                 place: p.place ?? "",
                 state: p.status == "accepted" ? .accepted : p.status == "declined" ? .declined : .pending(canAnswer: !mine),
-                onAccept: { Task { await model.respond(m, accept: true) } },
+                onAccept: { Haptics.success(); Task { await model.respond(m, accept: true) } },
                 onDecline: { Task { await model.respond(m, accept: false) } })
             .padding(.vertical, Sp.sm)
         } else if m.isPhoto || m.isVoice {
@@ -247,6 +254,7 @@ struct ChatView: View {
                     reactionsRow(m, mine: mine)
                     if mine, m.id == model.messages.last(where: { $0.senderId == session.userId })?.id, m.readAt != nil {
                         Text(t("chat2.read")).qText(.caption).foregroundStyle(Color.q.muted)
+                            .transition(.qPop)
                     }
                 }
                 if !mine { Spacer(minLength: 48) }
@@ -260,7 +268,7 @@ struct ChatView: View {
         Button(t("chat2.copy"), systemImage: "doc.on.doc") { UIPasteboard.general.string = m.body }
         Divider()
         ForEach(Reactions.all, id: \.key) { r in
-            Button(r.emoji) { Task { await model.react(m, r.key) } }
+            Button(r.emoji) { Haptics.tick(); Task { await model.react(m, r.key) } }
         }
     }
 
@@ -270,15 +278,20 @@ struct ChatView: View {
             HStack(spacing: Sp.xxs) {
                 ForEach(Array(Set(list.map(\.reaction))).sorted(), id: \.self) { key in
                     let count = list.filter { $0.reaction == key }.count
-                    Text(Reactions.emoji(key) + (count > 1 ? " \(count)" : ""))
-                        .qText(.caption)
-                        .padding(.horizontal, Sp.sm).padding(.vertical, Sp.xxs)
-                        .background(Color.q.card, in: Capsule())
-                        .overlay(Capsule().stroke(Color.q.line, lineWidth: 1))
-                        .onTapGesture { Task { await model.react(m, key) } }
+                    HStack(spacing: Sp.xxs) {
+                        Text(Reactions.emoji(key))
+                        if count > 1 { Text("\(count)").monospacedDigit().contentTransition(.numericText()) }
+                    }
+                    .qText(.caption)
+                    .padding(.horizontal, Sp.sm).padding(.vertical, Sp.xxs)
+                    .background(Color.q.card, in: Capsule())
+                    .overlay(Capsule().stroke(Color.q.line, lineWidth: 1))
+                    .onTapGesture { Haptics.tick(); Task { await model.react(m, key) } }
+                    .transition(.qPop)
                 }
             }
             .accessibilityElement(children: .combine)
+            .transition(.qPop)
         }
     }
 
@@ -288,6 +301,7 @@ struct ChatView: View {
                 DateNudge { composing = true }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal, Layout.margin)
+                    .transition(.qRise)
             }
             if let r = replyingTo {
                 HStack(spacing: Sp.sm) {
@@ -305,15 +319,21 @@ struct ChatView: View {
                 .frame(height: 44)
                 .padding(.horizontal, Layout.margin)
                 .background(Color.q.card)
+                .transition(.qRise)
             }
             if let started = recorder.started {
                 RecordingBar(started: started, onCancel: { recorder.cancel() }, onSend: { Task { await sendVoice() } })
                     .padding(.vertical, Sp.xs)
                     .background(Color.q.card)
+                    .transition(.opacity)
             } else {
                 inputRow
+                    .transition(.opacity)
             }
         }
+        .animation(Motion.adaptive(Motion.smooth), value: model.showNudge)
+        .animation(Motion.adaptive(Motion.smooth), value: replyingTo?.id)
+        .animation(Motion.adaptive(Motion.smooth), value: recorder.started)
         .photosPicker(isPresented: $pickingPhoto, selection: $photoItem, matching: .images)
         .onChange(of: photoItem) { _, item in
             guard let item else { return }
@@ -348,32 +368,31 @@ struct ChatView: View {
                 .padding(.horizontal, Sp.md)
                 .padding(.vertical, Sp.sm)
                 .background(Color.q.bg, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-            if draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                Button { Task { await startRecording() } } label: {
-                    Image(systemName: "mic.fill")
-                        .font(.q(.headline))
-                        .foregroundStyle(Color.q.blueText)
-                        .frame(width: 36, height: 36)
-                        .background(Color.q.blueTint, in: Circle())
-                }
-                .frame(minWidth: 44, minHeight: 44)
-                .accessibilityLabel(t("chat2.mic"))
-            } else {
-                Button { Task { await send() } } label: {
-                    Image(systemName: "arrow.up")
-                        .font(.q(.headline))
-                        .foregroundStyle(.white)
-                        .frame(width: 36, height: 36)
-                        .background(canSend ? Color.q.blue : Color.q.hint, in: Circle())
-                }
-                .frame(minWidth: 44, minHeight: 44)
-                .disabled(!canSend)
-                .accessibilityLabel(t("chat.send"))
-            }
+            micOrSend
         }
         .padding(.horizontal, Sp.sm)
         .padding(.vertical, Sp.xs)
         .background(Color.q.card)
+    }
+
+    /// Mic while the field is empty, send once there's text: one button whose symbol morphs.
+    private var micOrSend: some View {
+        let empty = draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        return Button {
+            if empty { Task { await startRecording() } } else { Task { await send() } }
+        } label: {
+            Image(systemName: empty ? "mic.fill" : "arrow.up")
+                .font(.q(.headline))
+                .foregroundStyle(empty ? Color.q.blueText : .white)
+                .contentTransition(.symbolEffect(.replace))
+                .frame(width: 36, height: 36)
+                .background(empty ? Color.q.blueTint : (canSend ? Color.q.blue : Color.q.hint), in: Circle())
+        }
+        .buttonStyle(.qPress)
+        .frame(minWidth: 44, minHeight: 44)
+        .disabled(!empty && !canSend)
+        .accessibilityLabel(empty ? t("chat2.mic") : t("chat.send"))
+        .animation(Motion.snappy, value: empty)
     }
 
     private func sendPhoto(_ item: PhotosPickerItem) async {
@@ -393,7 +412,7 @@ struct ChatView: View {
 
     private func startRecording() async {
         focused = false
-        if !(await recorder.start()) { toasts.show(t("chat2.micDenied"), error: true) }
+        if await recorder.start() { Haptics.knock() } else { toasts.show(t("chat2.micDenied"), error: true) }
     }
 
     private func sendVoice() async {

@@ -28,8 +28,9 @@ struct QButtonStyle: ButtonStyle {
             .background(colors.bg, in: Capsule())
             .contentShape(Capsule())
             .opacity(isEnabled ? (configuration.isPressed ? 0.75 : 1) : 0.4)
-            .scaleEffect(configuration.isPressed ? 0.98 : 1)
-            .animation(.easeOut(duration: 0.12), value: configuration.isPressed)
+            .scaleEffect(configuration.isPressed && !Motion.reduceMotion ? Motion.Press.capsule : 1)
+            .animation(Motion.snappy, value: configuration.isPressed)
+            .animation(Motion.snappy, value: isEnabled)
     }
 }
 

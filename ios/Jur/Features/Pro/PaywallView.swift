@@ -86,8 +86,9 @@ struct PaywallView: View {
                         .padding(Sp.lg)
                         .background(Color.white.opacity(on ? 0.2 : 0.08), in: RoundedRectangle(cornerRadius: Radius.md, style: .continuous))
                         .overlay(RoundedRectangle(cornerRadius: Radius.md, style: .continuous).stroke(on ? Color.q.gold : .clear, lineWidth: 2))
+                        .animation(Motion.snappy, value: on)
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.qPressCard)
                     .accessibilityAddTraits(on ? .isSelected : [])
                 }
             }

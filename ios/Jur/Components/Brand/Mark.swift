@@ -48,7 +48,7 @@ struct MarkView: View {
         .onAppear {
             guard animate, !reduceMotion else { return }
             progress = 0
-            withAnimation(.timingCurve(0.2, 0, 0, 1, duration: 0.6)) { progress = 1 }
+            withAnimation(Motion.draw) { progress = 1 }
         }
     }
 }
@@ -71,7 +71,7 @@ struct MarkLoader: View {
         .frame(width: size, height: size)
         .onAppear {
             if reduceMotion { on = true; return }
-            withAnimation(.timingCurve(0.2, 0, 0, 1, duration: 0.7).repeatForever(autoreverses: true)) { on = true }
+            withAnimation(Motion.loader.repeatForever(autoreverses: true)) { on = true }
         }
         .accessibilityElement()
         .accessibilityLabel(t("common.loading"))
