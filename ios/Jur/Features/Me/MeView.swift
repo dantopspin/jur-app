@@ -17,7 +17,7 @@ struct MeView: View {
                             VStack(alignment: .leading, spacing: Sp.sm) {
                                 Text(p.name).qText(.title2).foregroundStyle(Color.q.ink).lineLimit(2)
                                 HStack(spacing: Sp.sm) {
-                                    QTag(label: memberNo(p.memberNo), tone: .neutral)
+                                    QTag(label: formatMemberNo(p.memberNo), tone: .neutral)
                                     if p.verificationStatus == .approved {
                                         QTag(label: t("card.verified"), tone: .blue, systemImage: "checkmark.seal.fill")
                                     }

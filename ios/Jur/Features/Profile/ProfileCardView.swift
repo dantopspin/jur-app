@@ -39,7 +39,7 @@ struct ProfileCardView: View {
     }
 
     private var meta: String {
-        var parts = [memberNo(card.memberNo), Cities.label(card.travelCity ?? card.city)]
+        var parts = [formatMemberNo(card.memberNo), Cities.label(card.travelCity ?? card.city)]
         if let n = card.eventsAttended, n > 0, Config.eventsEnabled { parts.append(t("passport.departures") + " " + String(n)) }
         return parts.joined(separator: " · ")
     }
@@ -135,7 +135,7 @@ extension PassportPage {
             let f = DateFormatter(); f.dateFormat = "yyyy-MM"
             return f.date(from: s).map(Fmt.monthYear)
         } ?? ""
-        self.init(name: card.name, memberNo: memberNo(card.memberNo), city: Cities.label(card.city), since: since,
+        self.init(name: card.name, memberNo: formatMemberNo(card.memberNo), city: Cities.label(card.city), since: since,
                   departures: card.eventsAttended ?? 0, stamps: card.stamps, photo: card.photoURLs.first)
     }
 }

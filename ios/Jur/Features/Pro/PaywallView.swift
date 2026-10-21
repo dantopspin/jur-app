@@ -29,7 +29,7 @@ struct PaywallView: View {
             Color.q.blue.ignoresSafeArea()
             ScrollView {
                 VStack(spacing: Sp.xl) {
-                    MembershipCover(memberNo: memberNo(session.profile?.memberNo ?? 0), tilted: true)
+                    MembershipCover(memberNo: formatMemberNo(session.profile?.memberNo ?? 0), tilted: true)
                         .scaleEffect(0.7)
                         .frame(height: 250)
                         .padding(.top, Sp.xl)
@@ -164,7 +164,7 @@ struct ProWelcomeView: View {
             Color.q.blue.ignoresSafeArea()
             ScrollView {
                 VStack(spacing: Sp.xl) {
-                    MembershipCover(memberNo: memberNo(session.profile?.memberNo ?? 0), animatesIn: true)
+                    MembershipCover(memberNo: formatMemberNo(session.profile?.memberNo ?? 0), animatesIn: true)
                         .padding(.top, Sp.xxl)
                     VStack(spacing: Sp.sm) {
                         Text(t("cover.welcome")).qText(.title2).foregroundStyle(.white)

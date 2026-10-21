@@ -113,7 +113,7 @@ struct Stamp: View {
     private func detail(_ s: String) -> some View {
         Text(s).font(.q(.label)).lineLimit(1).minimumScaleFactor(0.85)
     }
-    private func big(_ s: String, size: CGFloat) -> some View {
+    private func big(_ s: String, size: CGFloat = 15) -> some View {
         Text(s).font(.qFont("Unbounded-ExtraBold", size: size, relativeTo: .headline, weight: .heavy))
             .monospacedDigit().lineLimit(1).minimumScaleFactor(0.7)
     }

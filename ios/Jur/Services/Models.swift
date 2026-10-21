@@ -43,4 +43,4 @@ struct Limits: Decodable, Equatable {
 }
 
 /// "№0042"
-func memberNo(_ n: Int) -> String { "№" + String(format: "%04d", n) }
+func formatMemberNo(_ n: Int) -> String { "№" + String(format: "%04d", n) }

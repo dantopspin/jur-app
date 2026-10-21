@@ -63,7 +63,7 @@ struct QChip: View {
 
 /// Wrapping layout for chips and tags. Chips already carry 4 pt of invisible hit area
 /// above and below, so chip rows use `FlowLayout(spacing: Sp.xs)`.
-struct FlowLayout: Layout {
+struct FlowLayout: SwiftUI.Layout {
     var spacing: CGFloat = Sp.sm
 
     func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {

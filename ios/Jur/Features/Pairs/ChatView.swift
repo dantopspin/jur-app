@@ -36,9 +36,9 @@ final class ChatModel {
     func listen() async {
         let ch = supabase.channel("chat-\(matchId.uuidString.lowercased())")
         let changes = ch.postgresChange(AnyAction.self, schema: "public", table: "messages",
-                                        filter: "match_id=eq.\(matchId.uuidString.lowercased())")
+                                        filter: .eq("match_id", value: matchId.uuidString.lowercased()))
         channel = ch
-        await ch.subscribe()
+        do { try await ch.subscribeWithError() } catch { return }
         for await _ in changes {
             if let fresh = try? await Backend.messages(matchId) {
                 messages = fresh
@@ -439,7 +439,7 @@ struct DateComposerSheet: View {
             } else {
                 error = t("date.invalid")
             }
-        } catch { error = t("common.error") }
+        } catch { self.error = t("common.error") }
     }
 }
 
