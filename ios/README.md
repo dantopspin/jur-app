@@ -32,6 +32,16 @@ settings at the top of `20261021000012_native_push.sql`. A tap opens the push's 
 `npx tsx scripts/make_strings.mjs`. Keys are dotted ("discover.empty"); `{name}` placeholders
 are filled by `t("key", ["name": value])`. The language can be switched in Settings.
 
+## Store setup (done 21 Oct 2026)
+
+- Apple team `4FUGKH9SC7`; App ID `kz.jur.app` with Push, Sign in with Apple, App Groups and
+  Sensitive Content Analysis.
+- App Store Connect app "JÜR: Active Dating" (Apple ID 6825340225, SKU JUR001, primary language Russian).
+- Subscription group "JUR Pro": `jur_pro_weekly` ₸1,490 · `jur_pro_monthly` ₸3,990 ·
+  `jur_pro_6m` ₸14,990 (Kazakhstan base price; other countries auto-converted).
+- RevenueCat project "JÜR" (`proj0d032cff`), app "JÜR iOS", entitlement `pro`, offering `default`.
+  The public SDK key goes in `REVENUECAT_IOS_KEY`.
+
 ## What's in the app
 
 Sign-in (Apple, email code), onboarding, Discover (tonight's board, cards, like with a note, super,
