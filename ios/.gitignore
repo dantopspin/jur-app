@@ -1,0 +1,6 @@
+Jur.xcodeproj/
+Config/Secrets.xcconfig
+Jur/Info.plist
+Jur/Jur.entitlements
+DerivedData/
+*.xcuserstate

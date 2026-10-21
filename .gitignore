@@ -1,0 +1,16 @@
+node_modules/
+.expo/
+dist/
+web-build/
+# ios/ is the native SwiftUI app (not an Expo prebuild), so it is tracked.
+android/
+.env
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+expo-env.d.ts
+supabase/.temp/
+supabase/.branches/
+.DS_Store

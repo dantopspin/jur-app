@@ -1,0 +1,7 @@
+{
+  "name": "qadam-sensitive",
+  "version": "1.0.0",
+  "private": true,
+  "main": "index.ts",
+  "description": "On-device nudity check for chat photos via Apple Sensitive Content Analysis"
+}

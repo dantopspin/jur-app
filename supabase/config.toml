@@ -1,0 +1,14 @@
+# Minimal Supabase CLI config. The CLI fills in defaults for everything else.
+project_id = "qadam"
+
+[auth]
+site_url = "qadam://"
+
+[auth.email]
+enable_signup = true
+otp_length = 6
+otp_expiry = 3600
+
+# RevenueCat authenticates with its own shared secret, not a Supabase JWT.
+[functions.revenuecat-webhook]
+verify_jwt = false

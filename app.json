@@ -1,0 +1,136 @@
+{
+  "expo": {
+    "name": "Qadam",
+    "slug": "qadam",
+    "scheme": "qadam",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#1F5FA0"
+    },
+    "ios": {
+      "bundleIdentifier": "kz.qadam.app",
+      "supportsTablet": false,
+      "infoPlist": {
+        "NSCameraUsageDescription": "Qadam uses the camera for profile photos and the selfie that verifies your profile.",
+        "NSPhotoLibraryUsageDescription": "Qadam needs access to your photos so you can add them to your profile.",
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSSupportsLiveActivities": true,
+        "NSMicrophoneUsageDescription": "Qadam uses the microphone for voice messages in your chats.",
+        "NSContactsUsageDescription": "Qadam can hide you from people in your contacts, and them from you. Only one-way codes leave your phone."
+      },
+      "usesAppleSignIn": true,
+      "entitlements": {
+        "com.apple.security.application-groups": [
+          "group.kz.qadam.app"
+        ],
+        "com.apple.developer.sensitivecontentanalysis.client": [
+          "analysis"
+        ]
+      }
+    },
+    "android": {
+      "package": "kz.qadam.app",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#1F5FA0"
+      },
+      "permissions": [
+        "android.permission.CAMERA"
+      ]
+    },
+    "plugins": [
+      "expo-router",
+      "expo-localization",
+      "expo-font",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Qadam needs access to your photos so you can add them to your profile.",
+          "cameraPermission": "Qadam uses the camera for profile photos and the selfie that verifies your profile."
+        }
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash.png",
+          "imageWidth": 180,
+          "backgroundColor": "#1F5FA0"
+        }
+      ],
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "Qadam uses the microphone for voice messages in your chats."
+        }
+      ],
+      "expo-apple-authentication",
+      [
+        "@react-native-google-signin/google-signin",
+        {
+          "iosUrlScheme": "com.googleusercontent.apps.REPLACE_WITH_IOS_CLIENT_ID"
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#1F5FA0",
+          "sounds": [
+            "./assets/sounds/match.wav"
+          ]
+        }
+      ],
+      "expo-live-activity",
+      "@bacons/apple-targets",
+      [
+        "expo-alternate-app-icons",
+        [
+          {
+            "name": "Night",
+            "ios": "./assets/icons/night.png",
+            "android": {
+              "foregroundImage": "./assets/icons/fg-gold.png",
+              "backgroundColor": "#0E1724"
+            }
+          },
+          {
+            "name": "Felt",
+            "ios": "./assets/icons/felt.png",
+            "android": {
+              "foregroundImage": "./assets/icons/fg-clay.png",
+              "backgroundColor": "#EFE6D6"
+            }
+          },
+          {
+            "name": "Nauryz",
+            "ios": "./assets/icons/nauryz.png",
+            "android": {
+              "foregroundImage": "./assets/icons/fg-gold.png",
+              "backgroundColor": "#3B8A5C"
+            }
+          }
+        ]
+      ],
+      [
+        "expo-contacts",
+        {
+          "contactsPermission": "Qadam can hide you from people in your contacts, and them from you. Only one-way codes leave your phone."
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": false
+    },
+    "extra": {
+      "eas": {
+        "projectId": "REPLACE_WITH_EAS_PROJECT_ID"
+      }
+    }
+  }
+}
