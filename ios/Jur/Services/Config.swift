@@ -14,6 +14,9 @@ enum Config {
     static var termsURL: URL { URL(string: "https://\(value("JurSiteHost"))/terms")! }
     /// User-created events, Tonight, check-in and event badges.
     static var eventsEnabled: Bool { value("JurEvents").lowercased() == "on" }
+    /// Email-code sign-in on the welcome screen. Off until a custom email sender (SMTP) is set up in Supabase:
+    /// the built-in sender only sends links, not codes. The hidden password route for App Review stays.
+    static let emailSignInEnabled = false
 
     static var isConfigured: Bool {
         !value("JurSupabaseHost").isEmpty && !value("JurSupabaseHost").contains("your-project")

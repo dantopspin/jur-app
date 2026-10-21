@@ -1,4 +1,4 @@
-// Welcome → Sign in with Apple, or an email code.
+// Welcome → Sign in with Apple (or an email code, when Config.emailSignInEnabled).
 // The password route exists only for the App Review demo account: long-press the mark.
 import AuthenticationServices
 import CryptoKit
@@ -107,14 +107,16 @@ struct SignInView: View {
             .frame(height: Layout.buttonHeight)
             .clipShape(Capsule())
 
-            Button {
-                error = nil
-                passwordMode = false
-                showEmail = true
-            } label: {
-                Label(t("welcome.email"), systemImage: "envelope")
+            if Config.emailSignInEnabled {
+                Button {
+                    error = nil
+                    passwordMode = false
+                    showEmail = true
+                } label: {
+                    Label(t("welcome.email"), systemImage: "envelope")
+                }
+                .buttonStyle(.qOnBlue)
             }
-            .buttonStyle(.qOnBlue)
 
             if let error {
                 Label(error, systemImage: "exclamationmark.circle.fill")
