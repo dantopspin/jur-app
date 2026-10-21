@@ -52,12 +52,17 @@ final class ChatModel {
         channel = nil
     }
 
-    func send(_ text: String, me: UUID) async -> Bool {
+    func send(_ text: String, me: UUID, replyTo: UUID? = nil) async -> Bool {
         do {
-            let m = try await Backend.send(text, match: matchId, from: me)
+            let m = try await Backend.send(text, match: matchId, from: me, replyTo: replyTo)
             if !messages.contains(where: { $0.id == m.id }) { messages.append(m) }
             return true
         } catch { return false }
+    }
+
+    func react(_ m: Message, _ reaction: String) async {
+        try? await Backend.react(m.id, reaction)
+        if let fresh = try? await Backend.messages(matchId) { messages = fresh }
     }
 
     func respond(_ m: Message, accept: Bool) async {
@@ -96,6 +101,7 @@ struct ChatView: View {
     @State private var photoItem: PhotosPickerItem?
     @State private var uploading = false
     @State private var recorder = VoiceRecorder()
+    @State private var replyingTo: Message?
     @FocusState private var focused: Bool
 
     enum Confirm: Identifiable { case block, unmatch; var id: Self { self } }
@@ -219,18 +225,58 @@ struct ChatView: View {
             HStack {
                 if mine { Spacer(minLength: 48) }
                 VStack(alignment: mine ? .trailing : .leading, spacing: Sp.xxs) {
-                    Text(m.body)
-                        .qText(.body)
-                        .foregroundStyle(mine ? .white : Color.q.ink)
-                        .padding(.horizontal, Sp.md)
-                        .padding(.vertical, Sp.sm)
-                        .background(mine ? Color.q.blue : Color.q.card, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-                        .textSelection(.enabled)
+                    VStack(alignment: .leading, spacing: Sp.xs) {
+                        if let r = m.reply {
+                            Text(r.kind == "photo" ? t("chat2.photo") : r.kind == "voice" ? t("chat2.voice") : r.body)
+                                .qText(.footnote)
+                                .lineLimit(2)
+                                .foregroundStyle(mine ? Color.white.opacity(0.85) : Color.q.inkSoft)
+                                .padding(.leading, Sp.sm)
+                                .overlay(alignment: .leading) {
+                                    Rectangle().fill(mine ? Color.white.opacity(0.6) : Color.q.blueText).frame(width: 2)
+                                }
+                        }
+                        Text(m.body)
+                            .qText(.body)
+                            .foregroundStyle(mine ? .white : Color.q.ink)
+                    }
+                    .padding(.horizontal, Sp.md)
+                    .padding(.vertical, Sp.sm)
+                    .background(mine ? Color.q.blue : Color.q.card, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                    .contextMenu { messageMenu(m) }
+                    reactionsRow(m, mine: mine)
                     if mine, m.id == model.messages.last(where: { $0.senderId == session.userId })?.id, m.readAt != nil {
                         Text(t("chat2.read")).qText(.caption).foregroundStyle(Color.q.muted)
                     }
                 }
                 if !mine { Spacer(minLength: 48) }
+            }
+            .accessibilityElement(children: .combine)
+        }
+    }
+
+    @ViewBuilder private func messageMenu(_ m: Message) -> some View {
+        Button(t("chat2.reply"), systemImage: "arrowshape.turn.up.left") { replyingTo = m; focused = true }
+        Button(t("chat2.copy"), systemImage: "doc.on.doc") { UIPasteboard.general.string = m.body }
+        Divider()
+        ForEach(Reactions.all, id: \.key) { r in
+            Button(r.emoji) { Task { await model.react(m, r.key) } }
+        }
+    }
+
+    @ViewBuilder private func reactionsRow(_ m: Message, mine: Bool) -> some View {
+        let list = m.reactions ?? []
+        if !list.isEmpty {
+            HStack(spacing: Sp.xxs) {
+                ForEach(Array(Set(list.map(\.reaction))).sorted(), id: \.self) { key in
+                    let count = list.filter { $0.reaction == key }.count
+                    Text(Reactions.emoji(key) + (count > 1 ? " \(count)" : ""))
+                        .qText(.caption)
+                        .padding(.horizontal, Sp.sm).padding(.vertical, Sp.xxs)
+                        .background(Color.q.card, in: Capsule())
+                        .overlay(Capsule().stroke(Color.q.line, lineWidth: 1))
+                        .onTapGesture { Task { await model.react(m, key) } }
+                }
             }
             .accessibilityElement(children: .combine)
         }
@@ -242,6 +288,23 @@ struct ChatView: View {
                 DateNudge { composing = true }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal, Layout.margin)
+            }
+            if let r = replyingTo {
+                HStack(spacing: Sp.sm) {
+                    Rectangle().fill(Color.q.blueText).frame(width: 2)
+                    VStack(alignment: .leading, spacing: 0) {
+                        Text(t("chat2.replyingTo", ["name": r.senderId == session.userId ? t("chat2.you") : (model.other?.name ?? "")]))
+                            .qText(.caption).foregroundStyle(Color.q.blueText)
+                        Text(r.body.isEmpty ? t("chat2.photo") : r.body).qText(.footnote).foregroundStyle(Color.q.inkSoft).lineLimit(1)
+                    }
+                    Spacer()
+                    Button { replyingTo = nil } label: { Image(systemName: "xmark.circle.fill").foregroundStyle(Color.q.hint) }
+                        .frame(minWidth: 44, minHeight: 44)
+                        .accessibilityLabel(t("common.cancel"))
+                }
+                .frame(height: 44)
+                .padding(.horizontal, Layout.margin)
+                .background(Color.q.card)
             }
             if let started = recorder.started {
                 RecordingBar(started: started, onCancel: { recorder.cancel() }, onSend: { Task { await sendVoice() } })
@@ -351,10 +414,12 @@ struct ChatView: View {
     private func send() async {
         guard let me = session.userId else { return }
         let text = draft
+        let reply = replyingTo?.id
         draft = ""
+        replyingTo = nil
         sending = true
         defer { sending = false }
-        if !(await model.send(text, me: me)) {
+        if !(await model.send(text, me: me, replyTo: reply)) {
             draft = text
             toasts.show(t("chat.sendFailed"), error: true)
         }

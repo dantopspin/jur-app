@@ -124,14 +124,21 @@ extension Backend {
         let matchId: UUID
         let senderId: UUID
         let body: String
-        enum CodingKeys: String, CodingKey { case matchId = "match_id", senderId = "sender_id", body }
+        let replyTo: UUID?
+        enum CodingKeys: String, CodingKey { case matchId = "match_id", senderId = "sender_id", body, replyTo = "reply_to" }
     }
 
-    static func send(_ body: String, match: UUID, from me: UUID) async throws -> Message {
+    static func send(_ body: String, match: UUID, from me: UUID, replyTo: UUID? = nil) async throws -> Message {
         let r = try await supabase.from("messages")
-            .insert(NewMessage(matchId: match, senderId: me, body: body.trimmingCharacters(in: .whitespacesAndNewlines)))
+            .insert(NewMessage(matchId: match, senderId: me, body: body.trimmingCharacters(in: .whitespacesAndNewlines),
+                               replyTo: replyTo))
             .select().single().execute()
         return try decoder.decode(Message.self, from: r.data)
+    }
+
+    /// Toggles a reaction (same one again removes it).
+    static func react(_ message: UUID, _ reaction: String) async throws {
+        try await call("react", ["p_message": .uuid(message), "p_reaction": .string(reaction)])
     }
 
     static func markRead(_ match: UUID) async throws { try await call("mark_read", ["p_match": .uuid(match)]) }

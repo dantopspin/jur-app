@@ -101,11 +101,23 @@ struct Message: Decodable, Identifiable, Hashable {
     let payload: DatePayload?
     let mediaPath: String?
     let mediaMs: Int?
+    let replyTo: UUID?
+    let reactions: [MessageReaction]?
+    let reply: ReplyPreview?
 
     var isDate: Bool { kind == "date" }
     var isPhoto: Bool { kind == "photo" }
     var isVoice: Bool { kind == "voice" }
     var isMedia: Bool { kind == "photo" || kind == "voice" }
+}
+
+struct MessageReaction: Decodable, Hashable { let profileId: UUID; let reaction: String }
+struct ReplyPreview: Decodable, Hashable { let id: UUID; let body: String; let kind: String?; let senderId: UUID }
+
+/// The five reactions the server accepts, and how they look.
+enum Reactions {
+    static let all: [(key: String, emoji: String)] = [("heart", "❤️"), ("fire", "🔥"), ("clap", "👏"), ("laugh", "😂"), ("thumbsup", "👍")]
+    static func emoji(_ key: String) -> String { all.first { $0.key == key }?.emoji ?? "❤️" }
 }
 
 struct EventHost: Decodable, Hashable { let id: UUID; let name: String; let photo: String? }
