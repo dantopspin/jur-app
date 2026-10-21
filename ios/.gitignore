@@ -1,6 +1,5 @@
-Jur.xcodeproj/
+Jur.xcodeproj/project.xcworkspace/xcuserdata/
+Jur.xcodeproj/xcuserdata/
 Config/Secrets.xcconfig
-Jur/Info.plist
-Jur/Jur.entitlements
 DerivedData/
 *.xcuserstate

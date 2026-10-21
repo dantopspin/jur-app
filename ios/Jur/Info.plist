@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>en</string>
+	<key>CFBundleDisplayName</key>
+	<string>JÜR</string>
+	<key>CFBundleExecutable</key>
+	<string>$(EXECUTABLE_NAME)</string>
+	<key>CFBundleIdentifier</key>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleLocalizations</key>
+	<array>
+		<string>en</string>
+		<string>ru</string>
+		<string>kk</string>
+	</array>
+	<key>CFBundleName</key>
+	<string>$(PRODUCT_NAME)</string>
+	<key>CFBundlePackageType</key>
+	<string>$(PRODUCT_BUNDLE_PACKAGE_TYPE)</string>
+	<key>CFBundleShortVersionString</key>
+	<string>$(MARKETING_VERSION)</string>
+	<key>CFBundleVersion</key>
+	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
+	<key>JurEvents</key>
+	<string>$(JUR_EVENTS)</string>
+	<key>JurRevenueCatKey</key>
+	<string>$(REVENUECAT_IOS_KEY)</string>
+	<key>JurSiteHost</key>
+	<string>$(SITE_HOST)</string>
+	<key>JurSupabaseAnonKey</key>
+	<string>$(SUPABASE_ANON_KEY)</string>
+	<key>JurSupabaseHost</key>
+	<string>$(SUPABASE_HOST)</string>
+	<key>JurSupportEmail</key>
+	<string>$(SUPPORT_EMAIL)</string>
+	<key>LSRequiresIPhoneOS</key>
+	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>JÜR uses the camera for your verification selfie and photos.</string>
+	<key>NSContactsUsageDescription</key>
+	<string>Hide your profile from people in your contacts. Only one-way codes leave your phone.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Record voice notes in chats.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Choose photos for your profile and chats.</string>
+	<key>UIAppFonts</key>
+	<array>
+		<string>Unbounded-Bold.ttf</string>
+		<string>Unbounded-ExtraBold.ttf</string>
+		<string>Manrope-Regular.ttf</string>
+		<string>Manrope-Medium.ttf</string>
+		<string>Manrope-SemiBold.ttf</string>
+		<string>Manrope-Bold.ttf</string>
+		<string>Manrope-ExtraBold.ttf</string>
+	</array>
+	<key>UILaunchScreen</key>
+	<dict>
+		<key>UIColorName</key>
+		<string>LaunchBlue</string>
+		<key>UIImageName</key>
+		<string>LaunchMark</string>
+	</dict>
+	<key>UIRequiresFullScreen</key>
+	<true/>
+	<key>UISupportedInterfaceOrientations</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+	</array>
+</dict>
+</plist>
