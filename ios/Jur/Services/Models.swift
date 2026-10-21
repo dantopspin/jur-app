@@ -13,6 +13,8 @@ struct MyProfile: Decodable, Identifiable, Equatable {
     let birthdate: String
     let gender: Gender
     let interestedIn: InterestedIn
+    let ageMin: Int?
+    let ageMax: Int?
     let city: String
     let bio: String?
     let nextChallenge: String?
