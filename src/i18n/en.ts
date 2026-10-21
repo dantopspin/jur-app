@@ -89,6 +89,9 @@ const en = {
     noBoosts: 'No boosts left',
     likesLeft: '{n} likes left today',
     emptySubApp: "New people join every day. Check back tomorrow, or bring a friend who moves.",
+    like: "Like",
+    pass: "Pass",
+    super: "Super like",
   },
   match: {
     title: 'Hearts in sync!',
@@ -137,6 +140,11 @@ const en = {
     fieldDescription: 'What to expect',
     publish: 'Publish event',
     invalid: 'Fill in title, meeting point, a future date and time.',
+    verifyToHost: "Verify your profile to create events.",
+    durationMin: "{n} min",
+    capacityN: "Up to {n} people",
+    memberRules: "Member events are free, up to 50 people, within the next 60 days. Up to 3 upcoming at a time.",
+    tooMany: "You already have 3 upcoming events.",
   },
   matches: {
     title: 'Matches',
@@ -150,6 +158,7 @@ const en = {
     you: 'You: ',
     emptySubApp: "Like people in Discover. When it's mutual, they show up here.",
     goDiscover: "Go to Discover",
+    newMatch: "New match — say hi",
   },
   chat: {
     placeholder: 'Message',
@@ -165,6 +174,7 @@ const en = {
     menu: "More",
     gone: "This chat is no longer available",
     goneSub: "The match ended, or one of you left JÜR.",
+    start: "You and {name} matched. Skip the small talk: suggest a run, a ski day or a coffee.",
   },
   report: {
     title: 'Why are you reporting {name}?',
@@ -574,6 +584,7 @@ const en = {
   legal: {
     terms: "Terms of Use",
     privacy: "Privacy Policy",
+    lead: "By subscribing you agree to our",
   },
   safety: {
     tapToView: "Tap to view photo",
@@ -613,6 +624,12 @@ const en = {
     codeGo: "Board",
     empty: "No departures today",
     create: "Create a departure",
+    segToday: "Today",
+    segTomorrow: "Tomorrow",
+    segWeekend: "Weekend",
+    hostCodeTitle: "Boarding code",
+    hostCodeHint: "Show it to your guests. New code in {s} s",
+    badCode: "Wrong code. Ask the host for the current one.",
   },
   passport: {
     title: "Member passport · JÜR",
@@ -644,6 +661,15 @@ const en = {
     giftTitle: "Give a friend a week of Pro",
     giftSend: "Send the gift",
     giftRule: "One gift every 30 days, for someone without Pro.",
+    giftShare: "A week of JÜR Pro from me. Code: {code}",
+    redeemTitle: "Have a gift code?",
+    redeem: "Activate",
+    redeemed: "A week of Pro is yours",
+    err_not_found: "No such code",
+    err_used: "This code has already been used",
+    err_own_gift: "You can’t activate your own gift",
+    err_already_pro: "You already have Pro",
+    err_already_redeemed: "You’ve already used a gift",
   },
 };
 

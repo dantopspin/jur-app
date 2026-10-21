@@ -599,6 +599,29 @@
         }
       }
     },
+    "board.badCode": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wrong code. Ask the host for the current one."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Неверный код. Спросите у организатора текущий."
+          }
+        },
+        "kk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Код қате. Ұйымдастырушыдан қазіргі кодты сұраңыз."
+          }
+        }
+      }
+    },
     "board.boarding": {
       "extractionState": "manual",
       "localizations": {
@@ -760,6 +783,52 @@
         }
       }
     },
+    "board.hostCodeHint": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show it to your guests. New code in {s} s"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Покажите гостям. Новый код через {s} с"
+          }
+        },
+        "kk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Қонақтарға көрсетіңіз. Жаңа код {s} с кейін"
+          }
+        }
+      }
+    },
+    "board.hostCodeTitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Boarding code"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Код посадки"
+          }
+        },
+        "kk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Отырғызу коды"
+          }
+        }
+      }
+    },
     "board.onTime": {
       "extractionState": "manual",
       "localizations": {
@@ -779,6 +848,75 @@
           "stringUnit": {
             "state": "translated",
             "value": "Жоспар бойынша"
+          }
+        }
+      }
+    },
+    "board.segToday": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Today"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сегодня"
+          }
+        },
+        "kk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Бүгін"
+          }
+        }
+      }
+    },
+    "board.segTomorrow": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tomorrow"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Завтра"
+          }
+        },
+        "kk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ертең"
+          }
+        }
+      }
+    },
+    "board.segWeekend": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Weekend"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Выходные"
+          }
+        },
+        "kk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Демалыс"
           }
         }
       }
@@ -1239,6 +1377,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "Хабарлама жіберілмеді"
+          }
+        }
+      }
+    },
+    "chat.start": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You and {name} matched. Skip the small talk: suggest a run, a ski day or a coffee."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вы с {name} — пара. Без долгой переписки: предложите пробежку, лыжи или кофе."
+          }
+        },
+        "kk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сіз бен {name} — жұпсыз. Ұзақ хат алмаспай, жүгіруді, шаңғыны не кофені ұсыныңыз."
           }
         }
       }
@@ -3221,6 +3382,121 @@
         }
       }
     },
+    "cover.err_already_pro": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You already have Pro"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "У вас уже есть Pro"
+          }
+        },
+        "kk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сізде Pro бар"
+          }
+        }
+      }
+    },
+    "cover.err_already_redeemed": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You’ve already used a gift"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вы уже активировали подарок"
+          }
+        },
+        "kk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сіз сыйлықты бұрын белсендірдіңіз"
+          }
+        }
+      }
+    },
+    "cover.err_not_found": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No such code"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Такого кода нет"
+          }
+        },
+        "kk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Мұндай код жоқ"
+          }
+        }
+      }
+    },
+    "cover.err_own_gift": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You can’t activate your own gift"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Свой подарок активировать нельзя"
+          }
+        },
+        "kk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Өз сыйлығыңызды белсендіре алмайсыз"
+          }
+        }
+      }
+    },
+    "cover.err_used": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This code has already been used"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Этот код уже использован"
+          }
+        },
+        "kk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Бұл код бұрын қолданылған"
+          }
+        }
+      }
+    },
     "cover.giftLabel": {
       "extractionState": "manual",
       "localizations": {
@@ -3290,6 +3566,29 @@
         }
       }
     },
+    "cover.giftShare": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A week of JÜR Pro from me. Code: {code}"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Неделя JÜR Pro от меня. Код: {code}"
+          }
+        },
+        "kk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Менен JÜR Pro бір апта. Код: {code}"
+          }
+        }
+      }
+    },
     "cover.giftTitle": {
       "extractionState": "manual",
       "localizations": {
@@ -3309,6 +3608,75 @@
           "stringUnit": {
             "state": "translated",
             "value": "Досыңызға бір апта Pro сыйлаңыз"
+          }
+        }
+      }
+    },
+    "cover.redeem": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Activate"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Активировать"
+          }
+        },
+        "kk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Белсендіру"
+          }
+        }
+      }
+    },
+    "cover.redeemTitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Have a gift code?"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Есть код подарка?"
+          }
+        },
+        "kk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сыйлық коды бар ма?"
+          }
+        }
+      }
+    },
+    "cover.redeemed": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A week of Pro is yours"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Неделя Pro — ваша"
+          }
+        },
+        "kk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Бір апта Pro сіздікі"
           }
         }
       }
@@ -3980,6 +4348,29 @@
         }
       }
     },
+    "discover.like": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Like"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Нравится"
+          }
+        },
+        "kk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ұнайды"
+          }
+        }
+      }
+    },
     "discover.likeLimit": {
       "extractionState": "manual",
       "localizations": {
@@ -4072,6 +4463,29 @@
         }
       }
     },
+    "discover.pass": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pass"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Пропустить"
+          }
+        },
+        "kk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Өткізу"
+          }
+        }
+      }
+    },
     "discover.seeEvents": {
       "extractionState": "manual",
       "localizations": {
@@ -4137,6 +4551,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "1 ортақ спорт"
+          }
+        }
+      }
+    },
+    "discover.super": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Super like"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Суперлайк"
+          }
+        },
+        "kk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Суперлайк"
           }
         }
       }
@@ -4831,6 +5268,29 @@
         }
       }
     },
+    "events.capacityN": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Up to {n} people"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "До {n} человек"
+          }
+        },
+        "kk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "{n} адамға дейін"
+          }
+        }
+      }
+    },
     "events.checkIn": {
       "extractionState": "manual",
       "localizations": {
@@ -4896,6 +5356,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "Жаңа іс-шара"
+          }
+        }
+      }
+    },
+    "events.durationMin": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "{n} min"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "{n} мин"
+          }
+        },
+        "kk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "{n} мин"
           }
         }
       }
@@ -5360,6 +5843,29 @@
         }
       }
     },
+    "events.memberRules": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Member events are free, up to 50 people, within the next 60 days. Up to 3 upcoming at a time."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "События участников бесплатные, до 50 человек, в ближайшие 60 дней. Не больше 3 предстоящих."
+          }
+        },
+        "kk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Қатысушылардың іс-шаралары тегін, 50 адамға дейін, алдағы 60 күн ішінде. Бір уақытта 3-тен аспайды."
+          }
+        }
+      }
+    },
     "events.notNow": {
       "extractionState": "manual",
       "localizations": {
@@ -5540,6 +6046,52 @@
           "stringUnit": {
             "state": "translated",
             "value": "Іс-шаралар"
+          }
+        }
+      }
+    },
+    "events.tooMany": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You already have 3 upcoming events."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "У вас уже 3 предстоящих события."
+          }
+        },
+        "kk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сізде алдағы 3 іс-шара бар."
+          }
+        }
+      }
+    },
+    "events.verifyToHost": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verify your profile to create events."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Подтвердите профиль, чтобы создавать события."
+          }
+        },
+        "kk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Іс-шара ашу үшін профиліңізді растаңыз."
           }
         }
       }
@@ -6188,6 +6740,29 @@
         }
       }
     },
+    "legal.lead": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "By subscribing you agree to our"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Оформляя подписку, вы принимаете"
+          }
+        },
+        "kk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Жазылу арқылы сіз келісесіз:"
+          }
+        }
+      }
+    },
     "legal.privacy": {
       "extractionState": "manual",
       "localizations": {
@@ -6759,6 +7334,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "Хабарламалар"
+          }
+        }
+      }
+    },
+    "matches.newMatch": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New match — say hi"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Новая пара — напишите первым"
+          }
+        },
+        "kk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Жаңа жұп — бірінші жазыңыз"
           }
         }
       }
