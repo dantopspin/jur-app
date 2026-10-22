@@ -45,6 +45,9 @@ struct SignInView: View {
                 withAnimation(Motion.smooth.delay(0.35)) { wordsShown = true }
                 withAnimation(Motion.smooth.delay(0.45)) { buttonsShown = true }
             }
+            // Go online once, right away: on iPhones that ask "Allow JÜR to use wireless data?",
+            // the system prompt then appears now, not while a sign-in request is waiting on it.
+            .task { await Self.warmUpNetwork() }
             .onChange(of: error) { _, new in
                 if let new { AccessibilityNotification.Announcement(new).post() }
             }
@@ -178,12 +181,17 @@ struct SignInView: View {
             error = nil; errorDetail = nil
             let credentials = OpenIDConnectCredentials(provider: .apple, idToken: token, nonce: nonce)
             do {
-                do {
-                    try await supabase.auth.signInWithIdToken(credentials: credentials)
-                } catch let e as URLError where Self.isTransient(e) {
-                    // A dropped or slow connection: try once more before giving up.
-                    try await Task.sleep(for: .seconds(1))
-                    try await supabase.auth.signInWithIdToken(credentials: credentials)
+                // A dropped connection, or network access not allowed yet (the system prompt
+                // still on screen): retry with growing pauses, about 9 seconds in all.
+                var attempt = 0
+                while true {
+                    do {
+                        try await supabase.auth.signInWithIdToken(credentials: credentials)
+                        break
+                    } catch let e as URLError where Self.isTransient(e) && attempt < 3 {
+                        attempt += 1
+                        try await Task.sleep(for: .seconds(1.5 * Double(attempt)))
+                    }
                 }
                 // the session listener routes onward
             } catch {
@@ -194,8 +202,16 @@ struct SignInView: View {
         }
     }
 
+    /// A tiny request to the server, ignored either way.
+    private static func warmUpNetwork() async {
+        var request = URLRequest(url: Config.supabaseURL.appending(path: "auth/v1/health"), timeoutInterval: 10)
+        request.setValue(Config.supabaseAnonKey, forHTTPHeaderField: "apikey")
+        _ = try? await URLSession.shared.data(for: request)
+    }
+
     private static func isTransient(_ e: URLError) -> Bool {
-        [.timedOut, .networkConnectionLost, .notConnectedToInternet, .cannotConnectToHost, .dnsLookupFailed].contains(e.code)
+        [.timedOut, .networkConnectionLost, .notConnectedToInternet, .cannotConnectToHost, .dnsLookupFailed,
+         .internationalRoamingOff, .dataNotAllowed, .cannotFindHost].contains(e.code)
     }
 
     private func show(_ err: Error) {
