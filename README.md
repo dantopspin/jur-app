@@ -139,7 +139,7 @@ You need: Node 20+, a Mac only if you want local iOS builds (EAS builds in the c
 5. Create the App Review demo account: **Auth → Users → Add user** with an email and password, then sign in once in the app and finish onboarding with it.
 6. For a staging project only, load demo events: `psql "$DB_URL" -f supabase/seed.sql`.
 7. **Database → Extensions**: enable **pg_net** (sends push notifications) and **pg_cron** (event reminders), then run `npx supabase db push` again so the reminder job is scheduled. Optional: if you turn on "Enhanced push security" in Expo, store the token with `alter database postgres set qadam.expo_access_token = '…';`.
-8. **Sign in with Apple** — Apple Developer → your App ID → enable *Sign in with Apple*; Supabase → Auth → Providers → Apple → enable and add your bundle id `kz.qadam.app` to Client IDs.
+8. **Sign in with Apple** — Apple Developer → your App ID → enable *Sign in with Apple*; Supabase → Auth → Providers → Apple → enable and add your bundle id `kz.jur.app` to Client IDs.
 9. **Google** — Google Cloud Console → Credentials: create a *Web* client and an *iOS* client (and an *Android* client with your signing SHA-1). Supabase → Auth → Providers → Google: paste the Web client id and secret, add the iOS client id to Client IDs, and turn on *Skip nonce checks* (needed for native iOS sign-in). Put the Web and iOS ids in `.env`, and replace `REPLACE_WITH_IOS_CLIENT_ID` in `app.json` with the iOS client's reversed id. Leave the Google ids empty to hide the button.
 
 ### 2. Run the app

@@ -47,7 +47,8 @@ struct PhotoGrid: View {
                     .clipShape(RoundedRectangle(cornerRadius: Radius.md, style: .continuous))
                     .overlay(alignment: .topTrailing) {
                         Button {
-                            photos.remove(at: index)
+                            // By value, not position: a stale index must never remove the wrong photo (or crash).
+                            photos.removeAll { $0 == url }
                         } label: {
                             Image(systemName: "xmark.circle.fill")
                                 .symbolRenderingMode(.palette)
@@ -56,6 +57,10 @@ struct PhotoGrid: View {
                                 .frame(width: 44, height: 44)
                         }
                         .accessibilityLabel(t("common.delete"))
+                        // In a Form row, buttons without their own style all fire on any tap in
+                        // the row (tapping a photo deleted every photo and crashed). Borderless
+                        // makes each one answer only to its own tap.
+                        .buttonStyle(.borderless)
                     }
                     .overlay(alignment: .bottomLeading) {
                         if index == 0 { QTag(label: t("edit.main"), tone: .gold).padding(Sp.sm) }
@@ -76,6 +81,7 @@ struct PhotoGrid: View {
                     .aspectRatio(3 / 4, contentMode: .fit)
                 }
                 .accessibilityLabel(t("onboarding.addPhoto"))
+                .buttonStyle(.borderless)
                 .disabled(uploading)
             }
         }

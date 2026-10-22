@@ -286,6 +286,7 @@ const en = {
     emailTitle: 'Your email',
     emailHint: 'We’ll send a 6-digit code. No passwords to remember.',
     socialFailed: 'That didn’t work. Try again, or continue with email.',
+    socialOffline: 'No connection to the server. Check your internet and try again.',
   },
   flow: {
     lblName: "Name",

@@ -10,6 +10,7 @@ struct SignInView: View {
     @State private var passwordMode = false
     @State private var error: String?
     @State private var nonce = ""
+    @State private var errorDetail: String?
     /// The welcome lands in order: the mark draws in, then the words, then the buttons.
     @State private var wordsShown = false
     @State private var buttonsShown = false
@@ -146,6 +147,15 @@ struct SignInView: View {
                     .qText(.footnote)
                     .foregroundStyle(.white)
                     .multilineTextAlignment(.center)
+                // What actually went wrong, small, so a tester's screenshot tells us the cause.
+                if let errorDetail {
+                    Text(verbatim: errorDetail)
+                        .qText(.caption)
+                        .foregroundStyle(Color.q.blueMist)
+                        .multilineTextAlignment(.center)
+                        .lineLimit(3)
+                        .textSelection(.enabled)
+                }
             }
             LegalFooter(leadKey: "auth.legalLead", trailingKey: "legal.adult", onBlue: true)
                 .padding(.top, Sp.xs)
@@ -165,14 +175,39 @@ struct SignInView: View {
             if let given = cred.fullName?.givenName, !given.isEmpty {
                 UserDefaults.standard.set(given, forKey: "jur.prefillName")
             }
+            error = nil; errorDetail = nil
+            let credentials = OpenIDConnectCredentials(provider: .apple, idToken: token, nonce: nonce)
             do {
-                try await supabase.auth.signInWithIdToken(credentials: .init(provider: .apple, idToken: token, nonce: nonce))
+                do {
+                    try await supabase.auth.signInWithIdToken(credentials: credentials)
+                } catch let e as URLError where Self.isTransient(e) {
+                    // A dropped or slow connection: try once more before giving up.
+                    try await Task.sleep(for: .seconds(1))
+                    try await supabase.auth.signInWithIdToken(credentials: credentials)
+                }
                 // the session listener routes onward
             } catch {
-                self.error = t("welcome.socialFailed")
+                show(error)
             }
         case .failure(let err):
-            if (err as? ASAuthorizationError)?.code != .canceled { error = t("welcome.socialFailed") }
+            if (err as? ASAuthorizationError)?.code != .canceled { show(err) }
+        }
+    }
+
+    private static func isTransient(_ e: URLError) -> Bool {
+        [.timedOut, .networkConnectionLost, .notConnectedToInternet, .cannotConnectToHost, .dnsLookupFailed].contains(e.code)
+    }
+
+    private func show(_ err: Error) {
+        if let e = err as? URLError {
+            error = t("welcome.socialOffline")
+            errorDetail = "net \(e.code.rawValue)"
+        } else if let e = err as? ASAuthorizationError {
+            error = t("welcome.socialFailed")
+            errorDetail = "apple \(e.code.rawValue)"
+        } else {
+            error = t("welcome.socialFailed")
+            errorDetail = String(String(describing: err).prefix(160))
         }
     }
 
