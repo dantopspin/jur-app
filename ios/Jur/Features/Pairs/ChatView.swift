@@ -167,7 +167,7 @@ struct ChatView: View {
                 NavigationLink { ProfileView(id: o.id, initial: o) } label: {
                     HStack(spacing: Sp.sm) {
                         Avatar(url: o.photoURLs.first, size: 28)
-                        Text(o.name).qText(.headline).foregroundStyle(Color.q.ink)
+                        Text(o.name).qText(.headline).foregroundStyle(Color.q.ink).lineLimit(1)
                         Image(systemName: "chevron.right").font(.q(.caption)).foregroundStyle(Color.q.hint)
                     }
                 }
@@ -316,7 +316,8 @@ struct ChatView: View {
                         .frame(minWidth: 44, minHeight: 44)
                         .accessibilityLabel(t("common.cancel"))
                 }
-                .frame(height: 44)
+                .frame(minHeight: 44)
+                .padding(.vertical, Sp.xxs)
                 .padding(.horizontal, Layout.margin)
                 .background(Color.q.card)
                 .transition(.qRise)

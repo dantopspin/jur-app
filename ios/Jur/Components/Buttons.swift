@@ -21,6 +21,9 @@ struct QButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(.q(.headline))
+            // One line, always: long Russian and Kazakh labels shrink a little instead of wrapping.
+            .lineLimit(1)
+            .minimumScaleFactor(0.8)
             .dynamicTypeSize(...DynamicTypeSize.accessibility1)
             .foregroundStyle(colors.fg)
             .frame(maxWidth: .infinity, minHeight: compact ? Layout.buttonHeightCompact : Layout.buttonHeight)

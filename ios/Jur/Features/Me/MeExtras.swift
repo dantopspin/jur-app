@@ -160,6 +160,8 @@ struct InviteView: View {
                             .submitLabel(.done)
                             .onSubmit { Task { await apply() } }
                         Button(t("me2.apply")) { Task { await apply() } }
+                            .lineLimit(1)
+                            .fixedSize()
                             .disabled(friendCode.trimmingCharacters(in: .whitespaces).count < 4 || applying)
                     }
                 } header: {

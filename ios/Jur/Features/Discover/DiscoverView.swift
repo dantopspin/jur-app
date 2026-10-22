@@ -284,6 +284,7 @@ struct NoteSheet: View {
                 Text(t("note.hint")).qText(.footnote).foregroundStyle(Color.q.muted)
                 Spacer()
                 Text("\(text.count)/140").qText(.footnote).monospacedDigit().foregroundStyle(Color.q.muted)
+                    .fixedSize()
                     .contentTransition(.numericText())
                     .animation(Motion.snappy, value: text.count)
             }

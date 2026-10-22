@@ -105,7 +105,7 @@ struct VoiceBubble: View {
                     }
                 }
                 .frame(width: 110, height: 4)
-                Text(length).font(.q(.footnote)).fontWeight(.bold).monospacedDigit()
+                Text(length).font(.q(.footnote)).fontWeight(.bold).monospacedDigit().fixedSize()
             }
             .foregroundStyle(mine ? .white : Color.q.ink)
             .padding(.horizontal, Sp.md)
@@ -137,6 +137,8 @@ struct RecordingBar: View {
         HStack(spacing: Sp.md) {
             Button(t("chat2.cancel"), action: onCancel)
                 .font(.q(.callout)).foregroundStyle(Color.q.danger)
+                .lineLimit(1)
+                .fixedSize()
                 .frame(minHeight: 44)
             Spacer()
             // The one loop allowed here: it means "recording".

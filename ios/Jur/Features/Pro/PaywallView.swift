@@ -82,7 +82,7 @@ struct PaywallView: View {
                                 if p.packageType == .sixMonth { Text(t("paywall.best")).qText(.label).foregroundStyle(Color.q.gold) }
                             }
                             Spacer()
-                            Text(p.storeProduct.localizedPriceString).qText(.number)
+                            Text(p.storeProduct.localizedPriceString).qText(.number).fixedSize()
                         }
                         .foregroundStyle(.white)
                         .padding(Sp.lg)

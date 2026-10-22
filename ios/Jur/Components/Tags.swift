@@ -44,7 +44,7 @@ struct QChip: View {
             action()
         } label: {
             VStack(spacing: 0) {
-                Text(label).qText(.callout)
+                Text(label).qText(.callout).lineLimit(1)
                 if let sub { Text(sub).font(.q(.caption)).opacity(0.8) }
             }
             .foregroundStyle(selected ? .white : Color.q.ink)

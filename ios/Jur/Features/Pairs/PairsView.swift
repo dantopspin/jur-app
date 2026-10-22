@@ -89,10 +89,10 @@ struct MatchRowView: View {
             Avatar(url: row.other.photoURLs.first, size: 52)
             VStack(alignment: .leading, spacing: Sp.xxs) {
                 HStack {
-                    Text(row.other.name).qText(.headline).foregroundStyle(Color.q.ink)
-                    Spacer()
+                    Text(row.other.name).qText(.headline).foregroundStyle(Color.q.ink).lineLimit(1)
+                    Spacer(minLength: Sp.sm)
                     if let last = row.lastMessage, let d = Date.iso(last.createdAt) {
-                        Text(Fmt.relative(d)).qText(.caption).foregroundStyle(Color.q.muted)
+                        Text(Fmt.relative(d)).qText(.caption).foregroundStyle(Color.q.muted).fixedSize()
                     }
                 }
                 HStack {
@@ -103,6 +103,7 @@ struct MatchRowView: View {
                             .contentTransition(.numericText())
                             .padding(.horizontal, Sp.sm).padding(.vertical, Sp.xxs)
                             .background(Color.q.blue, in: Capsule())
+                            .fixedSize()
                             .transition(.qPop)
                     }
                 }

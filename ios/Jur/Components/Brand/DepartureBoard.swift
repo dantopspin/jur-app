@@ -27,11 +27,13 @@ struct DepartureBoard: View {
         VStack(alignment: .leading, spacing: 0) {
             if header != nil || seeAll != nil {
                 HStack(alignment: .firstTextBaseline) {
-                    if let header { Text(header).qText(.overline).foregroundStyle(Color.q.gold) }
+                    if let header { Text(header).qText(.overline).foregroundStyle(Color.q.gold).lineLimit(2) }
                     Spacer(minLength: Sp.sm)
                     if let seeAll {
                         Button(t("board.all"), action: seeAll)
                             .font(.q(.footnote)).fontWeight(.bold)
+                            .lineLimit(1)
+                            .fixedSize()
                             .foregroundStyle(Color.q.blueMist)
                             .frame(minHeight: Layout.rowMin)
                     }

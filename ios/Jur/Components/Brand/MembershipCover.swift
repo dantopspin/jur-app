@@ -70,6 +70,8 @@ struct GiftCard: View {
                     Text(code)
                         .font(.q(.title2).monospacedDigit())
                         .tracking(3)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
                         .textSelection(.enabled)
                     Spacer()
                     Button {

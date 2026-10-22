@@ -14,13 +14,15 @@ struct ProfileCardView: View {
         VStack(alignment: .leading, spacing: 0) {
             photos
             VStack(alignment: .leading, spacing: Sp.md) {
-                HStack(alignment: .firstTextBaseline) {
-                    Text("\(card.name), \(card.age)").qText(.title2).foregroundStyle(Color.q.ink).lineLimit(1)
-                    Spacer(minLength: Sp.sm)
+                HStack(alignment: .firstTextBaseline, spacing: Sp.xs) {
+                    Text("\(card.name), \(card.age)").qText(.title2).foregroundStyle(Color.q.ink).lineLimit(2)
                     if card.verified {
-                        Label(t("card.verified"), systemImage: "checkmark.seal.fill")
-                            .qText(.footnote).fontWeight(.bold).foregroundStyle(Color.q.blueText)
+                        Image(systemName: "checkmark.seal.fill")
+                            .font(.q(.headline))
+                            .foregroundStyle(Color.q.blueText)
+                            .accessibilityLabel(t("card.verified"))
                     }
+                    Spacer(minLength: 0)
                 }
                 Text(meta).qText(.callout).foregroundStyle(Color.q.inkSoft).monospacedDigit()
                 if let sports = card.sports, !sports.isEmpty {

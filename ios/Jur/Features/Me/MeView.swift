@@ -97,7 +97,7 @@ struct MeView: View {
                 Avatar(url: p.photos.first.flatMap { URL(string: $0) }, size: 72)
                 VStack(alignment: .leading, spacing: Sp.sm) {
                     Text(p.name).qText(.title2).foregroundStyle(Color.q.ink).lineLimit(2)
-                    HStack(spacing: Sp.sm) {
+                    FlowLayout(spacing: Sp.xs) {
                         QTag(label: formatMemberNo(p.memberNo), tone: .neutral)
                         if p.verificationStatus == .approved {
                             QTag(label: t("card.verified"), tone: .blue, systemImage: "checkmark.seal.fill")
@@ -181,7 +181,7 @@ struct MeView: View {
                     }
                     Spacer()
                     if session.limits?.pro != true {
-                        QTag(label: t("me.getPro"), tone: .gold)
+                        QTag(label: t("me.getPro"), tone: .gold).fixedSize()
                     }
                     Image(systemName: "chevron.right").font(.q(.footnote).weight(.semibold)).foregroundStyle(Color.q.hint)
                 }
@@ -210,6 +210,7 @@ struct MeView: View {
             Spacer()
             Text(value).qText(.number).foregroundStyle(Color.q.blueText)
                 .contentTransition(.numericText())
+                .fixedSize()
         }
         .accessibilityElement(children: .combine)
     }

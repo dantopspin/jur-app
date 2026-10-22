@@ -77,9 +77,9 @@ struct DateTicket: View {
     @ViewBuilder private var answerContent: some View {
         switch state {
         case .pending(let canAnswer) where canAnswer:
-            HStack(spacing: Sp.sm) {
-                Button(t("ticket.accept"), action: onAccept).buttonStyle(.q(.primary, compact: true))
-                Button(t("ticket.decline"), action: onDecline).buttonStyle(.q(.secondary, compact: true))
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: Sp.sm) { answerButtons }
+                VStack(spacing: Sp.sm) { answerButtons }
             }
             .transition(.opacity)
         case .accepted:
@@ -89,6 +89,11 @@ struct DateTicket: View {
         default:
             QTag(label: t("date.waiting"), tone: .blue).transition(.qPop)
         }
+    }
+
+    @ViewBuilder private var answerButtons: some View {
+        Button(t("ticket.accept"), action: onAccept).buttonStyle(.q(.primary, compact: true))
+        Button(t("ticket.decline"), action: onDecline).buttonStyle(.q(.secondary, compact: true))
     }
 
     private func field(_ label: String, _ value: String, mono: Bool = false) -> some View {
