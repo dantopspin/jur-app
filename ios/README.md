@@ -22,8 +22,9 @@ RevenueCat 5.96.1.
 
 The app registers its APNs token with `register_push_token`. The server sends through the
 `apns` Edge Function (`../supabase/functions/apns`). Set its secrets (`PUSH_SECRET`, `APNS_KEY_ID`,
-`APNS_TEAM_ID`, `APNS_PRIVATE_KEY`, `APNS_TOPIC=kz.jur.app`, `APNS_ENV`) and the two database
-settings at the top of `20261021000012_native_push.sql`. A tap opens the push's `url`
+`APNS_TEAM_ID`, `APNS_PRIVATE_KEY`, `APNS_TOPIC=kz.jur.app`, `APNS_ENV`) and the two rows in
+`public.app_settings` (see `20261022000016_app_settings.sql`); turn off JWT verification for
+the function. APNS_ENV only picks which Apple server is tried first. A tap opens the push's `url`
 (`/chat/<id>`, `/likes`, `/event/<id>`, `/picks`).
 
 ## Strings
