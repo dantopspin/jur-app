@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 """Writes Jur.xcodeproj without XcodeGen, using Xcode 16+ folder-synced groups
 (every file under Jur/ is picked up automatically). Also writes Info.plist and the
-entitlements from project.yml's values. Run from ios/: python3 scripts/make_xcodeproj.py"""
+entitlements from project.yml's values. Run from ios/: python3 scripts/make_xcodeproj.py
+
+Targets: Jur (the app) and JurWidgets (widget extension: the departure Live Activity),
+embedded in the app. Shared/ is compiled into both."""
 import hashlib, os, plistlib
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -14,6 +17,8 @@ I = {k: oid(k) for k in [
     'target', 'sources', 'frameworks', 'resources',
     'pcl', 'pdebug', 'prelease', 'tcl', 'tdebug', 'trelease',
     'pkg_supabase', 'pkg_rc', 'dep_supabase', 'dep_rc', 'bf_supabase', 'bf_rc',
+    'shared', 'wgroup', 'wexceptions', 'appex', 'wtarget', 'wsources', 'wframeworks', 'wresources',
+    'wtcl', 'wtdebug', 'wtrelease', 'embed', 'bf_appex', 'wproxy', 'wdep',
 ]}
 
 common_project = {
@@ -40,8 +45,16 @@ target_settings = {
     'CURRENT_PROJECT_VERSION': '1', 'DEVELOPMENT_TEAM': '"$(JUR_TEAM_ID)"', 'ENABLE_PREVIEWS': 'YES',
     'GENERATE_INFOPLIST_FILE': 'NO', 'INFOPLIST_FILE': 'Jur/Info.plist',
     'LD_RUNPATH_SEARCH_PATHS': '("$(inherited)", "@executable_path/Frameworks")',
-    'MARKETING_VERSION': '2.0.0', 'PRODUCT_BUNDLE_IDENTIFIER': 'kz.jur.app', 'PRODUCT_NAME': '"$(TARGET_NAME)"',
+    'MARKETING_VERSION': '1.0', 'PRODUCT_BUNDLE_IDENTIFIER': 'kz.jur.app', 'PRODUCT_NAME': '"$(TARGET_NAME)"',
     'SWIFT_EMIT_LOC_STRINGS': 'YES', 'TARGETED_DEVICE_FAMILY': '1',
+}
+# The widget extension. Same version numbers as the app (App Store requires it).
+widget_settings = {
+    'CODE_SIGN_STYLE': 'Automatic', 'CURRENT_PROJECT_VERSION': '1', 'DEVELOPMENT_TEAM': '"$(JUR_TEAM_ID)"',
+    'GENERATE_INFOPLIST_FILE': 'NO', 'INFOPLIST_FILE': 'JurWidgets/Info.plist',
+    'LD_RUNPATH_SEARCH_PATHS': '("$(inherited)", "@executable_path/Frameworks", "@executable_path/../../Frameworks")',
+    'MARKETING_VERSION': '1.0', 'PRODUCT_BUNDLE_IDENTIFIER': 'kz.jur.app.widgets', 'PRODUCT_NAME': '"$(TARGET_NAME)"',
+    'SKIP_INSTALL': 'YES', 'SWIFT_EMIT_LOC_STRINGS': 'YES', 'TARGETED_DEVICE_FAMILY': '1',
 }
 
 def settings(d):
@@ -63,10 +76,36 @@ pbx = f'''// !$*UTF8*$!
 /* Begin PBXBuildFile section */
 		{I["bf_supabase"]} /* Supabase in Frameworks */ = {{isa = PBXBuildFile; productRef = {I["dep_supabase"]} /* Supabase */; }};
 		{I["bf_rc"]} /* RevenueCat in Frameworks */ = {{isa = PBXBuildFile; productRef = {I["dep_rc"]} /* RevenueCat */; }};
+		{I["bf_appex"]} /* JurWidgets.appex in Embed Foundation Extensions */ = {{isa = PBXBuildFile; fileRef = {I["appex"]} /* JurWidgets.appex */; settings = {{ATTRIBUTES = (RemoveHeadersOnCopy, ); }}; }};
 /* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		{I["wproxy"]} /* PBXContainerItemProxy */ = {{
+			isa = PBXContainerItemProxy;
+			containerPortal = {I["project"]} /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = {I["wtarget"]};
+			remoteInfo = JurWidgets;
+		}};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		{I["embed"]} /* Embed Foundation Extensions */ = {{
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				{I["bf_appex"]} /* JurWidgets.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		}};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		{I["app"]} /* Jur.app */ = {{isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Jur.app; sourceTree = BUILT_PRODUCTS_DIR; }};
+		{I["appex"]} /* JurWidgets.appex */ = {{isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = JurWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; }};
 		{I["secrets"]} /* Secrets.xcconfig */ = {{isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Secrets.xcconfig; sourceTree = "<group>"; }};
 /* End PBXFileReference section */
 
@@ -80,6 +119,13 @@ pbx = f'''// !$*UTF8*$!
 			);
 			target = {I["target"]} /* Jur */;
 		}};
+		{I["wexceptions"]} /* Exceptions for "JurWidgets" folder in "JurWidgets" target */ = {{
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = {I["wtarget"]} /* JurWidgets */;
+		}};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -89,6 +135,19 @@ pbx = f'''// !$*UTF8*$!
 				{I["exceptions"]} /* Exceptions for "Jur" folder in "Jur" target */,
 			);
 			path = Jur;
+			sourceTree = "<group>";
+		}};
+		{I["wgroup"]} /* JurWidgets */ = {{
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				{I["wexceptions"]} /* Exceptions for "JurWidgets" folder in "JurWidgets" target */,
+			);
+			path = JurWidgets;
+			sourceTree = "<group>";
+		}};
+		{I["shared"]} /* Shared */ = {{
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Shared;
 			sourceTree = "<group>";
 		}};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -103,6 +162,13 @@ pbx = f'''// !$*UTF8*$!
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		}};
+		{I["wframeworks"]} /* Frameworks */ = {{
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		}};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -110,6 +176,8 @@ pbx = f'''// !$*UTF8*$!
 			isa = PBXGroup;
 			children = (
 				{I["jurgroup"]} /* Jur */,
+				{I["wgroup"]} /* JurWidgets */,
+				{I["shared"]} /* Shared */,
 				{I["config"]} /* Config */,
 				{I["products"]} /* Products */,
 			);
@@ -127,6 +195,7 @@ pbx = f'''// !$*UTF8*$!
 			isa = PBXGroup;
 			children = (
 				{I["app"]} /* Jur.app */,
+				{I["appex"]} /* JurWidgets.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -141,13 +210,16 @@ pbx = f'''// !$*UTF8*$!
 				{I["sources"]} /* Sources */,
 				{I["frameworks"]} /* Frameworks */,
 				{I["resources"]} /* Resources */,
+				{I["embed"]} /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				{I["wdep"]} /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				{I["jurgroup"]} /* Jur */,
+				{I["shared"]} /* Shared */,
 			);
 			name = Jur;
 			packageProductDependencies = (
@@ -157,6 +229,27 @@ pbx = f'''// !$*UTF8*$!
 			productName = Jur;
 			productReference = {I["app"]} /* Jur.app */;
 			productType = "com.apple.product-type.application";
+		}};
+		{I["wtarget"]} /* JurWidgets */ = {{
+			isa = PBXNativeTarget;
+			buildConfigurationList = {I["wtcl"]} /* Build configuration list for PBXNativeTarget "JurWidgets" */;
+			buildPhases = (
+				{I["wsources"]} /* Sources */,
+				{I["wframeworks"]} /* Frameworks */,
+				{I["wresources"]} /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				{I["wgroup"]} /* JurWidgets */,
+				{I["shared"]} /* Shared */,
+			);
+			name = JurWidgets;
+			productName = JurWidgets;
+			productReference = {I["appex"]} /* JurWidgets.appex */;
+			productType = "com.apple.product-type.app-extension";
 		}};
 /* End PBXNativeTarget section */
 
@@ -189,12 +282,20 @@ pbx = f'''// !$*UTF8*$!
 			projectRoot = "";
 			targets = (
 				{I["target"]} /* Jur */,
+				{I["wtarget"]} /* JurWidgets */,
 			);
 		}};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
 		{I["resources"]} /* Resources */ = {{
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		}};
+		{I["wresources"]} /* Resources */ = {{
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -211,10 +312,25 @@ pbx = f'''// !$*UTF8*$!
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		}};
+		{I["wsources"]} /* Sources */ = {{
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		}};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXTargetDependency section */
+		{I["wdep"]} /* PBXTargetDependency */ = {{
+			isa = PBXTargetDependency;
+			target = {I["wtarget"]} /* JurWidgets */;
+			targetProxy = {I["wproxy"]} /* PBXContainerItemProxy */;
+		}};
+/* End PBXTargetDependency section */
+
 /* Begin XCBuildConfiguration section */
-{config(I["pdebug"], "Debug", debug_project, base=True)}{config(I["prelease"], "Release", release_project, base=True)}{config(I["tdebug"], "Debug", target_settings)}{config(I["trelease"], "Release", target_settings)}/* End XCBuildConfiguration section */
+{config(I["pdebug"], "Debug", debug_project, base=True)}{config(I["prelease"], "Release", release_project, base=True)}{config(I["tdebug"], "Debug", target_settings)}{config(I["trelease"], "Release", target_settings)}{config(I["wtdebug"], "Debug", widget_settings)}{config(I["wtrelease"], "Release", widget_settings)}/* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
 		{I["pcl"]} /* Build configuration list for PBXProject "Jur" */ = {{
@@ -231,6 +347,15 @@ pbx = f'''// !$*UTF8*$!
 			buildConfigurations = (
 				{I["tdebug"]} /* Debug */,
 				{I["trelease"]} /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		}};
+		{I["wtcl"]} /* Build configuration list for PBXNativeTarget "JurWidgets" */ = {{
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				{I["wtdebug"]} /* Debug */,
+				{I["wtrelease"]} /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
@@ -314,13 +439,16 @@ info = {
     'UISupportedInterfaceOrientations': ['UIInterfaceOrientationPortrait'], 'UIRequiresFullScreen': True,
     'UIAppFonts': ['Unbounded-Bold.ttf', 'Unbounded-ExtraBold.ttf', 'Manrope-Regular.ttf', 'Manrope-Medium.ttf',
                    'Manrope-SemiBold.ttf', 'Manrope-Bold.ttf', 'Manrope-ExtraBold.ttf'],
-    'NSCameraUsageDescription': 'JÜR uses the camera for your verification selfie and photos.',
+    'NSCameraUsageDescription': 'Take your verification selfie and photos for your profile.',
     'NSPhotoLibraryUsageDescription': 'Choose photos for your profile and chats.',
-    'NSMicrophoneUsageDescription': 'Record voice notes in chats.',
+    'NSMicrophoneUsageDescription': 'Record voice messages in chats.',
     'NSContactsUsageDescription': 'Hide your profile from people in your contacts. Only one-way codes leave your phone.',
     'JurSupabaseHost': '$(SUPABASE_HOST)', 'JurSupabaseAnonKey': '$(SUPABASE_ANON_KEY)',
     'JurRevenueCatKey': '$(REVENUECAT_IOS_KEY)', 'JurSiteHost': '$(SITE_HOST)',
     'JurSupportEmail': '$(SUPPORT_EMAIL)', 'JurEvents': '$(JUR_EVENTS)',
+    # The departure countdown on the lock screen, and jur:// links (it opens the event).
+    'NSSupportsLiveActivities': True,
+    'CFBundleURLTypes': [{'CFBundleURLName': 'kz.jur.app', 'CFBundleURLSchemes': ['jur']}],
 }
 with open(f'{ROOT}/Jur/Info.plist', 'wb') as f: plistlib.dump(info, f)
 ent = {
@@ -330,4 +458,13 @@ ent = {
     'com.apple.security.application-groups': ['group.kz.jur.app'],
 }
 with open(f'{ROOT}/Jur/Jur.entitlements', 'wb') as f: plistlib.dump(ent, f)
-print('wrote Jur.xcodeproj, Jur/Info.plist, Jur/Jur.entitlements')
+widget_info = {
+    'CFBundleDevelopmentRegion': 'en', 'CFBundleDisplayName': 'JÜR', 'CFBundleExecutable': '$(EXECUTABLE_NAME)',
+    'CFBundleIdentifier': '$(PRODUCT_BUNDLE_IDENTIFIER)', 'CFBundleInfoDictionaryVersion': '6.0',
+    'CFBundleName': '$(PRODUCT_NAME)', 'CFBundlePackageType': '$(PRODUCT_BUNDLE_PACKAGE_TYPE)',
+    'CFBundleShortVersionString': '$(MARKETING_VERSION)', 'CFBundleVersion': '$(CURRENT_PROJECT_VERSION)',
+    'NSExtension': {'NSExtensionPointIdentifier': 'com.apple.widgetkit-extension'},
+}
+os.makedirs(f'{ROOT}/JurWidgets', exist_ok=True)
+with open(f'{ROOT}/JurWidgets/Info.plist', 'wb') as f: plistlib.dump(widget_info, f)
+print('wrote Jur.xcodeproj, Jur/Info.plist, Jur/Jur.entitlements, JurWidgets/Info.plist')

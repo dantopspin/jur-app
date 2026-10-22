@@ -390,6 +390,10 @@ const en = {
     nauryz: 'Nauryz',
   },
   live: {
+    startsIn: 'Starts in',
+    gate: 'Gate',
+    going: 'Going: {n}',
+    checkedIn: 'You\'re here',
     meet: 'Meet at {place}',
     started: 'Started — check in',
   },

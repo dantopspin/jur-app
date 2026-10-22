@@ -111,6 +111,7 @@ final class DiscoverModel {
 struct DiscoverView: View {
     @Environment(SessionStore.self) private var session
     @Environment(ToastCenter.self) private var toasts
+    @Environment(SportsCatalog.self) private var catalog
     @State private var model = DiscoverModel()
     @State private var noteFor: ProfileCard?
     @State private var dragging = false
@@ -177,7 +178,11 @@ struct DiscoverView: View {
             .navigationDestination(item: $openEvent) { e in EventDetailView(eventId: e.id, initial: e) }
             .navigationDestination(isPresented: $showPicks) { PicksView() }
         }
-        .task { if model.queue.isEmpty { await model.load() } }
+        .task {
+            if model.queue.isEmpty { await model.load() }
+            // Today's events you joined: start their lock-screen countdowns.
+            LiveDepartures.sync(model.tonight) { catalog.sport($0)?.emoji ?? "" }
+        }
         .animation(Motion.adaptive(Motion.fade), value: model.loaded)
         .task {
             let today = Fmt.calendar.startOfDay(for: .now).formatted(.iso8601.year().month().day())

@@ -29,7 +29,9 @@ targets:
     platform: iOS
     sources:
       - path: Jur
+      - path: Shared
     dependencies:
+      - target: JurWidgets
       - package: Supabase
         product: Supabase
       - package: RevenueCat
@@ -76,6 +78,10 @@ targets:
         JurSiteHost: $(SITE_HOST)
         JurSupportEmail: $(SUPPORT_EMAIL)
         JurEvents: $(JUR_EVENTS)
+        NSSupportsLiveActivities: true
+        CFBundleURLTypes:
+          - CFBundleURLName: kz.jur.app
+            CFBundleURLSchemes: [jur]
     entitlements:
       path: Jur/Jur.entitlements
       properties:
@@ -83,3 +89,24 @@ targets:
         com.apple.developer.sensitivecontentanalysis.client: [analysis]
         aps-environment: development
         com.apple.security.application-groups: [group.kz.jur.app]
+  # The departure countdown (Live Activity) on the lock screen and in the Dynamic Island.
+  JurWidgets:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: JurWidgets
+      - path: Shared
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: kz.jur.app.widgets
+        TARGETED_DEVICE_FAMILY: "1"
+        SWIFT_EMIT_LOC_STRINGS: YES
+        SKIP_INSTALL: YES
+    info:
+      path: JurWidgets/Info.plist
+      properties:
+        CFBundleDisplayName: JÜR
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension

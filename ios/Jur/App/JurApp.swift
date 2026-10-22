@@ -17,6 +17,11 @@ struct JurApp: App {
                 .environment(\.locale, (AppLanguage(rawValue: language) ?? .ru).locale)
                 .overlay(alignment: .top) { ToastOverlay().environment(toasts) }
                 .tint(Color.q.blueText)
+                // jur://event/<id> (the lock-screen countdown) and other in-app links.
+                .onOpenURL { url in
+                    guard url.scheme == "jur" else { return }
+                    Router.shared.open(path: (url.host ?? "") + url.path)
+                }
                 // Rebuild the tree when the language changes so every string re-reads.
                 .id(language)
         }

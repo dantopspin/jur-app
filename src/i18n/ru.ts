@@ -392,6 +392,10 @@ const ru: Dict = {
     nauryz: 'Наурыз',
   },
   live: {
+    startsIn: 'До старта',
+    gate: 'Выход',
+    going: 'Идут: {n}',
+    checkedIn: 'Вы на месте',
     meet: 'Встреча: {place}',
     started: 'Началось — отметьтесь',
   },

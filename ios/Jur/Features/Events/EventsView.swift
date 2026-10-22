@@ -7,6 +7,7 @@ struct EventsView: View {
 
     @Environment(SessionStore.self) private var session
     @Environment(ToastCenter.self) private var toasts
+    @Environment(SportsCatalog.self) private var catalog
     @State private var events: [EventItem] = []
     @State private var loaded = false
     @State private var failed = false
@@ -133,6 +134,7 @@ struct EventsView: View {
         failed = false
         do { events = try await Backend.upcomingEvents() } catch { failed = events.isEmpty }
         loaded = true
+        LiveDepartures.sync(events) { catalog.sport($0)?.emoji ?? "" }
     }
 }
 

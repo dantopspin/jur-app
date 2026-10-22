@@ -393,6 +393,10 @@ const kk: Dict = {
     nauryz: 'Наурыз',
   },
   live: {
+    startsIn: 'Басталуына',
+    gate: 'Шығу',
+    going: 'Барады: {n}',
+    checkedIn: 'Сіз осындасыз',
     meet: 'Кездесу орны: {place}',
     started: 'Басталды — белгіленіңіз',
   },

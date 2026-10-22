@@ -24,6 +24,17 @@
 	<string>$(PRODUCT_BUNDLE_PACKAGE_TYPE)</string>
 	<key>CFBundleShortVersionString</key>
 	<string>$(MARKETING_VERSION)</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>kz.jur.app</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>jur</string>
+			</array>
+		</dict>
+	</array>
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
@@ -50,6 +61,8 @@
 	<string>Record voice messages in chats.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Choose photos for your profile and chats.</string>
+	<key>NSSupportsLiveActivities</key>
+	<true/>
 	<key>UIAppFonts</key>
 	<array>
 		<string>Unbounded-Bold.ttf</string>

@@ -82,6 +82,7 @@ final class SessionStore {
     }
 
     func signOut() async {
+        LiveDepartures.endAll()
         Purchases.disconnect()
         try? await supabase.auth.signOut()
     }

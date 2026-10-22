@@ -9,10 +9,36 @@
 /* Begin PBXBuildFile section */
 		FF2FCCE4A4F8AA721EF42002 /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = 062824CF641F20B7249C8C3F /* Supabase */; };
 		A36F309F4A231017C189C7E7 /* RevenueCat in Frameworks */ = {isa = PBXBuildFile; productRef = 667B2FECD25F669B3D67DA50 /* RevenueCat */; };
+		EB18C3DEFFF52F66142E60CD /* JurWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = C40DF6054C0CA13EEC3541F9 /* JurWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		348A42B9643AA957431866AD /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 46F86FAA6BBF9AC94A7E4595 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 792A23021CA546B4A394E8D2;
+			remoteInfo = JurWidgets;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		269605D45C104F12CBCDC8FB /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				EB18C3DEFFF52F66142E60CD /* JurWidgets.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		D2A57DC1D883FD21FB995169 /* Jur.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Jur.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		C40DF6054C0CA13EEC3541F9 /* JurWidgets.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = JurWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		7DE38F3C3D3BAA7CA58A366F /* Secrets.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Secrets.xcconfig; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -26,6 +52,13 @@
 			);
 			target = 42AEFBAE01D2DFD981F7DA7D /* Jur */;
 		};
+		5E9A51DEDD5D7B2D6C956ADC /* Exceptions for "JurWidgets" folder in "JurWidgets" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 792A23021CA546B4A394E8D2 /* JurWidgets */;
+		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -35,6 +68,19 @@
 				19AD27801B95BD1F2C6C2BF8 /* Exceptions for "Jur" folder in "Jur" target */,
 			);
 			path = Jur;
+			sourceTree = "<group>";
+		};
+		333DB45DE643C0AEB122A353 /* JurWidgets */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				5E9A51DEDD5D7B2D6C956ADC /* Exceptions for "JurWidgets" folder in "JurWidgets" target */,
+			);
+			path = JurWidgets;
+			sourceTree = "<group>";
+		};
+		9E81E7B963C71363E2FB3EEF /* Shared */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Shared;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -49,6 +95,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		7FFCAA64FDA7DFC475D96EBD /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -56,6 +109,8 @@
 			isa = PBXGroup;
 			children = (
 				55BB057AE379AF7B36D2C888 /* Jur */,
+				333DB45DE643C0AEB122A353 /* JurWidgets */,
+				9E81E7B963C71363E2FB3EEF /* Shared */,
 				2245023265AE4CF87D02C8B6 /* Config */,
 				86024CAD1E83101D97359D73 /* Products */,
 			);
@@ -73,6 +128,7 @@
 			isa = PBXGroup;
 			children = (
 				D2A57DC1D883FD21FB995169 /* Jur.app */,
+				C40DF6054C0CA13EEC3541F9 /* JurWidgets.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -87,13 +143,16 @@
 				F2AB5FB218DA8B84623F4557 /* Sources */,
 				4F6F5CC3FCCF73F75AE9CCF4 /* Frameworks */,
 				55B558C7EF820E6E00E5993B /* Resources */,
+				269605D45C104F12CBCDC8FB /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				74EEF6F9896BDD5966654318 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				55BB057AE379AF7B36D2C888 /* Jur */,
+				9E81E7B963C71363E2FB3EEF /* Shared */,
 			);
 			name = Jur;
 			packageProductDependencies = (
@@ -103,6 +162,27 @@
 			productName = Jur;
 			productReference = D2A57DC1D883FD21FB995169 /* Jur.app */;
 			productType = "com.apple.product-type.application";
+		};
+		792A23021CA546B4A394E8D2 /* JurWidgets */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 5531AD2B206274AC1F835024 /* Build configuration list for PBXNativeTarget "JurWidgets" */;
+			buildPhases = (
+				5AD131C41F0FB32C055D095B /* Sources */,
+				7FFCAA64FDA7DFC475D96EBD /* Frameworks */,
+				18142849AD244ADAA419BBF9 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				333DB45DE643C0AEB122A353 /* JurWidgets */,
+				9E81E7B963C71363E2FB3EEF /* Shared */,
+			);
+			name = JurWidgets;
+			productName = JurWidgets;
+			productReference = C40DF6054C0CA13EEC3541F9 /* JurWidgets.appex */;
+			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
 
@@ -135,12 +215,20 @@
 			projectRoot = "";
 			targets = (
 				42AEFBAE01D2DFD981F7DA7D /* Jur */,
+				792A23021CA546B4A394E8D2 /* JurWidgets */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
 		55B558C7EF820E6E00E5993B /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		18142849AD244ADAA419BBF9 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -157,7 +245,22 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		5AD131C41F0FB32C055D095B /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		74EEF6F9896BDD5966654318 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 792A23021CA546B4A394E8D2 /* JurWidgets */;
+			targetProxy = 348A42B9643AA957431866AD /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		2D53B50AE2273FABAAF8B8FA /* Debug */ = {
@@ -261,6 +364,42 @@
 			};
 			name = Release;
 		};
+		598E0049CD83679063EF0BA7 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "$(JUR_TEAM_ID)";
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = JurWidgets/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = ("$(inherited)", "@executable_path/Frameworks", "@executable_path/../../Frameworks");
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = kz.jur.app.widgets;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		7B24F5AED2565BDBEEF75A48 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "$(JUR_TEAM_ID)";
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = JurWidgets/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = ("$(inherited)", "@executable_path/Frameworks", "@executable_path/../../Frameworks");
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = kz.jur.app.widgets;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -278,6 +417,15 @@
 			buildConfigurations = (
 				FA7C752E798F561D7D156D98 /* Debug */,
 				22F75101C717335ACF4089A0 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		5531AD2B206274AC1F835024 /* Build configuration list for PBXNativeTarget "JurWidgets" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				598E0049CD83679063EF0BA7 /* Debug */,
+				7B24F5AED2565BDBEEF75A48 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
