@@ -16,9 +16,8 @@ struct SportPicker: View {
             }
             FlowLayout(spacing: Sp.xs) {
                 ForEach(catalog.all) { s in
-                    let level = picked[s.code]
-                    QChip(label: "\(s.emoji) \(s.name)", sub: level.map { t("levels.\($0.rawValue)") }, selected: level != nil) {
-                        cycle(s.code)
+                    SportChip(label: "\(s.emoji) \(s.name)", selected: picked[s.code] != nil) {
+                        withMotion(Motion.snappy) { picked[s.code] = picked[s.code] == nil ? .casual : nil }
                     }
                 }
             }
@@ -26,13 +25,6 @@ struct SportPicker: View {
                 Text(t("flow.sportsCount", ["n": picked.count])).qText(.footnote).foregroundStyle(Color.q.muted)
             }
         }
-    }
-
-    private func cycle(_ code: String) {
-        let order: [Level] = [.casual, .regular, .competitive, .beginner]
-        guard let current = picked[code] else { picked[code] = .casual; return }
-        let i = order.firstIndex(of: current) ?? 0
-        if i == order.count - 1 { picked[code] = nil } else { picked[code] = order[i + 1] }
     }
 }
 

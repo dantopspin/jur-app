@@ -275,53 +275,32 @@ extension Level {
     }
 }
 
-/// A sport chip. Selected, it shows its level as four pips; `armed` (the tap after the
-/// last level) shows × so the next tap removes it, instead of removing it by surprise.
+/// A sport chip: on or off. Both states have the same size, so picking a sport never
+/// shifts the row; off chips carry a hairline so they stay visible on white and on cream.
 struct SportChip: View {
     let label: String
-    let level: Level?
-    var armed = false
-    /// Bumped once, the first time anyone picks a sport: the pips pulse to show they're tappable.
-    var hintPulse = 0
+    let selected: Bool
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
-            VStack(spacing: 3) {
-                Text(label).qText(.callout)
-                // The pip row keeps its height when empty, so picking a sport doesn't shift the row.
-                Group {
-                        if armed {
-                            Image(systemName: "xmark").font(.q(.caption).weight(.bold)).transition(.qPop)
-                        } else if let level {
-                            HStack(spacing: 4) {
-                                ForEach(0..<4, id: \.self) { i in
-                                    Circle()
-                                        .fill(.white.opacity(i < level.pips ? 1 : 0.35))
-                                        .frame(width: 5, height: 5)
-                                }
-                            }
-                            .phaseAnimator([1.0, 1.4, 1.0], trigger: hintPulse) { content, scale in
-                                content.scaleEffect(scale)
-                            } animation: { _ in Motion.snappy }
-                        }
-                    }
-                    .frame(height: 8)
-            }
-            .foregroundStyle(level != nil ? .white : Color.q.ink)
-            .padding(.horizontal, Sp.md)
-            .padding(.vertical, Sp.sm)
-            .frame(minHeight: 40)
-            .background(level != nil ? (armed ? Color.q.clay : Color.q.blue) : Color.q.card, in: Capsule())
-            .padding(.vertical, Sp.xxs)
-            .contentShape(Rectangle())
-            .animation(Motion.snappy, value: level)
-            .animation(Motion.snappy, value: armed)
+            Text(label)
+                .qText(.callout)
+                .lineLimit(1)
+                .foregroundStyle(selected ? .white : Color.q.ink)
+                .padding(.horizontal, Sp.md)
+                .frame(minHeight: 40)
+                .background(selected ? Color.q.blue : Color.q.card, in: Capsule())
+                .overlay(Capsule().strokeBorder(selected ? Color.clear : Color.q.line, lineWidth: 1))
+                // 40 pt to the eye, 44 pt to the finger.
+                .padding(.vertical, Sp.xxs)
+                .contentShape(Rectangle())
+                .animation(Motion.snappy, value: selected)
         }
         .buttonStyle(.qPressCard)
+        .sensoryFeedback(.selection, trigger: selected)
         .accessibilityLabel(label)
-        .accessibilityValue(armed ? t("flow.tapToRemove") : level.map { t("levels.\($0.rawValue)") } ?? "")
-        .accessibilityAddTraits(level != nil ? .isSelected : [])
+        .accessibilityAddTraits(selected ? .isSelected : [])
     }
 }
 

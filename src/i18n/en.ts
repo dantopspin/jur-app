@@ -54,7 +54,7 @@ const en = {
     women: 'Women', men: 'Men', everyone: 'Everyone',
     cityTitle: 'Where do you train?',
     sportsTitle: 'What do you do?',
-    sportsHint: 'Pick everything you enjoy. Tap again to set your level.',
+    sportsHint: "Pick everything you enjoy.",
     pickOne: 'Pick at least one sport',
     summer: 'Summer', winter: 'Winter', allYear: 'All year',
     challengeTitle: 'Your next challenge',

@@ -60,7 +60,7 @@ struct ProfilePreviewSheet: View {
 
 // MARK: sports
 
-/// Your sports and levels as chips; the whole row opens the editor.
+/// Your sports as chips; the whole row opens the editor.
 struct SportsGlance: View {
     let sports: [String: Level]
     @Environment(SportsCatalog.self) private var catalog
@@ -82,22 +82,12 @@ struct SportsGlance: View {
         } else {
             FlowLayout(spacing: Sp.xs) {
                 ForEach(ordered) { s in
-                    HStack(spacing: Sp.xs) {
-                        Text(catalog.label(s.code)).qText(.caption).lineLimit(1)
-                        HStack(spacing: 2) {
-                            ForEach(0..<4, id: \.self) { i in
-                                Circle()
-                                    .fill(Color.q.blueText.opacity(i < s.level.pips ? 1 : 0.25))
-                                    .frame(width: 4, height: 4)
-                            }
-                        }
-                    }
+                    Text(catalog.label(s.code)).qText(.caption).lineLimit(1)
                     .foregroundStyle(Color.q.blueText)
                     .padding(.horizontal, Sp.sm)
                     .padding(.vertical, Sp.xs)
                     .background(Color.q.blueTint, in: Capsule())
-                    .accessibilityElement(children: .ignore)
-                    .accessibilityLabel(catalog.label(s.code) + ", " + t("levels.\(s.level.rawValue)"))
+
                 }
             }
             .padding(.vertical, Sp.xxs)

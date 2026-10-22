@@ -27,9 +27,6 @@ struct OnboardingView: View {
     @State private var error: String?
     @State private var pickerItems: [PhotosPickerItem] = []
     @State private var pending: [PendingPhoto] = []
-    @State private var armedSport: String?
-    @State private var sportsHint = 0
-    @AppStorage("jur.sportsHintShown") private var sportsHintShown = false
     @State private var autoAdvance: Task<Void, Never>?
     @State private var memberNo: Int?
     @FocusState private var focus: Field?
@@ -292,16 +289,8 @@ struct OnboardingView: View {
                             .foregroundStyle(Color.q.clayDeep)
                         FlowLayout(spacing: Sp.xs) {
                             ForEach(sports) { s in
-                                SportChip(label: "\(s.emoji) \(s.name)", level: d.picked[s.code],
-                                          armed: armedSport == s.code, hintPulse: sportsHint) {
-                                    cycle(s.code)
-                                }
-                                .contextMenu {
-                                    if d.picked[s.code] != nil {
-                                        Button(t("flow.removeSport"), systemImage: "minus.circle", role: .destructive) {
-                                            withMotion(Motion.snappy) { d.picked[s.code] = nil; armedSport = nil }
-                                        }
-                                    }
+                                SportChip(label: "\(s.emoji) \(s.name)", selected: d.picked[s.code] != nil) {
+                                    toggle(s.code)
                                 }
                             }
                         }
@@ -492,26 +481,11 @@ struct OnboardingView: View {
         }
     }
 
-    /// First tap picks a sport (casual), later taps step its level; after the last level the
-    /// chip shows × and one more tap removes it.
-    private func cycle(_ code: String) {
-        let order: [Level] = [.casual, .regular, .competitive, .beginner]
-        if armedSport == code {
-            withMotion(Motion.snappy) { d.picked[code] = nil; armedSport = nil }
-            return
-        }
-        armedSport = nil
-        guard let current = d.picked[code] else {
-            withMotion(Motion.snappy) { d.picked[code] = .casual }
-            if !sportsHintShown {
-                sportsHintShown = true
-                Task { try? await Task.sleep(for: .milliseconds(250)); sportsHint += 1 }
-            }
-            return
-        }
-        let i = order.firstIndex(of: current) ?? 0
+    /// A tap picks a sport, another removes it. Levels aren't asked for: every sport is
+    /// stored as `.casual`, which the server still expects.
+    private func toggle(_ code: String) {
         withMotion(Motion.snappy) {
-            if i == order.count - 1 { armedSport = code } else { d.picked[code] = order[i + 1] }
+            d.picked[code] = d.picked[code] == nil ? .casual : nil
         }
     }
 

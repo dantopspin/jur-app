@@ -11599,19 +11599,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Pick everything you enjoy. Tap again to set your level."
+            "value": "Pick everything you enjoy."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Выберите всё, что нравится. Нажмите ещё раз, чтобы указать уровень."
+            "value": "Выберите всё, что нравится."
           }
         },
         "kk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ұнайтынның бәрін таңдаңыз. Деңгейді көрсету үшін тағы басыңыз."
+            "value": "Ұнайтынның бәрін таңдаңыз."
           }
         }
       }
