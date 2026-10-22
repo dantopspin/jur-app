@@ -26,7 +26,7 @@ struct Wordmark: View {
 
     private func letter(_ s: String) -> some View {
         Text(s)
-            .font(.qFont("Unbounded-ExtraBold", size: size, relativeTo: .title, weight: .heavy))
+            .font(.qFont("Unbounded-ExtraBold", size: size, relativeTo: .title, weight: .heavy, latinOnly: true))
             .foregroundStyle(ink)
             .dynamicTypeSize(...DynamicTypeSize.large)
     }

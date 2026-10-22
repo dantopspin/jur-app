@@ -100,8 +100,12 @@ extension Font {
     }
 
     /// A specific brand face at a size, scaling with Dynamic Type like `relativeTo`.
-    static func qFont(_ name: String, size: CGFloat, relativeTo style: Font.TextStyle = .body, weight: Font.Weight = .regular) -> Font {
-        if UIFont(name: name, size: size) != nil {
+    /// Unbounded and Manrope lack several Kazakh letters (ә ғ қ ң ұ, and ө ү һ in Unbounded),
+    /// so the Kazakh interface uses the system faces instead of mixing two fonts in one word.
+    /// `latinOnly` text (the wordmark, "PRO") keeps the brand face in every language.
+    static func qFont(_ name: String, size: CGFloat, relativeTo style: Font.TextStyle = .body,
+                      weight: Font.Weight = .regular, latinOnly: Bool = false) -> Font {
+        if latinOnly || L10n.current != .kk, UIFont(name: name, size: size) != nil {
             return .custom(name, size: size, relativeTo: style)
         }
         let design: Font.Design = name.hasPrefix("Unbounded") ? .rounded : .default
@@ -124,4 +128,29 @@ private struct QTextModifier: ViewModifier {
 extension View {
     /// `Text("…").qText(.title2)`: font, tracking, line spacing and Dynamic Type ceiling together.
     func qText(_ type: QType) -> some View { modifier(QTextModifier(type: type)) }
+}
+
+/// Navigation bar titles are drawn by UIKit, so they need the brand faces set separately:
+/// Unbounded ExtraBold for large titles, Manrope ExtraBold for the inline title.
+/// Kazakh uses the system faces, as in `Font.qFont`. Bars created after a language change
+/// pick up the new style (the root view is rebuilt on a change).
+@MainActor
+enum QNavBar {
+    static func apply() {
+        let bar = UINavigationBar.appearance()
+        let brand = L10n.current != .kk
+        if brand, let large = UIFont(name: "Unbounded-ExtraBold", size: 30),
+           let inline = UIFont(name: "Manrope-ExtraBold", size: 17) {
+            bar.largeTitleTextAttributes = [
+                .font: UIFontMetrics(forTextStyle: .largeTitle).scaledFont(for: large, maximumPointSize: 40),
+                .kern: -0.3,
+            ]
+            bar.titleTextAttributes = [
+                .font: UIFontMetrics(forTextStyle: .headline).scaledFont(for: inline, maximumPointSize: 24),
+            ]
+        } else {
+            bar.largeTitleTextAttributes = nil
+            bar.titleTextAttributes = nil
+        }
+    }
 }

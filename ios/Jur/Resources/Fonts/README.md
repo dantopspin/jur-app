@@ -1,7 +1,8 @@
-Put these font files here (free, SIL Open Font License, from fonts.google.com):
+Brand fonts (SIL Open Font License 1.1, from fonts.google.com; licences beside them):
 
-- Unbounded: Unbounded-Bold.ttf, Unbounded-ExtraBold.ttf  (fonts.google.com/specimen/Unbounded → Download → static/)
+- Unbounded: Unbounded-Bold.ttf, Unbounded-ExtraBold.ttf
 - Manrope: Manrope-Regular.ttf, Manrope-Medium.ttf, Manrope-SemiBold.ttf, Manrope-Bold.ttf, Manrope-ExtraBold.ttf
-  (fonts.google.com/specimen/Manrope → Download → static/)
 
-Until they're added the app falls back to the system font, so it still builds and runs.
+Registered in Info.plist (UIAppFonts). Neither family covers all Kazakh letters, so the
+Kazakh interface uses the system faces (Typography.swift, qFont). If they're missing, the app
+falls back to the system font and still builds.

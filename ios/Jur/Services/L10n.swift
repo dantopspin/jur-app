@@ -28,7 +28,10 @@ enum L10n {
 
     static var current: AppLanguage {
         get { UserDefaults.standard.string(forKey: storageKey).flatMap(AppLanguage.init(rawValue:)) ?? .device }
-        set { UserDefaults.standard.set(newValue.rawValue, forKey: storageKey) }
+        set {
+            UserDefaults.standard.set(newValue.rawValue, forKey: storageKey)
+            if Thread.isMainThread { MainActor.assumeIsolated { QNavBar.apply() } }
+        }
     }
 
     private static var bundles: [AppLanguage: Bundle] = [:]

@@ -21,7 +21,7 @@ struct MembershipCover: View {
             HStack(alignment: .lastTextBaseline, spacing: Sp.sm) {
                 Wordmark(size: 30, ink: Color.q.gold, dots: Color.q.gold)
                 Text(verbatim: "PRO")
-                    .font(.qFont("Unbounded-ExtraBold", size: 14, relativeTo: .caption, weight: .heavy))
+                    .font(.qFont("Unbounded-ExtraBold", size: 14, relativeTo: .caption, weight: .heavy, latinOnly: true))
                     .tracking(2).foregroundStyle(Color.q.gold)
             }
             .padding(.top, Sp.xl)
