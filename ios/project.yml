@@ -66,9 +66,9 @@ targets:
           - Manrope-SemiBold.ttf
           - Manrope-Bold.ttf
           - Manrope-ExtraBold.ttf
-        NSCameraUsageDescription: JÜR uses the camera for your verification selfie and photos.
+        NSCameraUsageDescription: Take your verification selfie and photos for your profile.
         NSPhotoLibraryUsageDescription: Choose photos for your profile and chats.
-        NSMicrophoneUsageDescription: Record voice notes in chats.
+        NSMicrophoneUsageDescription: Record voice messages in chats.
         NSContactsUsageDescription: Hide your profile from people in your contacts. Only one-way codes leave your phone.
         JurSupabaseHost: $(SUPABASE_HOST)
         JurSupabaseAnonKey: $(SUPABASE_ANON_KEY)

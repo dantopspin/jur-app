@@ -251,7 +251,7 @@ The backend tests cover permissions (no self-granted Pro, no reading others' cha
 | Sounds | replace the WAVs in `assets/sounds/` with recorded takes (same names; dombra for Kazakhstan) |
 | Dark palette, felt, type scaling | `src/lib/theme.ts` |
 | Felt texture | `scripts/make_felt.py` → `assets/felt.png` |
-| Push wording | `push_text()` in `supabase/migrations/20261020000003_engagement.sql` (ship as a new migration) |
+| Push wording | `push_text()`, latest in `supabase/migrations/20261022000017_push_copy.sql` (ship changes as a new migration) |
 | Text | `src/i18n/kk.ts`, `ru.ts`, `en.ts` |
 
 ## Known gaps

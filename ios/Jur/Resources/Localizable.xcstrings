@@ -30,19 +30,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Enter a valid email"
+            "value": "Check your email address"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Введите корректный email"
+            "value": "Проверьте адрес почты"
           }
         },
         "kk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Дұрыс email енгізіңіз"
+            "value": "Пошта мекенжайын тексеріңіз"
           }
         }
       }
@@ -605,19 +605,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "All departures"
+            "value": "All events"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Все отправления"
+            "value": "Все события"
           }
         },
         "kk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Барлық жөнелу"
+            "value": "Барлық іс-шара"
           }
         }
       }
@@ -743,19 +743,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Create a departure"
+            "value": "Create an event"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Создать отправление"
+            "value": "Создать событие"
           }
         },
         "kk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Жол ашу"
+            "value": "Іс-шара ашу"
           }
         }
       }
@@ -956,7 +956,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "{n} места"
+            "value": "Мест: {n}"
           }
         },
         "kk": {
@@ -1140,13 +1140,13 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Проверен"
+            "value": "Профиль подтверждён"
           }
         },
         "kk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Тексерілген"
+            "value": "Расталған"
           }
         }
       }
@@ -1255,13 +1255,13 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Пара распалась, или кто-то из вас удалил аккаунт."
+            "value": "Мэтч удалён или кто-то из вас ушёл из JÜR."
           }
         },
         "kk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Жұп ажырады немесе біреуіңіз JÜR-ден кеттіңіз."
+            "value": "Мэтч жойылды немесе біреуіңіз JÜR-ден кетті."
           }
         }
       }
@@ -1387,19 +1387,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Message not sent"
+            "value": "Message not sent. Check your connection."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Сообщение не отправлено"
+            "value": "Сообщение не отправлено. Проверьте интернет."
           }
         },
         "kk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Хабарлама жіберілмеді"
+            "value": "Хабарлама жіберілмеді. Интернетті тексеріңіз."
           }
         }
       }
@@ -1416,13 +1416,13 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Вы с {name} — пара. Без долгой переписки: предложите пробежку, лыжи или кофе."
+            "value": "У вас мэтч с {name}. Без долгой переписки: предложите пробежку, лыжи или кофе."
           }
         },
         "kk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Сіз бен {name} — жұпсыз. Ұзақ хат алмаспай, жүгіруді, шаңғыны не кофені ұсыныңыз."
+            "value": "{name}: мэтч! Ұзақ хат алмаспай, жүгіруді, шаңғыны не кофені ұсыныңыз."
           }
         }
       }
@@ -1485,13 +1485,13 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Профиль"
+            "value": "Открыть профиль"
           }
         },
         "kk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Профиль"
+            "value": "Профильді ашу"
           }
         }
       }
@@ -1761,13 +1761,13 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ответ {name}"
+            "value": "Ответ · {name}"
           }
         },
         "kk": {
           "stringUnit": {
             "state": "translated",
-            "value": "{name}-ге жауап"
+            "value": "Жауап · {name}"
           }
         }
       }
@@ -1824,19 +1824,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "you"
+            "value": "yourself"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "вам"
+            "value": "вы"
           }
         },
         "kk": {
           "stringUnit": {
             "state": "translated",
-            "value": "сізге"
+            "value": "сіз"
           }
         }
       }
@@ -2928,19 +2928,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Something went wrong"
+            "value": "That didn't work. Please try again."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Что-то пошло не так"
+            "value": "Не получилось. Попробуйте ещё раз."
           }
         },
         "kk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Бірдеңе дұрыс болмады"
+            "value": "Болмады. Қайталап көріңіз."
           }
         }
       }
@@ -4354,19 +4354,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Come to an event this weekend — it's easier in person."
+            "value": "Come to an event this weekend. It's easier in person."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Приходи на событие в выходные — знакомиться проще вживую."
+            "value": "Приходите на событие в выходные: вживую знакомиться проще."
           }
         },
         "kk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Демалыста іс-шараға кел — танысу оңайырақ."
+            "value": "Демалыста іс-шараға келіңіз: жүзбе-жүз танысу оңайырақ."
           }
         }
       }
@@ -4636,7 +4636,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Суперлайкнул(а) вас"
+            "value": "Суперлайк для вас"
           }
         },
         "kk": {
@@ -5619,19 +5619,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Complete profiles get more likes."
+            "value": "A full profile gives people more to like."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Заполненные профили чаще получают лайки."
+            "value": "Полный профиль — больше поводов для лайка."
           }
         },
         "kk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Толық профильдер жиірек лайк алады."
+            "value": "Толық профиль — лайкқа көбірек себеп."
           }
         }
       }
@@ -6953,7 +6953,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "About you, and who to show"
+            "value": "You, and who you'd like to meet"
           }
         },
         "ru": {
@@ -7011,7 +7011,7 @@
         "kk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Паспорт берілді"
+            "value": "Төлқұжат берілді"
           }
         }
       }
@@ -7034,7 +7034,7 @@
         "kk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Паспорт беріліп жатыр…"
+            "value": "Төлқұжат дайындалып жатыр…"
           }
         }
       }
@@ -7045,7 +7045,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Your words"
+            "value": "Bio"
           }
         },
         "ru": {
@@ -7229,19 +7229,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "It’s a match with Daniyar"
+            "value": "Same pace! You and Daniyar liked each other."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Взаимная симпатия: Данияр"
+            "value": "В одном темпе! Вы с Данияром понравились друг другу."
           }
         },
         "kk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Өзара ұнату: Данияр"
+            "value": "Бір қарқында! Сіз бен Данияр бір-біріңізге ұнадыңыздар."
           }
         }
       }
@@ -8057,19 +8057,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Join an event — people who meet you there like you more often."
+            "value": "Come to an event. It's easier to click in person."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Сходите на событие — там вас лайкают чаще."
+            "value": "Сходите на событие: вживую симпатия возникает проще."
           }
         },
         "kk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Іс-шараға барыңыз — сонда сізді жиірек ұнатады."
+            "value": "Іс-шараға барыңыз: жүзбе-жүз ұнату оңайырақ."
           }
         }
       }
@@ -8080,19 +8080,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Add prompts to your profile — people like answers they can reply to."
+            "value": "Answer a few questions on your profile. They're easy to reply to with a like."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Добавьте ответы на вопросы в профиль — на них чаще отвечают лайком."
+            "value": "Ответьте на вопросы в профиле: на них легко ответить лайком."
           }
         },
         "kk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Профильге сұрақтарға жауап қосыңыз — оларды жиі ұнатады."
+            "value": "Профильдегі сұрақтарға жауап беріңіз: оларға лайкпен жауап беру оңай."
           }
         }
       }
@@ -8241,19 +8241,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Hearts in sync!"
+            "value": "Same pace!"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Сердца совпали!"
+            "value": "В одном темпе!"
           }
         },
         "kk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Жүректер сәйкес келді!"
+            "value": "Бір қарқында!"
           }
         }
       }
@@ -8339,13 +8339,13 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ставьте лайки в «Знакомствах». Когда симпатия взаимна, человек появится здесь."
+            "value": "Ставьте лайки в «Анкетах». Когда симпатия взаимна, человек появится здесь."
           }
         },
         "kk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Танысу бөлімінде ұнатыңыз. Өзара болса, адам осында пайда болады."
+            "value": "Анкеталарда ұнатыңыз. Өзара болса, адам осында пайда болады."
           }
         }
       }
@@ -8362,13 +8362,13 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "К знакомствам"
+            "value": "К анкетам"
           }
         },
         "kk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Танысуға өту"
+            "value": "Анкеталарға өту"
           }
         }
       }
@@ -8448,19 +8448,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "New match — say hi"
+            "value": "New match. Say hi"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Новая пара — напишите первым"
+            "value": "Новый мэтч. Начните разговор"
           }
         },
         "kk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Жаңа жұп — бірінші жазыңыз"
+            "value": "Жаңа мэтч. Әңгімені бастаңыз"
           }
         }
       }
@@ -9098,7 +9098,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Проверка профиля идёт"
+            "value": "Профиль на проверке"
           }
         },
         "kk": {
@@ -9115,19 +9115,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Verification declined — try again"
+            "value": "Verification declined. Try again"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Проверка не пройдена — попробуйте снова"
+            "value": "Проверка не пройдена. Попробуйте снова"
           }
         },
         "kk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Растау өтпеді — қайта көріңіз"
+            "value": "Растау өтпеді. Қайта көріңіз"
           }
         }
       }
@@ -9679,7 +9679,7 @@
         "kk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Әзірге белгі жоқ: іс-шараға келіңіз"
+            "value": "Әзірге мөр жоқ: іс-шараға келіңіз"
           }
         }
       }
@@ -9932,7 +9932,7 @@
         "kk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Белгілер: {n}"
+            "value": "Мөрлер: {n}"
           }
         }
       }
@@ -10311,19 +10311,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Training partners see you only as a partner for runs, rides and games — no dating."
+            "value": "Training partners see you only as a partner for runs, rides and games. No dating."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Напарники видят вас только как партнёра для пробежек, заездов и игр — без свиданий."
+            "value": "Напарники видят вас только как партнёра для пробежек, заездов и игр. Без свиданий."
           }
         },
         "kk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Серіктестер сізді тек жүгіріс, велосапар мен ойын серіктесі ретінде көреді — кездесусіз."
+            "value": "Серіктестер сізді тек жүгіріс, велосапар мен ойын серіктесі ретінде көреді. Кездесусіз."
           }
         }
       }
@@ -10334,19 +10334,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Train with"
+            "value": "Show as partners"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Тренироваться с"
+            "value": "Кого показывать как напарников"
           }
         },
         "kk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Кіммен жаттығамын"
+            "value": "Серіктес ретінде кімді көрсету"
           }
         }
       }
@@ -10800,13 +10800,13 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Хватит печатать? Предложи пробежку"
+            "value": "Хватит печатать? Предложите пробежку"
           }
         },
         "kk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Жазысу жетер? Жүгіруге шақыр"
+            "value": "Жазысу жетер ме? Жүгіруге шақырыңыз"
           }
         }
       }
@@ -11461,7 +11461,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "At least 1, up to 6. Real photos of you — action shots welcome."
+            "value": "1 to 6 real photos of you. Action shots welcome."
           }
         },
         "ru": {
@@ -11990,19 +11990,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Come to your first departure and your first stamp appears here."
+            "value": "Come to your first event and your first stamp appears here."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Приходите на первое отправление — здесь появится первая отметка."
+            "value": "Приходите на первое событие, и здесь появится первая отметка."
           }
         },
         "kk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Алғашқы жолға шығыңыз — алғашқы мөр осында пайда болады."
+            "value": "Алғашқы іс-шараға келіңіз, алғашқы мөр осында пайда болады."
           }
         }
       }
@@ -12272,7 +12272,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Видно, кто вас лайкнул"
+            "value": "Кто вас лайкнул"
           }
         },
         "kk": {
@@ -12335,19 +12335,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Subscriptions renew automatically until cancelled in your App Store or Google Play settings."
+            "value": "Renews automatically. Cancel anytime in your Apple ID settings, at least 24 hours before the period ends."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Подписка продлевается автоматически, пока вы не отмените её в настройках App Store или Google Play."
+            "value": "Подписка продлевается автоматически. Отменить её можно в любой момент в настройках Apple ID, не позднее чем за 24 часа до конца периода."
           }
         },
         "kk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Жазылым App Store не Google Play баптауларында тоқтатқанша автоматты түрде ұзартылады."
+            "value": "Жазылым автоматты түрде ұзартылады. Оны кез келген уақытта Apple ID баптауларынан, кезең аяқталуына кемінде 24 сағат қалғанда тоқтатуға болады."
           }
         }
       }
@@ -12496,19 +12496,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "More chances to meet your pace."
+            "value": "Find someone at your pace, faster."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Больше шансов встретить свой темп."
+            "value": "Найдите человека в своём темпе быстрее."
           }
         },
         "kk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Өз қарқыныңызды табуға көбірек мүмкіндік."
+            "value": "Өз қарқыныңыздағы адамды тезірек табыңыз."
           }
         }
       }
@@ -12588,19 +12588,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Purchases aren’t available in this build. Use a development or store build."
+            "value": "Purchases aren't available right now. Please try again later."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "В этой сборке покупки недоступны. Нужна dev- или магазинная сборка."
+            "value": "Покупки сейчас недоступны. Попробуйте позже."
           }
         },
         "kk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Бұл нұсқада сатып алу қолжетімсіз. Dev немесе дүкен нұсқасы керек."
+            "value": "Сатып алу қазір қолжетімсіз. Кейінірек қайталаңыз."
           }
         }
       }
@@ -12818,7 +12818,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Add a prompt"
+            "value": "Add a question"
           }
         },
         "ru": {
@@ -12910,7 +12910,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Choose a prompt"
+            "value": "Choose a question"
           }
         },
         "ru": {
@@ -13002,19 +13002,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Add a prompt — it gives people something to talk about."
+            "value": "Answer a question. It gives people something to talk about."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Добавьте вопрос — так проще начать разговор."
+            "value": "Ответьте на вопрос: так проще начать разговор."
           }
         },
         "kk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Сұрақ қосыңыз — әңгімені бастау оңайырақ болады."
+            "value": "Сұраққа жауап беріңіз: әңгімені бастау оңайырақ болады."
           }
         }
       }
@@ -13163,7 +13163,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Prompts"
+            "value": "Questions"
           }
         },
         "ru": {
@@ -13577,19 +13577,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "This permanently deletes your profile, matches and messages. Subscriptions must be cancelled in your store settings."
+            "value": "This permanently deletes your profile, matches and messages. If you have Pro, also cancel it in your Apple ID settings."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Профиль, мэтчи и сообщения будут удалены навсегда. Подписку нужно отменить в настройках магазина."
+            "value": "Профиль, мэтчи и сообщения удалятся навсегда. Если у вас Pro, отмените подписку в настройках Apple ID."
           }
         },
         "kk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Профиль, мэтчтер мен хабарламалар біржола жойылады. Жазылымды дүкен баптауларынан тоқтату керек."
+            "value": "Профиль, мэтчтер мен хабарламалар біржола жойылады. Pro болса, жазылымды Apple ID баптауларынан тоқтатыңыз."
           }
         }
       }
@@ -14135,7 +14135,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Пришёл(ла)"
+            "value": "На старте"
           }
         },
         "kk": {
@@ -14181,13 +14181,13 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Проверен(а)"
+            "value": "Подтверждено"
           }
         },
         "kk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Тексерілген"
+            "value": "Расталды"
           }
         }
       }
@@ -14733,7 +14733,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "{n} дней"
+            "value": "Дней: {n}"
           }
         },
         "kk": {
@@ -14986,13 +14986,13 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Сделайте селфи с поднятым большим пальцем. Модератор сравнит его с вашими фото — и вы получите значок «Проверен». Селфи никто не увидит."
+            "value": "Сделайте селфи с поднятым большим пальцем. Модератор сравнит его с вашими фото, и вы получите отметку «Профиль подтверждён». Селфи никто не увидит."
           }
         },
         "kk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Бас бармақты көтеріп селфи түсіріңіз. Модератор оны фотоларыңызбен салыстырады, сосын «Тексерілген» белгісін аласыз. Селфиді ешкім көрмейді."
+            "value": "Бас бармақты көтеріп селфи түсіріңіз. Модератор оны фотоларыңызбен салыстырады, сосын «Расталған» белгісін аласыз. Селфиді ешкім көрмейді."
           }
         }
       }
