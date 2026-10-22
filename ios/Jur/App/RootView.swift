@@ -17,6 +17,9 @@ struct RootView: View {
                                secondary: (t("settings.signOut"), { await session.signOut() }))
             case .needsProfile:
                 OnboardingView()
+                    .transition(Motion.reduceMotion ? .opacity
+                                : .asymmetric(insertion: .offset(y: 32).combined(with: .opacity),
+                                              removal: .scale(scale: 0.96).combined(with: .opacity)))
             case .banned:
                 ContentUnavailableView {
                     Label(t("common.error"), systemImage: "hand.raised").font(.q(.title3))

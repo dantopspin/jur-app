@@ -106,6 +106,11 @@ struct DiscoverView: View {
     @State private var dragging = false
     /// Bumped once a day so the picks icon bounces when there are new picks.
     @State private var picksBounce = 0
+    #if DEBUG
+    @State private var previewOnboarding = false
+    #endif
+    /// Right after onboarding the first card deals in and the buttons follow, once.
+    @State private var dealt = !UserDefaults.standard.bool(forKey: "jur.firstRun")
     @AppStorage("jur.picksSeenDay") private var picksSeenDay = ""
     @State private var fling: DeckFling?
     @State private var openEvent: EventItem?
@@ -140,7 +145,13 @@ struct DiscoverView: View {
             .overlay(alignment: .bottom) { if model.current != nil { actions } }
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .topBarLeading) { Lockup(size: 20) }
+                ToolbarItem(placement: .topBarLeading) {
+                    Lockup(size: 20)
+                    #if DEBUG
+                        // Debug builds only: triple-tap the logo to walk through onboarding.
+                        .onTapGesture(count: 3) { previewOnboarding = true }
+                    #endif
+                }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button { showPicks = true } label: {
                         Image(systemName: "sparkles")
@@ -165,6 +176,11 @@ struct DiscoverView: View {
             NoteSheet(card: card) { note in fling = DeckFling(kind: .like, note: note) }
         }
         .sheet(isPresented: $model.paywall) { PaywallView() }
+        #if DEBUG
+        .fullScreenCover(isPresented: $previewOnboarding) {
+            OnboardingView(preview: true) { previewOnboarding = false }
+        }
+        #endif
         .fullScreenCover(isPresented: Binding(get: { model.match != nil }, set: { if !$0 { model.match = nil } })) {
             if let m = model.match {
                 MatchMoment(other: m.card, myPhoto: session.profile?.photos.first) {
@@ -185,6 +201,13 @@ struct DiscoverView: View {
                       returningId: model.returningId, returningEdge: model.returningEdge,
                       onCommit: { kind, note in model.commit(kind, note: note, toasts: toasts) },
                       onNote: { noteFor = $0 })
+                .opacity(dealt ? 1 : 0)
+                .offset(y: dealt || Motion.reduceMotion ? 0 : 60)
+                .onAppear {
+                    guard !dealt else { return }
+                    UserDefaults.standard.removeObject(forKey: "jur.firstRun")
+                    withAnimation(Motion.adaptive(Motion.hero).delay(0.2)) { dealt = true }
+                }
         } else {
             QEmptyState(symbol: "figure.run", title: t("discover.empty"),
                         message: t(Config.eventsEnabled ? "discover.emptySub" : "discover.emptySubApp"),
@@ -206,6 +229,9 @@ struct DiscoverView: View {
             RoundAction(symbol: "heart.fill", tint: .white, fill: Color.q.blue, size: 64, label: t("discover.like")) { fling = DeckFling(kind: .like) }
                 .simultaneousGesture(LongPressGesture(minimumDuration: 0.5).onEnded { _ in noteFor = model.current })
         }
+        .opacity(dealt ? 1 : 0)
+        .scaleEffect(dealt || Motion.reduceMotion ? 1 : 0.8)
+        .animation(Motion.adaptive(Motion.bouncy).delay(0.45), value: dealt)
         .padding(.bottom, Sp.lg)
     }
 

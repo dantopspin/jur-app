@@ -71,7 +71,7 @@ struct FlowLayout: SwiftUI.Layout {
         let width = proposal.width ?? .infinity
         var x: CGFloat = 0, y: CGFloat = 0, rowHeight: CGFloat = 0, maxX: CGFloat = 0
         for v in subviews {
-            let s = v.sizeThatFits(.unspecified)
+            let s = size(of: v, maxWidth: width)
             if x > 0, x + s.width > width { x = 0; y += rowHeight + spacing; rowHeight = 0 }
             x += s.width + spacing
             rowHeight = max(rowHeight, s.height)
@@ -83,11 +83,19 @@ struct FlowLayout: SwiftUI.Layout {
     func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
         var x = bounds.minX, y = bounds.minY, rowHeight: CGFloat = 0
         for v in subviews {
-            let s = v.sizeThatFits(.unspecified)
+            let s = size(of: v, maxWidth: bounds.width)
             if x > bounds.minX, x + s.width > bounds.maxX { x = bounds.minX; y += rowHeight + spacing; rowHeight = 0 }
             v.place(at: CGPoint(x: x, y: y), proposal: ProposedViewSize(s))
             x += s.width + spacing
             rowHeight = max(rowHeight, s.height)
         }
+    }
+
+    /// A chip's natural size, but never wider than the row: at the largest text sizes a long
+    /// label wraps inside its chip instead of running off the screen.
+    private func size(of view: LayoutSubview, maxWidth: CGFloat) -> CGSize {
+        let ideal = view.sizeThatFits(.unspecified)
+        guard maxWidth.isFinite, ideal.width > maxWidth else { return ideal }
+        return view.sizeThatFits(ProposedViewSize(width: maxWidth, height: nil))
     }
 }

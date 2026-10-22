@@ -13,6 +13,10 @@ struct SignInView: View {
     /// The welcome lands in order: the mark draws in, then the words, then the buttons.
     @State private var wordsShown = false
     @State private var buttonsShown = false
+    #if DEBUG
+    /// Debug builds only: triple-tap the wordmark to walk through onboarding without an account.
+    @State private var previewOnboarding = false
+    #endif
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @AppStorage(L10n.storageKey) private var language: String = AppLanguage.device.rawValue
 
@@ -86,6 +90,12 @@ struct SignInView: View {
             Wordmark(size: 46, ink: .white, dots: Color.q.gold)
                 .accessibilityAddTraits(.isHeader)
                 .padding(.top, Sp.lg)
+                #if DEBUG
+                .onTapGesture(count: 3) { previewOnboarding = true }
+                .fullScreenCover(isPresented: $previewOnboarding) {
+                    OnboardingView(preview: true) { previewOnboarding = false }
+                }
+                #endif
             VStack(spacing: 0) {
                 Text(t("auth.tagline"))
                     .qText(.title3)
