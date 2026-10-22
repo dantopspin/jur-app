@@ -1,4 +1,5 @@
 // Edit profile: photos, words, sports, who you want to meet.
+import AVFoundation
 import PhotosUI
 import SwiftUI
 
@@ -109,6 +110,7 @@ struct VerifyView: View {
     @Environment(ToastCenter.self) private var toasts
     @Environment(\.dismiss) private var dismiss
     @State private var camera = false
+    @State private var cameraOff = false
     @State private var busy = false
 
     var body: some View {
@@ -121,7 +123,7 @@ struct VerifyView: View {
             Text(t("verify.title")).qText(.title1).multilineTextAlignment(.center)
             Text(t("verify.body")).qText(.body).foregroundStyle(Color.q.inkSoft).multilineTextAlignment(.center)
             Spacer()
-            Button { camera = true } label: { BusyLabel(title: t("verify.take"), systemImage: "camera", busy: busy) }
+            Button { Task { await openCamera() } } label: { BusyLabel(title: t("verify.take"), systemImage: "camera", busy: busy) }
                 .buttonStyle(.qPrimary)
                 .disabled(busy || !UIImagePickerController.isSourceTypeAvailable(.camera))
         }
@@ -130,6 +132,18 @@ struct VerifyView: View {
         .navigationBarTitleDisplayMode(.inline)
         .fullScreenCover(isPresented: $camera) {
             CameraPicker { image in Task { await submit(image) } }.ignoresSafeArea()
+        }
+        .permissionAlert(isPresented: $cameraOff, title: t("perm.cameraTitle"), message: t("perm.cameraBody"))
+    }
+
+    /// iOS asks on the first tap; if the camera was turned off, say so and offer Settings
+    /// instead of opening a black camera screen.
+    private func openCamera() async {
+        switch AVCaptureDevice.authorizationStatus(for: .video) {
+        case .authorized: camera = true
+        case .notDetermined:
+            if await AVCaptureDevice.requestAccess(for: .video) { camera = true } else { cameraOff = true }
+        default: cameraOff = true
         }
     }
 

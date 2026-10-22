@@ -792,6 +792,12 @@ const kk: Dict = {
     share: "Бөлісу",
     eventShareText: "«{title}» шарасына барамын, {when}. JÜR-ға қосылыңыз: {url}",
   },
+  perm: {
+    openSettings: "Баптауларды ашу",
+    cameraTitle: "JÜR үшін камера өшірулі",
+    cameraBody: "Тексеру селфиін түсіру үшін Баптауларда камераға рұқсат беріңіз.",
+    micTitle: "JÜR үшін микрофон өшірулі",
+  },
 };
 
 export default kk;

@@ -1,5 +1,6 @@
 // A conversation. Text, date tickets ("ticket for two") and the nudge to stop typing
 // and meet. New messages and answers arrive live (Supabase Realtime).
+import AVFoundation
 import PhotosUI
 import Supabase
 import SwiftUI
@@ -107,6 +108,7 @@ struct ChatView: View {
     @State private var photoItem: PhotosPickerItem?
     @State private var uploading = false
     @State private var recorder = VoiceRecorder()
+    @State private var micOff = false
     @State private var replyingTo: Message?
     @FocusState private var focused: Bool
 
@@ -144,6 +146,7 @@ struct ChatView: View {
                 Task { await model.load() }
             }
         }
+        .permissionAlert(isPresented: $micOff, title: t("perm.micTitle"), message: t("chat2.micDenied"))
         .sheet(isPresented: $reporting) {
             if let o = model.other { ReportSheet(name: o.name, otherId: o.id) { onChange(); dismiss() } }
         }
@@ -413,7 +416,13 @@ struct ChatView: View {
 
     private func startRecording() async {
         focused = false
-        if await recorder.start() { Haptics.knock() } else { toasts.show(t("chat2.micDenied"), error: true) }
+        if await recorder.start() {
+            Haptics.knock()
+        } else if AVAudioApplication.shared.recordPermission == .denied {
+            micOff = true
+        } else {
+            toasts.show(t("common.error"), error: true)
+        }
     }
 
     private func sendVoice() async {

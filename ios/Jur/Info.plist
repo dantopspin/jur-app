@@ -55,8 +55,6 @@
 	<true/>
 	<key>NSCameraUsageDescription</key>
 	<string>Take your verification selfie and photos for your profile.</string>
-	<key>NSContactsUsageDescription</key>
-	<string>Hide your profile from people in your contacts. Only one-way codes leave your phone.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Record voice messages in chats.</string>
 	<key>NSPhotoLibraryUsageDescription</key>

@@ -153,7 +153,7 @@ struct OnboardingView: View {
             .disabled(!canContinue || saving)
             .animation(Motion.snappy, value: buttonTitle)
             if d.step == .issued {
-                Button(t("flow.notifyLater")) { Task { await enterApp(askPush: false) } }
+                Button(t("flow.notifyLater")) { Push.remindLater(); Task { await enterApp(askPush: false) } }
                     .buttonStyle(.qGhost)
                     .transition(.qPop)
             }

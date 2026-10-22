@@ -442,7 +442,6 @@ info = {
     'NSCameraUsageDescription': 'Take your verification selfie and photos for your profile.',
     'NSPhotoLibraryUsageDescription': 'Choose photos for your profile and chats.',
     'NSMicrophoneUsageDescription': 'Record voice messages in chats.',
-    'NSContactsUsageDescription': 'Hide your profile from people in your contacts. Only one-way codes leave your phone.',
     'JurSupabaseHost': '$(SUPABASE_HOST)', 'JurSupabaseAnonKey': '$(SUPABASE_ANON_KEY)',
     'JurRevenueCatKey': '$(REVENUECAT_IOS_KEY)', 'JurSiteHost': '$(SITE_HOST)',
     'JurSupportEmail': '$(SUPPORT_EMAIL)', 'JurEvents': '$(JUR_EVENTS)',

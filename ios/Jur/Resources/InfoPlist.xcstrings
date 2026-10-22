@@ -69,29 +69,6 @@
           }
         }
       }
-    },
-    "NSContactsUsageDescription": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Hide your profile from people in your contacts. Only one-way codes leave your phone."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Скройте профиль от людей из ваших контактов. С телефона уходят только необратимые коды."
-          }
-        },
-        "kk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Профиліңізді контактілеріңіздегі адамдардан жасырыңыз. Телефоннан тек қайтымсыз кодтар жіберіледі."
-          }
-        }
-      }
     }
   },
   "version": "1.0"

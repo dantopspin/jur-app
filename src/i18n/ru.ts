@@ -791,6 +791,12 @@ const ru: Dict = {
     share: "Поделиться",
     eventShareText: "Иду на «{title}», {when}. Присоединяйтесь в JÜR: {url}",
   },
+  perm: {
+    openSettings: "Открыть Настройки",
+    cameraTitle: "Камера выключена для JÜR",
+    cameraBody: "Разрешите доступ к камере в Настройках, чтобы сделать селфи для проверки.",
+    micTitle: "Микрофон выключен для JÜR",
+  },
 };
 
 export default ru;

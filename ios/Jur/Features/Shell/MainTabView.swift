@@ -15,6 +15,7 @@ struct MainTabView: View {
     @State private var showLikes = false
     @State private var showPicks = false
     @State private var router = Router.shared
+    @State private var notifyInvite = false
 
     var body: some View {
         TabView(selection: $tab) {
@@ -55,7 +56,44 @@ struct MainTabView: View {
             await catalog.load()
             await pairs.load()
             await Push.refresh()
+            // Never asked about notifications: invite once the app has settled, not on top of
+            // the first frame.
+            try? await Task.sleep(for: .seconds(2))
+            if await Push.shouldInvite() { notifyInvite = true }
         }
+        .sheet(isPresented: $notifyInvite) { NotifyInviteSheet() }
+    }
+}
+
+/// "Don't miss a match": explains why before iOS asks, so the one-time system prompt
+/// comes when the person has chosen to see it.
+struct NotifyInviteSheet: View {
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        VStack(spacing: Sp.lg) {
+            MarkView(size: IconSize.hero, color: Color.q.blueText)
+                .padding(.top, Sp.xl)
+            Text(t("flow.notifyTitle")).qText(.title2).foregroundStyle(Color.q.ink)
+                .multilineTextAlignment(.center)
+            Text(t(Config.eventsEnabled ? "flow.notifySub" : "flow.notifySubApp"))
+                .qText(.body).foregroundStyle(Color.q.inkSoft)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: Sp.md)
+            Button(t("flow.notifyAllow")) {
+                Task { await Push.enable(); dismiss() }
+            }
+            .buttonStyle(.qPrimary)
+            Button(t("flow.notifyLater")) { Push.remindLater(); dismiss() }
+                .buttonStyle(.qGhost)
+        }
+        .padding(Layout.margin)
+        .background(Color.q.bg)
+        .presentationDetents([.medium])
+        .presentationDragIndicator(.visible)
+        .interactiveDismissDisabled(false)
+        .onDisappear { Push.remindLater() }
     }
 }
 

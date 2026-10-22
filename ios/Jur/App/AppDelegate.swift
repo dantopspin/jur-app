@@ -38,6 +38,23 @@ enum Push {
         await MainActor.run { UIApplication.shared.registerForRemoteNotifications() }
     }
 
+    /// "Not now" pressed: don't invite again for a week.
+    static func remindLater() {
+        UserDefaults.standard.set(Date.now.timeIntervalSince1970, forKey: laterKey)
+    }
+
+    /// True for someone iOS has never asked (skipped it in onboarding a week ago, or signed in
+    /// to an existing profile, which skips onboarding). Once asked, iOS never shows its prompt
+    /// again, so after that the only way back is the Settings row.
+    static func shouldInvite() async -> Bool {
+        let settings = await UNUserNotificationCenter.current().notificationSettings()
+        guard settings.authorizationStatus == .notDetermined else { return false }
+        let last = UserDefaults.standard.double(forKey: laterKey)
+        return last == 0 || Date.now.timeIntervalSince1970 - last > 7 * 24 * 3600
+    }
+
+    private static let laterKey = "jur.pushLaterAt"
+
     /// Re-registers on launch if permission was already given.
     static func refresh() async {
         let settings = await UNUserNotificationCenter.current().notificationSettings()

@@ -789,6 +789,12 @@ const en = {
     share: "Share",
     eventShareText: "I'm going to “{title}” on {when}. Join me on JÜR: {url}",
   },
+  perm: {
+    openSettings: "Open Settings",
+    cameraTitle: "Camera is off for JÜR",
+    cameraBody: "Allow camera access in Settings to take your verification selfie.",
+    micTitle: "Microphone is off for JÜR",
+  },
 };
 
 export default en;
