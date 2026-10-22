@@ -186,6 +186,17 @@ struct EventDetailView: View {
         }
         .background(Color.q.bg)
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            if let e = event, !e.cancelled, e.end > .now {
+                ToolbarItem(placement: .topBarTrailing) {
+                    SharePassButton(pass: .event(e, sport: catalog.label(e.sportCode)),
+                                    text: t("pass.eventShareText", ["title": e.title, "when": Fmt.dayTime(e.start),
+                                                                    "url": Config.appStoreURL.absoluteString])) {
+                        Image(systemName: "square.and.arrow.up").accessibilityLabel(t("pass.share"))
+                    }
+                }
+            }
+        }
         .overlay {
             if let stamp {
                 StampLanding(data: stamp, city: event.map { Cities.label($0.city) }) {

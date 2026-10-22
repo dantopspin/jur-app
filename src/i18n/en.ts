@@ -771,6 +771,23 @@ const en = {
     emergency: "In danger right now? Call 112.",
     legalTitle: "Documents",
   },
+  pass: {
+    invite: "Invitation",
+    inviteTitle: "Let's get moving together",
+    from: "From",
+    to: "To",
+    you: "You",
+    code: "Code",
+    departure: "Boarding pass",
+    when: "When",
+    sport: "Sport",
+    gate: "Gate",
+    going: "Going",
+    seatsLeft: "Seats left",
+    cta: "Get JÜR on the App Store",
+    share: "Share",
+    eventShareText: "I'm going to “{title}” on {when}. Join me on JÜR: {url}",
+  },
 };
 
 export default en;

@@ -774,6 +774,23 @@ const kk: Dict = {
     emergency: "Қауіп төнсе, 112-ге қоңырау шалыңыз.",
     legalTitle: "Құжаттар",
   },
+  pass: {
+    invite: "Шақыру",
+    inviteTitle: "Бірге қозғалайық",
+    from: "Кімнен",
+    to: "Кімге",
+    you: "Сізге",
+    code: "Код",
+    departure: "Отырғызу талоны",
+    when: "Қашан",
+    sport: "Спорт",
+    gate: "Шығу",
+    going: "Барады",
+    seatsLeft: "Бос орын",
+    cta: "JÜR-ды App Store-дан жүктеңіз",
+    share: "Бөлісу",
+    eventShareText: "«{title}» шарасына барамын, {when}. JÜR-ға қосылыңыз: {url}",
+  },
 };
 
 export default kk;

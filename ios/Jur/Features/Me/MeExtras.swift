@@ -142,7 +142,7 @@ struct InviteView: View {
                         Text(t("me2.inviteProgress", ["n": r.count, "left": r.toNext, "days": r.bonusDays]))
                             .qText(.footnote).foregroundStyle(Color.q.blueText)
                     }
-                    ShareLink(item: shareText) {
+                    SharePassButton(pass: .invite(from: session.profile?.name ?? "", code: code), text: shareText) {
                         Label(t("me2.share"), systemImage: "square.and.arrow.up")
                             .frame(maxWidth: .infinity)
                     }

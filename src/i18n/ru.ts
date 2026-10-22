@@ -773,6 +773,23 @@ const ru: Dict = {
     emergency: "Если вам угрожает опасность, звоните 112.",
     legalTitle: "Документы",
   },
+  pass: {
+    invite: "Приглашение",
+    inviteTitle: "Давайте двигаться вместе",
+    from: "От",
+    to: "Кому",
+    you: "Вам",
+    code: "Код",
+    departure: "Посадочный",
+    when: "Когда",
+    sport: "Спорт",
+    gate: "Выход",
+    going: "Идут",
+    seatsLeft: "Мест осталось",
+    cta: "Скачайте JÜR в App Store",
+    share: "Поделиться",
+    eventShareText: "Иду на «{title}», {when}. Присоединяйтесь в JÜR: {url}",
+  },
 };
 
 export default ru;
