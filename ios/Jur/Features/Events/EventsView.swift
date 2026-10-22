@@ -55,6 +55,9 @@ struct EventsView: View {
                     } else {
                         DepartureBoard(departures: shown.map(\.departure), showsColumns: !shown.isEmpty,
                                        emptyText: t("board.empty")) { d in path.append(d.id) }
+                        if let next = nextUp {
+                            nextUpBoard(next)
+                        }
                         if shown.isEmpty && canHost {
                             Button(t("board.create")) { creating = true }.buttonStyle(.q(.accent))
                         }
@@ -87,6 +90,43 @@ struct EventsView: View {
                 }
             }
         }
+    }
+
+    /// When the chosen day is empty: the nearest day that has events, and its events.
+    private var nextUp: (day: Date, events: [EventItem])? {
+        guard shown.isEmpty else { return nil }
+        let cal = Fmt.calendar
+        let ahead = events.filter { $0.end > .now }.sorted { $0.start < $1.start }
+        guard let first = ahead.first else { return nil }
+        let day = cal.startOfDay(for: first.start)
+        return (day, ahead.filter { cal.isDate($0.start, inSameDayAs: day) })
+    }
+
+    /// The tab that contains `day`, if any (events further out have no tab).
+    private func window(for day: Date) -> Window? {
+        let cal = Fmt.calendar
+        if cal.isDateInToday(day) { return .today }
+        if cal.isDateInTomorrow(day) { return .tomorrow }
+        if let weekend = cal.nextWeekend(startingAfter: cal.startOfDay(for: .now).addingTimeInterval(-1)),
+           day >= weekend.start && day < weekend.end { return .weekend }
+        return nil
+    }
+
+    private func dayLabel(_ day: Date) -> String {
+        let cal = Fmt.calendar
+        if cal.isDateInToday(day) { return t("empty.today") }
+        if cal.isDateInTomorrow(day) { return t("empty.tomorrow") }
+        return Fmt.day(day)
+    }
+
+    /// "Next up · tomorrow": up to three of that day's events, with a jump to its tab.
+    private func nextUpBoard(_ next: (day: Date, events: [EventItem])) -> some View {
+        let target = window(for: next.day)
+        return DepartureBoard(departures: next.events.prefix(3).map(\.departure),
+                              header: t("empty.nextTitle", ["day": dayLabel(next.day)]),
+                              showsColumns: true,
+                              seeAll: target.map { w in { range = w } }) { d in path.append(d.id) }
+            .transition(.opacity)
     }
 
     private func load() async {

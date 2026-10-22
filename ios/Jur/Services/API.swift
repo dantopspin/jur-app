@@ -109,6 +109,25 @@ extension Backend {
 
     static func rewind() async throws -> RewindResult { try await rpc("rewind") }
     static func likesReceived() async throws -> LikesReceived { try await rpc("likes_received") }
+    /// How many people you've liked so far (a total only).
+    static func likesSent() async throws -> Int { try await rpc("my_likes_sent") }
+
+    /// Widening the search from the empty Discover screen.
+    private struct AgeRangeUpdate: Encodable {
+        let ageMin: Int, ageMax: Int
+        enum CodingKeys: String, CodingKey { case ageMin = "age_min", ageMax = "age_max" }
+    }
+    private struct ModeUpdate: Encodable { let mode: String }
+
+    static func setAgeRange(userId: UUID, min: Int, max: Int) async throws {
+        try await supabase.from("profiles").update(AgeRangeUpdate(ageMin: min, ageMax: max))
+            .eq("id", value: userId.uuidString).execute()
+    }
+
+    static func setMode(userId: UUID, _ mode: ProfileMode) async throws {
+        try await supabase.from("profiles").update(ModeUpdate(mode: mode.rawValue))
+            .eq("id", value: userId.uuidString).execute()
+    }
 
     // MARK: matches and chat
 

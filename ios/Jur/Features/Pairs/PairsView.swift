@@ -59,8 +59,7 @@ struct PairsView: View {
             .background(Color.q.bg)
             .overlay {
                 if model.loaded && model.rows.isEmpty && model.likes == 0 {
-                    QEmptyState(symbol: "bubble.left.and.bubble.right", title: t("matches.empty"),
-                                message: t("matches.emptySubApp"), actionTitle: t("matches.goDiscover"), action: goDiscover)
+                    PairsEmpty(goDiscover: goDiscover)
                 } else if model.failed {
                     ErrorStateView(retry: { await model.load() })
                 } else if !model.loaded {

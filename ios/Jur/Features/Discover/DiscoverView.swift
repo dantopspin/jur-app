@@ -226,11 +226,10 @@ struct DiscoverView: View {
                     withAnimation(Motion.adaptive(Motion.hero).delay(0.2)) { dealt = true }
                 }
         } else {
-            QEmptyState(symbol: "figure.run", title: t("discover.empty"),
-                        message: t(Config.eventsEnabled ? "discover.emptySub" : "discover.emptySubApp"),
-                        actionTitle: Config.eventsEnabled ? t("discover.seeEvents") : nil,
-                        action: Config.eventsEnabled ? Optional(openEvents) : nil)
-                .frame(minHeight: 420)
+            DiscoverEmpty(reload: {
+                await model.load()
+                return model.queue.count
+            }, openEvents: openEvents)
         }
     }
 

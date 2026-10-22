@@ -221,6 +221,8 @@ enum Fmt {
     /// "19:00"
     static func time(_ d: Date) -> String { formatter("HH:mm").string(from: d) }
     /// "Sat 25 Oct · 09:30"
+    /// "Sat 25 Oct" in the app's language.
+    static func day(_ d: Date) -> String { formatter("EEE d MMM").string(from: d) }
     static func dayTime(_ d: Date) -> String { formatter("EEE d MMM").string(from: d) + " · " + time(d) }
     /// "Oct 2026"
     static func monthYear(_ d: Date) -> String { formatter("MMM yyyy").string(from: d) }
