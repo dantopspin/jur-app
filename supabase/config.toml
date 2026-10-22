@@ -12,3 +12,7 @@ otp_expiry = 3600
 # RevenueCat authenticates with its own shared secret, not a Supabase JWT.
 [functions.revenuecat-webhook]
 verify_jwt = false
+
+[functions.apns]
+# Called by Postgres with its own shared secret (PUSH_SECRET), not a user token.
+verify_jwt = false

@@ -3,10 +3,17 @@
 //
 // Secrets: PUSH_SECRET, APNS_KEY_ID, APNS_TEAM_ID, APNS_PRIVATE_KEY (the .p8 file's
 // contents), APNS_TOPIC (kz.jur.app), APNS_ENV ("development" or "production").
+//
+// Builds from Xcode get sandbox tokens; TestFlight and App Store builds get production
+// tokens, and both can be in the table at once. APNS_ENV only picks which server is
+// tried first: a token the first server calls BadDeviceToken is retried on the other,
+// and dropped only if neither accepts it.
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 
 const env = (k: string) => Deno.env.get(k) ?? '';
-const host = env('APNS_ENV') === 'production' ? 'https://api.push.apple.com' : 'https://api.sandbox.push.apple.com';
+const PRODUCTION = 'https://api.push.apple.com';
+const SANDBOX = 'https://api.sandbox.push.apple.com';
+const hosts = env('APNS_ENV') === 'development' ? [SANDBOX, PRODUCTION] : [PRODUCTION, SANDBOX];
 
 let cached: { jwt: string; at: number } | null = null;
 
@@ -42,23 +49,32 @@ Deno.serve(async (req) => {
   });
   const jwt = await providerToken();
   const admin = createClient(env('SUPABASE_URL'), env('SUPABASE_SERVICE_ROLE_KEY'));
+  const send = (host: string, token: string) => fetch(`${host}/3/device/${token}`, {
+    method: 'POST',
+    headers: {
+      authorization: `bearer ${jwt}`,
+      'apns-topic': env('APNS_TOPIC') || 'kz.jur.app',
+      'apns-push-type': 'alert',
+      'apns-priority': '10',
+    },
+    body: payload,
+  });
   const results = await Promise.all((tokens as string[]).map(async (token) => {
-    const r = await fetch(`${host}/3/device/${token}`, {
-      method: 'POST',
-      headers: {
-        authorization: `bearer ${jwt}`,
-        'apns-topic': env('APNS_TOPIC') || 'kz.jur.app',
-        'apns-push-type': 'alert',
-        'apns-priority': '10',
-      },
-      body: payload,
-    });
-    if (r.status === 410 || r.status === 400) {
-      const reason = (await r.json().catch(() => ({}))).reason;
-      if (r.status === 410 || reason === 'BadDeviceToken') await admin.rpc('drop_push_token', { p_token: token });
-      return { token: token.slice(0, 8), status: r.status, reason };
+    let status = 0;
+    let reason: string | undefined;
+    for (const host of hosts) {
+      const r = await send(host, token);
+      status = r.status;
+      reason = r.status === 200 ? undefined : (await r.json().catch(() => ({}))).reason;
+      // A token from the other environment: try the other server before giving up on it.
+      if (r.status === 400 && reason === 'BadDeviceToken') continue;
+      break;
     }
-    return { token: token.slice(0, 8), status: r.status };
+    // 410: the app was removed. BadDeviceToken on both servers: the token is junk.
+    if (status === 410 || (status === 400 && reason === 'BadDeviceToken')) {
+      await admin.rpc('drop_push_token', { p_token: token });
+    }
+    return { token: token.slice(0, 8), status, reason };
   }));
   return Response.json({ sent: results });
 });
