@@ -7,7 +7,10 @@ import SwiftUI
 final class DiscoverModel {
     var queue: [ProfileCard] = []
     var tonight: [EventItem] = []
+    /// The skeleton card: only on the first load, and only once it has taken a moment,
+    /// so an empty or fast answer never flashes a grey card first.
     var loading = false
+    private(set) var loaded = false
     var failed = false
     var match: (card: ProfileCard, matchId: UUID)?
     var paywall = false
@@ -15,9 +18,16 @@ final class DiscoverModel {
     var current: ProfileCard? { queue.first }
 
     func load() async {
-        loading = queue.isEmpty
         failed = false
-        defer { loading = false }
+        let skeleton = loaded ? nil : Task {
+            try? await Task.sleep(for: .milliseconds(350))
+            if !Task.isCancelled { loading = true }
+        }
+        defer {
+            skeleton?.cancel()
+            loading = false
+            loaded = true
+        }
         do {
             async let people = Backend.discover()
             async let events: [EventItem] = Config.eventsEnabled ? Backend.upcomingEvents() : []
@@ -145,13 +155,16 @@ struct DiscoverView: View {
             .overlay(alignment: .bottom) { if model.current != nil { actions } }
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
+                // The logo isn't a button: on iOS 26 it sits on the bar without a glass circle.
                 ToolbarItem(placement: .topBarLeading) {
                     Lockup(size: 20)
+                        .fixedSize()
                     #if DEBUG
                         // Debug builds only: triple-tap the logo to walk through onboarding.
                         .onTapGesture(count: 3) { previewOnboarding = true }
                     #endif
                 }
+                .qPlainBarItem()
                 ToolbarItem(placement: .topBarTrailing) {
                     Button { showPicks = true } label: {
                         Image(systemName: "sparkles")
@@ -165,6 +178,7 @@ struct DiscoverView: View {
             .navigationDestination(isPresented: $showPicks) { PicksView() }
         }
         .task { if model.queue.isEmpty { await model.load() } }
+        .animation(Motion.adaptive(Motion.fade), value: model.loaded)
         .task {
             let today = Fmt.calendar.startOfDay(for: .now).formatted(.iso8601.year().month().day())
             guard picksSeenDay != today else { return }
@@ -192,7 +206,10 @@ struct DiscoverView: View {
     }
 
     @ViewBuilder private var deck: some View {
-        if model.loading {
+        if !model.loaded && !model.loading {
+            // The first answer is on its way: hold the space, show nothing yet.
+            Color.clear.frame(height: 420)
+        } else if model.loading {
             ProfileCardView(card: .placeholder, compact: true).redacted(reason: .placeholder).qShimmer()
         } else if model.failed {
             ErrorStateView(retry: { await model.load() }).frame(minHeight: 420)

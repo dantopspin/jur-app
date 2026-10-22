@@ -158,3 +158,15 @@ struct Lockup: View {
         .accessibilityAddTraits(.isHeader)
     }
 }
+
+extension ToolbarContent {
+    /// A bar item that isn't a button (the logo): no glass circle behind it on iOS 26.
+    @ToolbarContentBuilder
+    func qPlainBarItem() -> some ToolbarContent {
+        if #available(iOS 26.0, *) {
+            sharedBackgroundVisibility(.hidden)
+        } else {
+            self
+        }
+    }
+}
