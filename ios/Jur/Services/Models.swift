@@ -29,6 +29,13 @@ struct MyProfile: Decodable, Identifiable, Equatable {
     let travelCity: String?
     let travelUntil: String?
     let cityNo: Int?
+    /// Paused by the person (Me → Pause). Optional until the pause migration is run.
+    let paused: Bool?
+    /// Who a training partner can be (buddy and both modes).
+    let buddyWith: InterestedIn?
+    /// Set once a friend's invite code was used.
+    let referredBy: UUID?
+    let createdAt: String?
 }
 
 struct Limits: Decodable, Equatable {

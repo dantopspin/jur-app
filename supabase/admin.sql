@@ -37,7 +37,8 @@ update reports set status = 'actioned' where reported_id = '<reported id>' and s
 
 -- Dismiss (no action), and un-hide if the auto-hide was wrong:
 update reports set status = 'dismissed' where reported_id = '<reported id>' and status = 'open';
-update profiles set hidden = false where id = '<reported id>' and not banned;
+-- (a profile the person paused themselves stays hidden)
+update profiles set held = false, hidden = paused where id = '<reported id>' and not banned;
 
 -- 3. Hosts: official hosts (clubs, partners) skip the member-event limits.
 update profiles set is_host = true where member_no = <member number>;

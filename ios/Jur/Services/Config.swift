@@ -12,6 +12,9 @@ enum Config {
     static var supportEmail: String { value("JurSupportEmail") }
     static var privacyURL: URL { URL(string: "https://\(value("JurSiteHost"))/privacy")! }
     static var termsURL: URL { URL(string: "https://\(value("JurSiteHost"))/terms")! }
+    static var supportURL: URL { URL(string: "https://\(value("JurSiteHost"))/support")! }
+    /// The App Store page, for invites.
+    static let appStoreURL = URL(string: "https://apps.apple.com/app/id6825340225")!
     /// User-created events, Tonight, check-in and event badges.
     static var eventsEnabled: Bool { value("JurEvents").lowercased() == "on" }
     /// Email-code sign-in on the welcome screen. Off until a custom email sender (SMTP) is set up in Supabase:

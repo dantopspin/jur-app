@@ -124,6 +124,27 @@ extension Backend {
             .eq("id", value: userId.uuidString).execute()
     }
 
+    private struct BuddyWithUpdate: Encodable {
+        let buddyWith: String
+        enum CodingKeys: String, CodingKey { case buddyWith = "buddy_with" }
+    }
+
+    static func setBuddyWith(userId: UUID, _ who: InterestedIn) async throws {
+        try await supabase.from("profiles").update(BuddyWithUpdate(buddyWith: who.rawValue))
+            .eq("id", value: userId.uuidString).execute()
+    }
+
+    /// Hidden from Discover and Likes while paused; matches and chats keep working.
+    static func setPaused(_ paused: Bool) async throws {
+        try await call("set_paused", ["p_paused": .bool(paused)])
+    }
+
+    static func referrals() async throws -> Referrals { try await rpc("my_referrals") }
+
+    static func redeemReferral(_ code: String) async throws -> OkResult {
+        try await rpc("redeem_referral", ["p_code": .string(code.trimmingCharacters(in: .whitespaces).uppercased())])
+    }
+
     static func setMode(userId: UUID, _ mode: ProfileMode) async throws {
         try await supabase.from("profiles").update(ModeUpdate(mode: mode.rawValue))
             .eq("id", value: userId.uuidString).execute()

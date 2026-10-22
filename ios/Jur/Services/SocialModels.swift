@@ -47,6 +47,14 @@ struct ProfileCard: Decodable, Identifiable, Hashable {
     }
 }
 
+/// Friends who joined with your code, and how many more until the next free Pro week.
+struct Referrals: Decodable, Equatable {
+    let count: Int
+    let every: Int
+    let toNext: Int
+    let bonusDays: Int
+}
+
 struct SwipeResult: Decodable {
     let ok: Bool
     let error: String?
