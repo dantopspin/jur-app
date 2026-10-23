@@ -33,3 +33,10 @@ enum Hints {
         try? Tips.configure([.displayFrequency(.immediate)])
     }
 }
+
+extension View {
+    /// The photos hint, only on the deck's top card (iOS 17 has no optional-tip popover).
+    @ViewBuilder func photosTip(_ on: Bool) -> some View {
+        if on { popoverTip(PhotosTip(), arrowEdge: .top) } else { self }
+    }
+}

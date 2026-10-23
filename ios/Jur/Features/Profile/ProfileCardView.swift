@@ -78,7 +78,7 @@ struct ProfileCardView: View {
                 HStack(spacing: 0) {
                     Color.clear.contentShape(Rectangle()).onTapGesture { turn(to: max(page - 1, 0)) }
                     Color.clear.contentShape(Rectangle()).onTapGesture { turn(to: min(page + 1, urls.count - 1)) }
-                        .popoverTip(showsTips ? PhotosTip() as (any Tip)? : nil, arrowEdge: .top)
+                        .photosTip(showsTips)
                 }
                 .onAppear { if showsTips { PhotosTip.cardHasMore = true } }
             }
