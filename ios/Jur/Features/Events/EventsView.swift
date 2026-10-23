@@ -257,34 +257,32 @@ struct EventDetailView: View {
     @State private var reloadTick = 0
     /// The "showed up" stamp landing after a successful check-in.
     @State private var stamp: StampData?
+    /// Who's going: nil until loaded (and while you're not going).
+    @State private var people: [ProfileCard]?
+    @State private var confirmLeave = false
+    @Environment(\.openURL) private var openURL
 
     private var isHost: Bool { event?.hostId != nil && event?.hostId == session.userId }
 
     var body: some View {
         ScrollView {
             if let e = event {
-                VStack(alignment: .leading, spacing: Sp.lg) {
-                    DepartureBoard(departures: [e.departure], header: catalog.label(e.sportCode))
-                    VStack(alignment: .leading, spacing: Sp.md) {
-                        Text(e.title).qText(.title2).foregroundStyle(Color.q.ink).accessibilityAddTraits(.isHeader)
-                        info("clock", Fmt.dayTime(e.start) + " · " + t("events.durationMin", ["n": e.durationMin]))
-                        info("mappin.and.ellipse", e.meetingPoint)
-                        info("person.2", t("events.going", ["n": e.goingCount, "cap": e.capacity]))
-                        if let h = e.host { info("person.crop.circle", t("events.host", ["name": h.name])) }
-                        if let d = e.description, !d.isEmpty {
-                            Text(d).qText(.body).foregroundStyle(Color.q.ink).padding(.top, Sp.sm)
-                        }
-                    }
-                    .qCard()
+                VStack(alignment: .leading, spacing: Sp.md) {
+                    hero(e)
+                    facts(e)
                     if isHost { hostCard(e) }
-                    actions(e)
+                    people(e)
+                    about(e)
                 }
-                .padding(Layout.margin)
+                .padding(.horizontal, Layout.margin)
+                .padding(.bottom, Sp.lg)
             } else {
                 AfterABlink { MarkLoader().padding(.top, Sp.xxl) }
             }
         }
         .background(Color.q.bg)
+        // The one action, always in reach: join, going, boarding, or why not.
+        .safeAreaInset(edge: .bottom) { if let e = event { bottomBar(e) } }
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             if let e = event, !e.cancelled, e.end > .now {
@@ -306,35 +304,195 @@ struct EventDetailView: View {
             }
         }
         .task { if event == nil { event = initial }; await load() }
+        .task(id: event?.iAmGoing) { await loadPeople() }
         .sheet(isPresented: $boarding) {
             BoardingCodeSheet(eventTitle: event.map { "\($0.title) \(Fmt.time($0.start))" } ?? "",
                               code: $code, busy: busy, isError: codeError) {
                 Task { await checkIn() }
             }
         }
+        .confirmationDialog(t("eventd.leaveTitle"), isPresented: $confirmLeave, titleVisibility: .visible) {
+            Button(t("events.leave"), role: .destructive) { Task { await leave() } }
+            Button(t("common.cancel"), role: .cancel) {}
+        }
     }
 
-    private func info(_ symbol: String, _ text: String) -> some View {
-        Label(text, systemImage: symbol).qText(.callout).foregroundStyle(Color.q.inkSoft)
+    // MARK: parts
+
+    /// Night-blue, like the departure board: sport, title, the time large, and how soon.
+    private func hero(_ e: EventItem) -> some View {
+        VStack(alignment: .leading, spacing: Sp.sm) {
+            HStack(spacing: Sp.sm) {
+                Text(catalog.label(e.sportCode)).qText(.overline).foregroundStyle(Color.q.blueMist)
+                Spacer(minLength: 0)
+                if e.cancelled {
+                    QTag(label: t("eventd.cancelled"), tone: .clay)
+                } else if e.boardingOpen && e.end > .now {
+                    QTag(label: t("eventd.boarding"), tone: .gold)
+                }
+            }
+            Text(e.title).qText(.title1).foregroundStyle(.white)
+                .accessibilityAddTraits(.isHeader)
+            HStack(alignment: .firstTextBaseline, spacing: Sp.sm) {
+                Text(Fmt.time(e.start)).font(.q(.display)).foregroundStyle(Color.q.gold)
+                Text(whenText(e)).qText(.callout).foregroundStyle(Color.q.blueMist)
+            }
+        }
+        .padding(Sp.lg)
+        .padding(.bottom, Sp.xxl)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(alignment: .bottom) {
+            ZStack(alignment: .bottom) {
+                Color.q.boardGround
+                Horizon(far: Color.q.boardRidge, near: Color.q.boardShade, snow: false).frame(height: 44)
+            }
+        }
+        .clipShape(RoundedRectangle(cornerRadius: Radius.lg, style: .continuous))
+        .accessibilityElement(children: .combine)
     }
 
-    @ViewBuilder private func actions(_ e: EventItem) -> some View {
-        if e.iCheckedIn {
+    /// "сегодня · через 2 ч", "завтра · через 11 ч", "сб 25 окт".
+    private func whenText(_ e: EventItem) -> String {
+        let cal = Fmt.calendar
+        let day = cal.isDateInToday(e.start) ? t("empty.today") : cal.isDateInTomorrow(e.start) ? t("empty.tomorrow") : Fmt.day(e.start)
+        guard e.start > .now, e.start.timeIntervalSinceNow < 48 * 3600 else { return day }
+        let f = RelativeDateTimeFormatter()
+        f.locale = L10n.current.locale
+        f.unitsStyle = .short
+        return day + " · " + f.localizedString(for: e.start, relativeTo: .now)
+    }
+
+    /// Where (opens a route) and how many spots.
+    private func facts(_ e: EventItem) -> some View {
+        HStack(alignment: .top, spacing: Sp.sm) {
+            Button { openRoute(e) } label: {
+                VStack(alignment: .leading, spacing: Sp.xxs) {
+                    Text(t("eventd.where")).qText(.label).foregroundStyle(Color.q.muted)
+                    Text(e.meetingPoint).qText(.headline).foregroundStyle(Color.q.ink)
+                        .lineLimit(2).multilineTextAlignment(.leading)
+                    Text(t("eventd.route")).qText(.footnote).fontWeight(.bold).foregroundStyle(Color.q.blueText)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .qCard(padding: Sp.md)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.qPressCard)
+            VStack(alignment: .leading, spacing: Sp.xxs) {
+                Text(t("eventd.spots")).qText(.label).foregroundStyle(Color.q.muted)
+                Text(verbatim: "\(e.goingCount) / \(e.capacity)").qText(.number).foregroundStyle(Color.q.ink)
+                    .contentTransition(.numericText())
+                Text(t("events.durationMin", ["n": e.durationMin])).qText(.footnote).foregroundStyle(Color.q.muted)
+            }
+            .frame(width: 112, alignment: .leading)
+            .qCard(padding: Sp.md)
+            .accessibilityElement(children: .combine)
+        }
+        .fixedSize(horizontal: false, vertical: true)
+    }
+
+    /// 2GIS (the map everyone here uses) by search; the web page opens the app when it's installed.
+    private func openRoute(_ e: EventItem) {
+        let q = "\(e.meetingPoint), \(Cities.label(e.city))"
+        if let enc = q.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed),
+           let url = URL(string: "https://2gis.kz/search/\(enc)") {
+            openURL(url)
+        }
+    }
+
+    /// Who's going: faces once you're going (that's when the list opens), a promise before.
+    private func people(_ e: EventItem) -> some View {
+        VStack(alignment: .leading, spacing: Sp.md) {
+            HStack(alignment: .firstTextBaseline) {
+                Text(t("eventd.who")).qText(.label).foregroundStyle(Color.q.muted)
+                Spacer()
+                if e.iAmGoing, let people, !people.isEmpty {
+                    NavigationLink { EventPeopleView(title: e.title, people: people) } label: {
+                        Text(t("eventd.all", ["n": people.count])).qText(.footnote).fontWeight(.bold)
+                            .foregroundStyle(Color.q.blueText)
+                    }
+                }
+            }
+            if e.iAmGoing, let people {
+                if people.isEmpty {
+                    Text(t("eventd.nobody")).qText(.callout).foregroundStyle(Color.q.inkSoft)
+                } else {
+                    FacePile(people: Array(people.prefix(5)), extra: max(people.count - 5, 0))
+                    let open = people.filter { $0.openToMeet == true }.count
+                    let mine = people.filter { matchIds.contains($0.id) }.count
+                    let line = [open > 0 ? t("eventd.open", ["n": open]) : nil,
+                                mine > 0 ? t("eventd.matches", ["n": mine]) : nil].compactMap { $0 }
+                    if !line.isEmpty {
+                        HStack(spacing: Sp.xs) {
+                            Circle().fill(Color.q.gold).frame(width: Sp.sm + Sp.xxs, height: Sp.sm + Sp.xxs).accessibilityHidden(true)
+                            Text(line.joined(separator: " · ")).qText(.footnote).foregroundStyle(Color.q.muted)
+                        }
+                    }
+                }
+            } else if e.goingCount > 0 {
+                HStack(spacing: Sp.md) {
+                    FacePile(people: [], extra: 0, placeholders: min(e.goingCount, 4))
+                    Text(t("eventd.locked")).qText(.footnote).foregroundStyle(Color.q.muted)
+                }
+            } else {
+                Text(t("eventd.nobody")).qText(.callout).foregroundStyle(Color.q.inkSoft)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .qCard()
+    }
+
+    @ViewBuilder private func about(_ e: EventItem) -> some View {
+        VStack(alignment: .leading, spacing: Sp.sm) {
+            if let d = e.description, !d.isEmpty {
+                Text(d).qText(.body).foregroundStyle(Color.q.ink)
+            }
+            if let h = e.host {
+                HStack(spacing: Sp.sm) {
+                    Avatar(url: h.photo.flatMap(URL.init(string:)), size: 24)
+                    Text(t("eventd.hostedBy", ["name": h.name])).qText(.footnote).foregroundStyle(Color.q.muted)
+                }
+            }
+        }
+        .padding(.horizontal, Sp.xs)
+        .padding(.top, Sp.xs)
+    }
+
+    /// Price and spots on the left; the one thing to do on the right.
+    private func bottomBar(_ e: EventItem) -> some View {
+        HStack(spacing: Sp.md) {
+            VStack(alignment: .leading, spacing: Sp.xxs) {
+                Text(e.priceKzt == 0 ? t("eventd.free") : "\(e.priceKzt) ₸").qText(.headline).foregroundStyle(Color.q.ink)
+                Text(t("eventd.spotsLeft", ["n": e.spotsLeft])).qText(.footnote).foregroundStyle(Color.q.muted)
+                    .contentTransition(.numericText())
+            }
+            Spacer(minLength: Sp.sm)
+            barAction(e)
+        }
+        .padding(.horizontal, Layout.margin)
+        .padding(.top, Sp.md)
+        .padding(.bottom, Sp.sm)
+        .background(.bar)
+        .overlay(alignment: .top) { Rectangle().fill(Color.q.line).frame(height: 1) }
+    }
+
+    @ViewBuilder private func barAction(_ e: EventItem) -> some View {
+        if e.cancelled || e.end < .now {
+            QTag(label: t(e.cancelled ? "eventd.cancelled" : "eventd.over"), tone: .neutral)
+        } else if isHost {
+            QTag(label: t("eventd.hosting"), tone: .blue, systemImage: "flag.fill")
+        } else if e.iCheckedIn {
             QTag(label: t("events.checkedIn"), tone: .good, systemImage: "checkmark").transition(.qPop)
+        } else if e.iAmGoing && e.boardingOpen {
+            Button(t("eventd.boarding")) { code = ""; codeError = false; boarding = true }
+                .buttonStyle(.q(.primary, compact: true)).fixedSize()
         } else if e.iAmGoing {
-            if e.boardingOpen && !isHost {
-                Button(t("board.codeGo")) { code = ""; codeError = false; boarding = true }.buttonStyle(.qPrimary)
-            } else if !isHost {
-                Text(t("events.notNow")).qText(.footnote).foregroundStyle(Color.q.muted)
-            }
-            if !isHost {
-                Button(t("events.leave")) { Task { await leave() } }.buttonStyle(.qGhost).disabled(busy)
-            }
+            Button { confirmLeave = true } label: { Label(t("eventd.going"), systemImage: "checkmark") }
+                .buttonStyle(.q(.secondary, compact: true)).fixedSize().disabled(busy)
         } else if e.isFull {
             QTag(label: t("events.full"), tone: .neutral).transition(.qPop)
         } else {
-            Button { Task { await join() } } label: { BusyLabel(title: t("events.join"), busy: busy) }
-                .buttonStyle(.qPrimary).disabled(busy)
+            Button { Task { await join() } } label: { BusyLabel(title: t("eventd.join"), busy: busy) }
+                .buttonStyle(.q(.primary, compact: true)).fixedSize().disabled(busy)
         }
     }
 
@@ -352,13 +510,23 @@ struct EventDetailView: View {
                 Text(t("board.hostCodeHint", ["s": left])).qText(.footnote).foregroundStyle(Color.q.muted)
                     .monospacedDigit()
                     .contentTransition(.numericText(countsDown: true))
-                    .animation(Motion.snappy, value: left)
+                    .animation(Motion.adaptive(Motion.snappy), value: left)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .qCard()
             .onChange(of: left == 60) { _, minuteTurned in if minuteTurned { reloadTick += 1 } }
         }
         .task(id: reloadTick) { hostCode = (try? await Backend.hostCode(e.id))?.code }
+    }
+
+    /// People you're matched with (from the matches list on the phone).
+    private var matchIds: Set<UUID> {
+        Set((DataCache.get(CacheKey.matches, as: [MatchRow].self) ?? []).map(\.other.id))
+    }
+
+    private func loadPeople() async {
+        guard let e = event, e.iAmGoing else { people = nil; return }
+        if let p = try? await Backend.eventPeople(e.id) { withMotion(Motion.fade) { people = p } }
     }
 
     private func load() async {
@@ -588,5 +756,70 @@ struct StampLanding: View {
             try? await Task.sleep(for: .seconds(1.8))
             onDone()
         }
+    }
+}
+
+/// Overlapping faces; a gold ring marks someone open to meeting. With no people, plain
+/// circles stand in (the list opens once you're going).
+struct FacePile: View {
+    let people: [ProfileCard]
+    let extra: Int
+    var placeholders = 0
+    private let size: CGFloat = 48
+    /// The ring around each face (gold when open to meeting, the card colour otherwise).
+    private let ring: CGFloat = Sp.xxs + 1
+
+    var body: some View {
+        HStack(spacing: -Sp.md) {
+            ForEach(people) { p in
+                Avatar(url: p.photoURLs.first, size: size - ring * 2)
+                    .padding(ring)
+                    .background(p.openToMeet == true ? Color.q.gold : Color.q.card, in: Circle())
+            }
+            ForEach(0..<placeholders, id: \.self) { _ in
+                Circle().fill(Color.q.blueTint).frame(width: size - ring * 2, height: size - ring * 2)
+                    .padding(ring).background(Color.q.card, in: Circle())
+            }
+            if extra > 0 {
+                Text(verbatim: "+\(extra)").qText(.caption).foregroundStyle(Color.q.blueText)
+                    .frame(width: size - ring * 2, height: size - ring * 2)
+                    .background(Color.q.blueTint, in: Circle())
+                    .padding(ring).background(Color.q.card, in: Circle())
+            }
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(t("eventd.who"))
+    }
+}
+
+/// Everyone going: open-to-meet first (the server orders them), each opens their profile.
+struct EventPeopleView: View {
+    let title: String
+    let people: [ProfileCard]
+
+    var body: some View {
+        QList {
+            ForEach(people) { p in
+                NavigationLink { ProfileView(id: p.id, initial: p) } label: {
+                    HStack(spacing: Sp.md) {
+                        Avatar(url: p.photoURLs.first, size: 52)
+                            .padding(Sp.xxs)
+                            .background(p.openToMeet == true ? Color.q.gold : .clear, in: Circle())
+                        VStack(alignment: .leading, spacing: Sp.xxs) {
+                            Text(verbatim: "\(p.name), \(p.age)").qText(.headline).foregroundStyle(Color.q.ink)
+                            if p.openToMeet == true {
+                                Text(t("eventd.openOne")).qText(.footnote).foregroundStyle(Color.q.muted)
+                            }
+                        }
+                        Spacer(minLength: 0)
+                        if p.checkedIn == true {
+                            QTag(label: t("events.checkedIn"), tone: .good, systemImage: "checkmark")
+                        }
+                    }
+                }
+            }
+        }
+        .navigationTitle(t("eventd.who"))
+        .navigationBarTitleDisplayMode(.inline)
     }
 }

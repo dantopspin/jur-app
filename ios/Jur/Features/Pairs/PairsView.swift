@@ -1,4 +1,4 @@
-// Pairs: who liked you (a row into Likes), then your matches, newest conversation first.
+// Pairs: a strip of who liked you and new matches, then conversations, newest first.
 import SwiftUI
 
 @MainActor
@@ -57,46 +57,85 @@ struct PairsView: View {
     @Environment(ToastCenter.self) private var toasts
     @State private var unmatching: MatchRow?
 
+    /// Matched, but nobody has written yet.
+    private var newMatches: [MatchRow] { model.rows.filter { $0.lastMessage == nil } }
+    private var conversations: [MatchRow] { model.rows.filter { $0.lastMessage != nil } }
+
+    private var strip: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(alignment: .top, spacing: Sp.md) {
+                if model.likes > 0 {
+                    Button { showLikes = true } label: { likesTile }
+                        .buttonStyle(.qPressCard)
+                }
+                ForEach(newMatches) { row in
+                    NavigationLink(value: row.matchId) { NewMatchTile(row: row) }
+                        .buttonStyle(.qPressCard)
+                }
+            }
+            .padding(.horizontal, Layout.margin)
+            .padding(.vertical, Sp.sm)
+        }
+    }
+
+    private var likesTile: some View {
+        VStack(spacing: Sp.xs) {
+            VStack(spacing: Sp.xxs) {
+                Image(systemName: "heart.fill").font(.q(.title3)).foregroundStyle(Color.q.gold)
+                Text(verbatim: "\(model.likes)").qText(.title2).foregroundStyle(.white)
+                    .contentTransition(.numericText())
+            }
+            .frame(width: NewMatchTile.width, height: NewMatchTile.height)
+            .background(Color.q.blueNight, in: RoundedRectangle(cornerRadius: Radius.md, style: .continuous))
+            Text(t("pairs.liked")).qText(.caption).foregroundStyle(Color.q.blueText).lineLimit(1)
+        }
+        .accessibilityElement(children: .combine)
+    }
+
     var body: some View {
         NavigationStack(path: $path) {
             List {
-                if model.likes > 0 {
-                    NavigationLink { LikesView() } label: {
-                        HStack(spacing: Sp.md) {
-                            Image(systemName: "heart.fill").font(.q(.title3)).foregroundStyle(Color.q.gold)
-                                .frame(width: 52, height: 52).background(Color.q.blueNight, in: Circle())
-                            VStack(alignment: .leading, spacing: Sp.xxs) {
-                                Text(model.likes == 1 ? t("matches.likedYouOne") : t("matches.likedYou", ["n": model.likes]))
-                                    .qText(.headline)
-                                    .contentTransition(.numericText())
-                                    .animation(Motion.snappy, value: model.likes)
-                                Text(t("matches.seeWho")).qText(.footnote).foregroundStyle(Color.q.blueText)
-                            }
-                        }
+                // Top: who liked you and new matches nobody has written to yet, as a strip.
+                if model.likes > 0 || !newMatches.isEmpty {
+                    Section {
+                        strip
+                            .listRowInsets(EdgeInsets())
+                            .listRowBackground(Color.q.bg)
+                            .listRowSeparator(.hidden)
+                    } header: {
+                        QSectionHeader(t("pairs.new"))
                     }
-                    .listRowBackground(Color.q.bg)
-                    .listRowSeparatorTint(Color.q.line)
                 }
-                ForEach(model.rows) { row in
-                    NavigationLink(value: row.matchId) { MatchRowView(row: row, me: session.userId) }
-                        .swipeActions(edge: .leading) {
-                            if row.unread > 0 {
-                                Button { Task { await model.markRead(row) } } label: {
-                                    Label(t("matches.markRead"), systemImage: "envelope.open")
+                // Below: conversations only, newest first.
+                Section {
+                    ForEach(conversations) { row in
+                        NavigationLink(value: row.matchId) { MatchRowView(row: row, me: session.userId) }
+                            .swipeActions(edge: .leading) {
+                                if row.unread > 0 {
+                                    Button { Task { await model.markRead(row) } } label: {
+                                        Label(t("matches.markRead"), systemImage: "envelope.open")
+                                    }
+                                    .tint(Color.q.blue)
                                 }
-                                .tint(Color.q.blue)
                             }
-                        }
-                        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                            Button { unmatching = row } label: {
-                                Label(t("chat.unmatch"), systemImage: "person.crop.circle.badge.minus")
+                            .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                                Button { unmatching = row } label: {
+                                    Label(t("chat.unmatch"), systemImage: "person.crop.circle.badge.minus")
+                                }
+                                .tint(Color.q.danger)
                             }
-                            .tint(Color.q.danger)
-                        }
-                        .listRowBackground(Color.q.bg)
-                        .listRowSeparatorTint(Color.q.line)
+                            .listRowBackground(Color.q.bg)
+                            .listRowSeparatorTint(Color.q.line)
+                    }
+                } header: {
+                    if !conversations.isEmpty { QSectionHeader(t("pairs.messages")) }
+                } footer: {
+                    if conversations.isEmpty && !newMatches.isEmpty {
+                        Text(t("pairs.startHint")).qText(.footnote).foregroundStyle(Color.q.muted)
+                    }
                 }
             }
+            .listSectionSeparator(.hidden)
             .listStyle(.plain)
             .scrollContentBackground(.hidden)
             .background(Color.q.bg)
@@ -175,5 +214,23 @@ struct MatchRowView: View {
         case "voice": return mine + t("chat2.voice")
         default: return mine + last.body
         }
+    }
+}
+
+/// A new match in the strip: their photo, their first name.
+struct NewMatchTile: View {
+    let row: MatchRow
+    static let width: CGFloat = 76
+    static let height: CGFloat = 100
+
+    var body: some View {
+        VStack(spacing: Sp.xs) {
+            QPhoto(url: row.other.photoURLs.first, size: .thumb)
+                .frame(width: Self.width, height: Self.height)
+                .clipShape(RoundedRectangle(cornerRadius: Radius.md, style: .continuous))
+            Text(row.other.name).qText(.caption).foregroundStyle(Color.q.ink).lineLimit(1)
+                .frame(width: Self.width)
+        }
+        .accessibilityElement(children: .combine)
     }
 }

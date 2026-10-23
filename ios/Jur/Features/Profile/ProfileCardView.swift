@@ -147,6 +147,160 @@ struct ProfileCardView: View {
     }
 }
 
+/// Someone's whole profile, read top to bottom: photos and words take turns (main photo
+/// with the name, sports, a prompt, a photo, goal and about, a prompt, a photo…), so it
+/// never turns into a wall of text after the pictures. Tap a photo to look closer.
+struct ProfileStoryView: View {
+    let card: ProfileCard
+    @Environment(SportsCatalog.self) private var catalog
+    @State private var viewing: Int?
+
+    private enum Block: Identifiable {
+        case photo(Int), sports, prompt(PromptAnswer), about, achievements
+        var id: String {
+            switch self {
+            case .photo(let i): "photo\(i)"
+            case .sports: "sports"
+            case .prompt(let p): "prompt-\(p.key)"
+            case .about: "about"
+            case .achievements: "achievements"
+            }
+        }
+    }
+
+    private var blocks: [Block] {
+        let photos = Array(card.photoURLs.indices.dropFirst())
+        let prompts = card.prompts ?? []
+        var words: [Block] = []
+        if !(card.sports ?? []).isEmpty { words.append(.sports) }
+        if let p = prompts.first { words.append(.prompt(p)) }
+        let hasAbout = !(card.nextChallenge ?? "").isEmpty || !(card.bio ?? "").isEmpty
+        if hasAbout { words.append(.about) }
+        words += prompts.dropFirst().map { .prompt($0) }
+        // Two pieces of words, then a photo, while both last; then whatever is left.
+        var out: [Block] = [.photo(0)]
+        var w = words[...], ph = photos[...]
+        while !w.isEmpty || !ph.isEmpty {
+            for _ in 0..<2 { if let b = w.popFirst() { out.append(b) } }
+            if let i = ph.popFirst() { out.append(.photo(i)) }
+        }
+        if !(card.achievements ?? []).isEmpty { out.append(.achievements) }
+        return out
+    }
+
+    var body: some View {
+        VStack(spacing: Sp.md) {
+            ForEach(blocks) { block in
+                switch block {
+                case .photo(let i): photo(i)
+                case .sports: sports
+                case .prompt(let p): prompt(p)
+                case .about: about
+                case .achievements: achievements
+                }
+            }
+        }
+        .fullScreenCover(item: Binding(get: { viewing.map { EditProfileView.PhotoIndex(id: $0) } },
+                                       set: { viewing = $0?.id })) { v in
+            PhotoViewer(photos: .constant(card.photos), index: v.id, editable: false)
+        }
+    }
+
+    private func photo(_ i: Int) -> some View {
+        let urls = card.photoURLs
+        return ZStack(alignment: .bottomLeading) {
+            Color.q.blueDeep
+            if i < urls.count { QPhoto(url: urls[i]) }
+            if i == 0 {
+                LinearGradient(colors: [.clear, Color.q.scrim], startPoint: .center, endPoint: .bottom)
+                VStack(alignment: .leading, spacing: Sp.xxs) {
+                    HStack(spacing: Sp.xs) {
+                        Text(verbatim: "\(card.name), \(card.age)").qText(.title1).foregroundStyle(.white).lineLimit(2)
+                        if card.verified {
+                            Image(systemName: "checkmark.seal.fill").font(.q(.headline)).foregroundStyle(.white)
+                                .accessibilityLabel(t("card.verified"))
+                        }
+                    }
+                    Text(meta).qText(.callout).foregroundStyle(Color.q.blueMist)
+                }
+                .padding(Sp.lg)
+            }
+        }
+        .frame(height: i == 0 ? 470 : 440)
+        .clipShape(RoundedRectangle(cornerRadius: Radius.lg, style: .continuous))
+        .contentShape(Rectangle())
+        .onTapGesture { if i < urls.count { viewing = i } }
+        .accessibilityElement(children: i == 0 ? .combine : .ignore)
+        .accessibilityLabel(i == 0 ? "" : t("chat2.photo") + " \(i + 1)")
+        .accessibilityAddTraits(.isButton)
+    }
+
+    private var meta: String {
+        var parts = [Cities.label(card.travelCity ?? card.city)]
+        if let n = card.eventsAttended, n > 0, Config.eventsEnabled { parts.append(t("passport.departures") + " " + String(n)) }
+        return parts.joined(separator: " · ")
+    }
+
+    private var sports: some View {
+        VStack(alignment: .leading, spacing: Sp.sm) {
+            FlowLayout(spacing: Sp.xs) {
+                ForEach(card.sports ?? [], id: \.code) { s in QTag(label: catalog.label(s.code), tone: .neutral) }
+            }
+            if let n = card.sharedSports, n > 0 {
+                Text(n == 1 ? t("discover.sharedOne") : t("discover.sharedMany", ["n": n]))
+                    .qText(.footnote).fontWeight(.bold).foregroundStyle(Color.q.good)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .qCard()
+    }
+
+    private func prompt(_ p: PromptAnswer) -> some View {
+        VStack(alignment: .leading, spacing: Sp.sm) {
+            Text(t("prompts.\(p.key)")).qText(.footnote).fontWeight(.bold).foregroundStyle(Color.q.muted)
+            Text(p.answer).qText(.title3).foregroundStyle(Color.q.ink)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .qCard(padding: Sp.lg + Sp.xs)
+        .accessibilityElement(children: .combine)
+    }
+
+    private var about: some View {
+        VStack(alignment: .leading, spacing: Sp.md) {
+            if let c = card.nextChallenge, !c.isEmpty {
+                VStack(alignment: .leading, spacing: Sp.xxs) {
+                    Text(t("card.nextChallenge")).qText(.label).foregroundStyle(Color.q.muted)
+                    Text(c).qText(.headline).foregroundStyle(Color.q.ink)
+                }
+            }
+            if let b = card.bio, !b.isEmpty {
+                if !(card.nextChallenge ?? "").isEmpty { Divider().overlay(Color.q.line) }
+                VStack(alignment: .leading, spacing: Sp.xxs) {
+                    Text(t("edit2.about")).qText(.label).foregroundStyle(Color.q.muted)
+                    Text(b).qText(.body).foregroundStyle(Color.q.ink)
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .qCard()
+    }
+
+    private var achievements: some View {
+        VStack(alignment: .leading, spacing: Sp.sm) {
+            ForEach(card.achievements ?? [], id: \.title) { a in
+                HStack {
+                    Text(a.title).qText(.callout)
+                    Spacer()
+                    if let r = a.result { Text(r).qText(.number) }
+                }
+                .foregroundStyle(Color.q.ink)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .qCard()
+    }
+}
+
 /// The back of a profile: their passport page, built from the card.
 extension PassportPage {
     init(card: ProfileCard) {
@@ -183,7 +337,7 @@ struct ProfileView: View {
                     if showPassport {
                         PassportPage(card: card)
                     } else {
-                        ProfileCardView(card: card)
+                        ProfileStoryView(card: card)
                     }
                 }
                 .rotation3DEffect(.degrees(turn), axis: (x: 0, y: 1, z: 0), perspective: 0.4)

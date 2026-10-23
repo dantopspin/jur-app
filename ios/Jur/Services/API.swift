@@ -168,6 +168,10 @@ extension Backend {
     }
 
     /// Hidden from Discover and Likes while paused; matches and chats keep working.
+    static func blocked() async throws -> [BlockedPerson] { try await rpc("my_blocked") }
+    static func unblock(_ id: UUID) async throws { try await call("unblock", ["p_profile": .uuid(id)]) }
+    static func upcomingDates() async throws -> [UpcomingDate] { try await rpc("my_upcoming_dates") }
+
     static func setPaused(_ paused: Bool) async throws {
         try await call("set_paused", ["p_paused": .bool(paused)])
     }
@@ -269,6 +273,8 @@ extension Backend {
     static func checkIn(_ id: UUID, code: String) async throws -> CheckInResult {
         try await rpc("check_in", ["p_event": .uuid(id), "p_code": .string(code)])
     }
+    /// Who's going (only once you're going yourself): open-to-meet people first.
+    static func eventPeople(_ id: UUID) async throws -> [ProfileCard] { try await rpc("event_people", ["p_event": .uuid(id)]) }
     static func hostCode(_ id: UUID) async throws -> HostCode { try await rpc("host_checkin_code", ["p_event": .uuid(id)]) }
 
     struct NewEvent: Encodable {

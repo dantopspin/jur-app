@@ -37,6 +37,9 @@ struct ProfileCard: Decodable, Identifiable, Hashable {
     let note: String?
     // only in daily picks: what you already decided today
     var mySwipe: SwipeKind? = nil
+    // only in an event's people: open to meeting, already checked in
+    var openToMeet: Bool? = nil
+    var checkedIn: Bool? = nil
 
     var photoURLs: [URL] { photos.compactMap(URL.init(string:)) }
     var stamps: [StampData] {
@@ -64,6 +67,24 @@ struct SwipeResult: Decodable {
     let ok: Bool
     let error: String?
     let matchId: UUID?
+}
+
+/// Someone you blocked (Safety → Blocked).
+struct BlockedPerson: Decodable, Identifiable, Hashable {
+    let id: UUID
+    let name: String
+    let photo: String?
+}
+
+/// An accepted date still ahead (Safety → send the plan to a friend).
+struct UpcomingDate: Decodable, Identifiable, Hashable {
+    let messageId: UUID
+    let matchId: UUID
+    let name: String
+    let sport: String?
+    let when: String?
+    let place: String?
+    var id: UUID { messageId }
 }
 
 /// Saying yes to a date at an event: `joined` is false when the event had no spot left.

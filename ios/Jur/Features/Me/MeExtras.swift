@@ -209,6 +209,7 @@ struct InviteView: View {
 
 struct HelpSafetyView: View {
     @Environment(\.openURL) private var openURL
+    @State private var datePlans = false
 
     private struct Tip: Identifiable {
         let symbol: String
@@ -221,41 +222,191 @@ struct HelpSafetyView: View {
         Tip(symbol: "location", key: "me2.tip2"),
         Tip(symbol: "bubble.left.and.bubble.right", key: "me2.tip3"),
         Tip(symbol: "banknote", key: "me2.tip4"),
-        Tip(symbol: "flag", key: "me2.tip5"),
     ]
 
     var body: some View {
-        QList {
-            QSection(t("me2.tipsTitle")) {
-                ForEach(tips) { tip in
-                    Label {
-                        Text(t(tip.key)).qText(.callout).foregroundStyle(Color.q.ink)
-                    } icon: {
-                        Image(systemName: tip.symbol).foregroundStyle(Color.q.blueText)
+        ScrollView {
+            VStack(alignment: .leading, spacing: Sp.xl) {
+                emergency
+
+                VStack(alignment: .leading, spacing: Sp.sm) {
+                    QSectionHeader(t("safety2.before")).padding(.horizontal, Sp.xs)
+                    LazyVGrid(columns: [GridItem(.flexible(), spacing: Sp.sm), GridItem(.flexible(), spacing: Sp.sm)],
+                              alignment: .leading, spacing: Sp.sm) {
+                        ForEach(tips) { tip in
+                            VStack(alignment: .leading, spacing: Sp.sm) {
+                                Image(systemName: tip.symbol).font(.q(.title3)).foregroundStyle(Color.q.blueText)
+                                    .accessibilityHidden(true)
+                                Text(t(tip.key)).qText(.callout).foregroundStyle(Color.q.ink)
+                                    .fixedSize(horizontal: false, vertical: true)
+                                Spacer(minLength: 0)
+                            }
+                            .frame(maxWidth: .infinity, minHeight: 120, alignment: .topLeading)
+                            .qCard(padding: Sp.md)
+                            .accessibilityElement(children: .combine)
+                        }
                     }
-                    .padding(.vertical, Sp.xxs)
+                }
+
+                VStack(alignment: .leading, spacing: Sp.sm) {
+                    QSectionHeader(t("safety2.tools")).padding(.horizontal, Sp.xs)
+                    VStack(spacing: 0) {
+                        Button { datePlans = true } label: {
+                            row("square.and.arrow.up", t("safety2.sharePlan"), sub: t("safety2.sharePlanSub"))
+                        }
+                        Divider().overlay(Color.q.line).padding(.leading, Sp.lg + IconSize.toolbar + Sp.md)
+                        NavigationLink { BlockedListView() } label: { row("nosign", t("safety2.blocked")) }
+                    }
+                    .buttonStyle(.plain)
+                    .background(Color.q.card, in: RoundedRectangle(cornerRadius: Radius.lg, style: .continuous))
+                    // How to report someone (it's on their profile and in the chat).
+                    Text(t("me2.tip5")).qText(.footnote).foregroundStyle(Color.q.muted).padding(.horizontal, Sp.xs)
+                }
+
+                VStack(alignment: .leading, spacing: Sp.sm) {
+                    QSectionHeader(t("me2.contactTitle")).padding(.horizontal, Sp.xs)
+                    Button {
+                        if let url = URL(string: "mailto:\(Config.supportEmail)") { openURL(url) }
+                    } label: { row("envelope", t("me2.writeUs")) }
+                    .buttonStyle(.plain)
+                    .background(Color.q.card, in: RoundedRectangle(cornerRadius: Radius.lg, style: .continuous))
+                    Text(t("safety2.legalNote")).qText(.footnote).foregroundStyle(Color.q.muted).padding(.horizontal, Sp.xs)
                 }
             }
+            .padding(Layout.margin)
+        }
+        .background(Color.q.bg)
+        .navigationTitle(t("me3.safety"))
+        .navigationBarTitleDisplayMode(.inline)
+        .sheet(isPresented: $datePlans) { DatePlansSheet() }
+    }
 
-            Section {
-                SettingsLink(symbol: "envelope", title: t("me2.writeUs")) {
-                    if let url = URL(string: "mailto:\(Config.supportEmail)") { openURL(url) }
+    /// First and largest: one tap calls 112.
+    private var emergency: some View {
+        Button {
+            if let url = URL(string: "tel://112") { openURL(url) }
+        } label: {
+            HStack(spacing: Sp.md) {
+                Image(systemName: "phone.fill").font(.q(.title3)).foregroundStyle(.white)
+                    .frame(width: 52, height: 52)
+                    .background(Color.q.danger, in: Circle())
+                    .accessibilityHidden(true)
+                VStack(alignment: .leading, spacing: Sp.xxs) {
+                    Text(t("safety2.call")).qText(.headline).foregroundStyle(Color.q.ink)
+                    Text(t("safety2.callSub")).qText(.footnote).foregroundStyle(Color.q.danger)
                 }
-                SettingsLink(symbol: "questionmark.circle", title: t("settings.support")) { openURL(Config.supportURL) }
-            } header: {
-                QSectionHeader(t("me2.contactTitle"))
-            } footer: {
-                Text(t("me2.emergency")).qText(.footnote).fontWeight(.semibold).foregroundStyle(Color.q.clay)
+                Spacer(minLength: 0)
             }
+            .padding(Sp.lg)
+            .background(Color.q.dangerTint, in: RoundedRectangle(cornerRadius: Radius.lg, style: .continuous))
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.qPressCard)
+    }
 
-            QSection(t("me2.legalTitle")) {
-                SettingsLink(symbol: "lock", title: t("settings.privacy")) { openURL(Config.privacyURL) }
-                SettingsLink(symbol: "doc.text", title: t("settings.terms")) { openURL(Config.termsURL) }
+    private func row(_ symbol: String, _ title: String, sub: String? = nil) -> some View {
+        HStack(spacing: Sp.md) {
+            Image(systemName: symbol).foregroundStyle(Color.q.blueText).frame(width: IconSize.toolbar)
+                .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: Sp.xxs) {
+                Text(title).qText(.body).foregroundStyle(Color.q.ink)
+                if let sub { Text(sub).qText(.footnote).foregroundStyle(Color.q.muted) }
+            }
+            Spacer(minLength: Sp.sm)
+            QChevron()
+        }
+        .padding(.horizontal, Sp.lg)
+        .frame(minHeight: 52)
+        .contentShape(Rectangle())
+    }
+}
+
+/// Your upcoming accepted dates; each one goes to a friend as a short message.
+struct DatePlansSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    @Environment(SportsCatalog.self) private var catalog
+    @State private var dates: [UpcomingDate]?
+
+    var body: some View {
+        NavigationStack {
+            QList {
+                if let dates {
+                    if dates.isEmpty {
+                        Text(t("safety2.noPlans")).qText(.callout).foregroundStyle(Color.q.inkSoft)
+                    }
+                    ForEach(dates) { d in
+                        ShareLink(item: message(d)) {
+                            HStack(spacing: Sp.md) {
+                                VStack(alignment: .leading, spacing: Sp.xxs) {
+                                    Text(d.name).qText(.headline).foregroundStyle(Color.q.ink)
+                                    Text(summary(d)).qText(.footnote).foregroundStyle(Color.q.muted)
+                                }
+                                Spacer(minLength: Sp.sm)
+                                Image(systemName: "square.and.arrow.up").foregroundStyle(Color.q.blueText)
+                                    .accessibilityHidden(true)
+                            }
+                        }
+                    }
+                } else {
+                    ProgressView().frame(maxWidth: .infinity)
+                }
+            }
+            .navigationTitle(t("safety2.sharePlan"))
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar { ToolbarItem(placement: .confirmationAction) { Button(t("common.done")) { dismiss() } } }
+            .task { dates = (try? await Backend.upcomingDates()) ?? [] }
+        }
+        .qSheet()
+    }
+
+    private func summary(_ d: UpcomingDate) -> String {
+        [d.sport.map { catalog.label($0) }, d.when.flatMap { Date.iso($0) }.map(Fmt.dayTime), d.place]
+            .compactMap { $0 }.joined(separator: " · ")
+    }
+
+    private func message(_ d: UpcomingDate) -> String {
+        t("safety2.planText", ["name": d.name, "what": summary(d)])
+    }
+}
+
+/// People you blocked, with a way to unblock.
+struct BlockedListView: View {
+    @Environment(ToastCenter.self) private var toasts
+    @State private var people: [BlockedPerson]?
+
+    var body: some View {
+        QList {
+            if let people {
+                if people.isEmpty {
+                    Text(t("safety2.noBlocked")).qText(.callout).foregroundStyle(Color.q.inkSoft)
+                }
+                ForEach(people) { p in
+                    HStack(spacing: Sp.md) {
+                        Avatar(url: p.photo.flatMap(URL.init(string:)), size: 44)
+                        Text(p.name).qText(.body).foregroundStyle(Color.q.ink)
+                        Spacer(minLength: Sp.sm)
+                        Button(t("safety2.unblock")) { Task { await unblock(p) } }
+                            .buttonStyle(.q(.secondary, compact: true)).fixedSize()
+                    }
+                }
+            } else {
+                ProgressView().frame(maxWidth: .infinity)
             }
         }
-        .scrollContentBackground(.hidden)
-        .background(Color.q.bg)
-        .navigationTitle(t("me2.help"))
+        .navigationTitle(t("safety2.blocked"))
         .navigationBarTitleDisplayMode(.inline)
+        .task { people = (try? await Backend.blocked()) ?? [] }
+    }
+
+    private func unblock(_ p: BlockedPerson) async {
+        let before = people
+        withMotion(Motion.smooth) { people?.removeAll { $0.id == p.id } }
+        do {
+            try await Backend.unblock(p.id)
+            toasts.show(t("safety2.unblocked", ["name": p.name]))
+        } catch {
+            withMotion(Motion.smooth) { people = before }
+            toasts.show(error)
+        }
     }
 }

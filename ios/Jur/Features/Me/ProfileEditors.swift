@@ -118,6 +118,8 @@ struct PhotoGrid: View {
 struct PhotoViewer: View {
     @Binding var photos: [String]
     @State var index: Int
+    /// Your own photos (make main, delete); someone else's are only looked at.
+    var editable = true
     @Environment(\.dismiss) private var dismiss
     @State private var dragY: CGFloat = 0
 
@@ -156,6 +158,7 @@ struct PhotoViewer: View {
             .opacity(dragY > 0 ? 0 : 1)
         }
         .overlay(alignment: .bottom) {
+            if editable {
             HStack(spacing: Sp.sm) {
                 Button { makeMain() } label: {
                     Label(t(index == 0 ? "edit.main" : "edit2.makeMain"), systemImage: index == 0 ? "star.fill" : "star")
@@ -172,6 +175,7 @@ struct PhotoViewer: View {
             .padding(.horizontal, Layout.margin)
             .padding(.bottom, Sp.sm)
             .opacity(dragY > 0 ? 0 : 1)
+            }
         }
         .preferredColorScheme(.dark)
         .statusBarHidden(dragY > 0)
