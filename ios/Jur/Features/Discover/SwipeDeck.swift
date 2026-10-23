@@ -35,11 +35,12 @@ struct SwipeDeck: View {
         ZStack(alignment: .top) {
             ForEach(Array(cards.prefix(2).enumerated()), id: \.element.id) { index, card in
                 let top = index == 0
-                ProfileCardView(card: card, compact: true)
-                    // The next card waits slightly smaller and rises as the top one is dragged away.
-                    .scaleEffect(top ? 1 : 0.95 + 0.05 * progress, anchor: .top)
+                ProfileCardView(card: card, compact: true, showsTips: top)
+                    // The next card waits slightly smaller, its lower edge peeking out under the
+                    // top one, and rises into place as the top one is dragged away.
+                    .scaleEffect(top ? 1 : 0.95 + 0.05 * progress, anchor: .bottom)
                     .brightness(top ? 0 : -0.03 * (1 - progress))
-                    .offset(x: top ? drag.width : 0, y: top ? drag.height * 0.2 + lift : 0)
+                    .offset(x: top ? drag.width : 0, y: top ? drag.height * 0.2 + lift : 10 * (1 - progress))
                     .rotationEffect(.degrees(top ? rotation : 0), anchor: .bottom)
                     .overlay(alignment: .top) { if top { hint } }
                     .zIndex(top ? 1 : 0)

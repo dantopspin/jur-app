@@ -95,6 +95,6 @@ struct LikesView: View {
             if r.matchId != nil { toasts.show(t("match.title")) }
             if r.error == "like_limit" { paywall = true }
             await load()
-        } catch { toasts.show(t("common.error"), error: true) }
+        } catch { toasts.show(error) }
     }
 }

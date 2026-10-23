@@ -100,7 +100,7 @@ struct DiscoverEmpty: View {
                     let found = await reload()
                     toasts.show(t(found > 0 ? "empty.widened" : "empty.widenedNone"))
                 } catch {
-                    toasts.show(t("common.error"), error: true)
+                    toasts.show(error)
                 }
             }
         } label: {

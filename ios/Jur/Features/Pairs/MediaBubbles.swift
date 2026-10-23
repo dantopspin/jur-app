@@ -53,7 +53,7 @@ struct PhotoBubble: View {
         .fullScreenCover(isPresented: $fullScreen) {
             ZStack(alignment: .topTrailing) {
                 Color.black.ignoresSafeArea()
-                if let image { Image(uiImage: image).resizable().scaledToFit().frame(maxWidth: .infinity, maxHeight: .infinity) }
+                if let image { ZoomablePhoto(image: image).ignoresSafeArea() }
                 CloseButton(action: { fullScreen = false }, onBlue: true).padding(Layout.margin)
             }
             .qZoomDestination(id: message.id, in: zoom)

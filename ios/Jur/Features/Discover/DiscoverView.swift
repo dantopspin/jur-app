@@ -1,6 +1,7 @@
 // Discover: tonight's departures on top, then one person at a time.
 // Pass / like by button or swipe; long-press like (or the note button) for a like with a note.
 import SwiftUI
+import TipKit
 
 @MainActor
 @Observable
@@ -59,11 +60,31 @@ final class DiscoverModel {
     var returningId: UUID?
     var returningEdge: Edge = .leading
 
+    /// When the top card appeared, and passes so far this session (for the undo toast).
+    private var shownAt = Date.now
+    private var passes = 0
+
     /// Optimistic: the card leaves at once (animated); on a limit it comes back and the paywall opens.
     func commit(_ kind: SwipeKind, note: String? = nil, toasts: ToastCenter) {
         guard let card = queue.first else { return }
+        let quick = Date.now.timeIntervalSince(shownAt) < 2
         withMotion(Motion.smooth) { _ = queue.removeFirst() }
+        shownAt = .now
         prefetchNext()
+        SwipeTip().invalidate(reason: .actionPerformed)
+        if kind == .like { Task { await NoteTip.liked.donate() } }
+        if note != nil { NoteTip().invalidate(reason: .actionPerformed) }
+        // "Пропущено · Вернуть": when the pass was quick (likely by accident) or while
+        // someone is still learning the deck. Not after every pass: that would nag.
+        if kind == .pass {
+            passes += 1
+            if quick || passes <= 3 {
+                toasts.show(t("discover.passed", ["name": card.name]), symbol: "arrow.uturn.backward",
+                            action: t("discover.undo")) { [weak self] in
+                    Task { await self?.undo(toasts: toasts) }
+                }
+            }
+        }
         Task { await send(card, kind, note: note, toasts: toasts) }
     }
 
@@ -89,7 +110,7 @@ final class DiscoverModel {
             if queue.count < 3 { await refill() }
         } catch {
             restore(card, after: kind)
-            toasts.show(t("common.error"), error: true)
+            toasts.show(error)
         }
     }
 
@@ -114,7 +135,7 @@ final class DiscoverModel {
             case "pro_only": paywallContext = .undo; paywall = true
             default: toasts.show(t("undo.nothing"))
             }
-        } catch { toasts.show(t("common.error"), error: true) }
+        } catch { toasts.show(error) }
     }
 
     private func refill() async {
@@ -245,6 +266,9 @@ struct DiscoverView: View {
         } else if model.failed {
             ErrorStateView(retry: { await model.load() }).frame(minHeight: 420)
         } else if !model.queue.isEmpty {
+            TipView(SwipeTip(), arrowEdge: .bottom)
+                .tipBackground(Color.q.card)
+                .padding(.bottom, Sp.xs)
             SwipeDeck(cards: Array(model.queue.prefix(2)), dragging: $dragging, fling: $fling,
                       returningId: model.returningId, returningEdge: model.returningEdge,
                       onCommit: { kind, note in model.commit(kind, note: note, toasts: toasts) },
@@ -276,6 +300,7 @@ struct DiscoverView: View {
             }
             RoundAction(symbol: "heart.fill", tint: .white, fill: Color.q.blue, size: 64, label: t("discover.like")) { fling = DeckFling(kind: .like) }
                 .simultaneousGesture(LongPressGesture(minimumDuration: 0.5).onEnded { _ in noteFor = model.current })
+                .popoverTip(NoteTip(), arrowEdge: .bottom)
             BoostButton(round: true) { boostPaywall = true }
         }
         .opacity(dealt ? 1 : 0)
@@ -301,6 +326,8 @@ struct NoteSheet: View {
     let send: (String) -> Void
     @Environment(\.dismiss) private var dismiss
     @State private var text = ""
+    @FocusState private var typing: Bool
+    private var draftId: String { "note.\(card.id.uuidString.lowercased())" }
 
     var body: some View {
         VStack(alignment: .leading, spacing: Sp.lg) {
@@ -312,7 +339,10 @@ struct NoteSheet: View {
                 .lineLimit(3...5)
                 .padding(.vertical, Sp.md)
                 .qField()
-                .onChange(of: text) { _, v in if v.count > 140 { text = String(v.prefix(140)) } }
+                .focused($typing)
+                .limited($text, to: 140)
+                // Closed by accident? The note is still there next time.
+                .onChange(of: text) { _, v in Drafts.set(draftId, v) }
             HStack {
                 Text(t("note.hint")).qText(.footnote).foregroundStyle(Color.q.muted)
                 Spacer()
@@ -322,6 +352,7 @@ struct NoteSheet: View {
                     .animation(Motion.snappy, value: text.count)
             }
             Button(t("note.send")) {
+                Drafts.set(draftId, "")
                 send(text)
                 dismiss()
             }
@@ -332,6 +363,11 @@ struct NoteSheet: View {
         .padding(.top, Sp.sm)
         .frame(maxHeight: .infinity, alignment: .top)
         .qSheet(detents: [.medium])
+        .onAppear {
+            text = Drafts.get(draftId)
+            // Opened to write: the keyboard comes up with it.
+            typing = true
+        }
     }
 }
 

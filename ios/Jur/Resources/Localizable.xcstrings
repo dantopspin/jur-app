@@ -1611,6 +1611,52 @@
         }
       }
     },
+    "chat2.jumpDown": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jump to latest"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "К последним"
+          }
+        },
+        "kk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Соңғыларына өту"
+          }
+        }
+      }
+    },
+    "chat2.jumpNew": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "{n} new, jump to latest"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Новых: {n}, к последним"
+          }
+        },
+        "kk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Жаңа: {n}, соңғыларына өту"
+          }
+        }
+      }
+    },
     "chat2.mic": {
       "extractionState": "manual",
       "localizations": {
@@ -1653,6 +1699,75 @@
           "stringUnit": {
             "state": "translated",
             "value": "Дауыстық жіберу үшін Баптаулардан микрофонға рұқсат беріңіз."
+          }
+        }
+      }
+    },
+    "chat2.micFailed": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn't start recording. Try again."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не удалось начать запись. Попробуйте ещё раз."
+          }
+        },
+        "kk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Жазуды бастау мүмкін болмады. Қайталап көріңіз."
+          }
+        }
+      }
+    },
+    "chat2.newMessages": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "NEW MESSAGES"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "НОВЫЕ СООБЩЕНИЯ"
+          }
+        },
+        "kk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ЖАҢА ХАБАРЛАМАЛАР"
+          }
+        }
+      }
+    },
+    "chat2.pastePhoto": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paste photo"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вставить фото"
+          }
+        },
+        "kk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Фотоны қою"
           }
         }
       }
@@ -4532,6 +4647,29 @@
         }
       }
     },
+    "discover.passed": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "{name} skipped"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "{name} — пропуск"
+          }
+        },
+        "kk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "{name} — өткізілді"
+          }
+        }
+      }
+    },
     "discover.seeEvents": {
       "extractionState": "manual",
       "localizations": {
@@ -4666,6 +4804,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "Суперлайктар бітті"
+          }
+        }
+      }
+    },
+    "discover.undo": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Undo"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вернуть"
+          }
+        },
+        "kk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Қайтару"
           }
         }
       }
@@ -5245,6 +5406,29 @@
         }
       }
     },
+    "edit.discard": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Discard"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не сохранять"
+          }
+        },
+        "kk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сақтамау"
+          }
+        }
+      }
+    },
     "edit.filtersMoved": {
       "extractionState": "manual",
       "localizations": {
@@ -5333,6 +5517,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "Профиль"
+          }
+        }
+      }
+    },
+    "edit.unsavedTitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save your changes?"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сохранить изменения?"
+          }
+        },
+        "kk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Өзгерістерді сақтау керек пе?"
           }
         }
       }
@@ -5843,6 +6050,121 @@
         }
       }
     },
+    "err.generic": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Something went wrong. Try again."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Что-то пошло не так. Попробуйте ещё раз."
+          }
+        },
+        "kk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Бірдеңе дұрыс болмады. Қайталап көріңіз."
+          }
+        }
+      }
+    },
+    "err.offline": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No internet connection. Check it and try again."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Нет интернета. Проверьте подключение и попробуйте ещё раз."
+          }
+        },
+        "kk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Интернет жоқ. Байланысты тексеріп, қайталап көріңіз."
+          }
+        }
+      }
+    },
+    "err.session": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your session expired. Sign in again."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сессия истекла. Войдите снова."
+          }
+        },
+        "kk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сессия аяқталды. Қайта кіріңіз."
+          }
+        }
+      }
+    },
+    "err.slow": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The server isn't answering. Try again in a moment."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сервер не отвечает. Попробуйте чуть позже."
+          }
+        },
+        "kk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сервер жауап бермей тұр. Сәлден соң қайталаңыз."
+          }
+        }
+      }
+    },
+    "err.tooBig": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "That file is too large. Try a smaller one."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Файл слишком большой. Попробуйте поменьше."
+          }
+        },
+        "kk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Файл тым үлкен. Кішірегін көріңіз."
+          }
+        }
+      }
+    },
     "events.capacityN": {
       "extractionState": "manual",
       "localizations": {
@@ -5931,6 +6253,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "Жаңа іс-шара"
+          }
+        }
+      }
+    },
+    "events.discardTitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Discard this event?"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Удалить черновик события?"
+          }
+        },
+        "kk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Іс-шара жобасын жою керек пе?"
           }
         }
       }
@@ -6345,6 +6690,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "Кім баратынын көру үшін жазылыңыз."
+          }
+        }
+      }
+    },
+    "events.keepEditing": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep editing"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Продолжить"
+          }
+        },
+        "kk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Жалғастыру"
           }
         }
       }
@@ -9289,6 +9657,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "Сізді 1 адам ұнатты"
+          }
+        }
+      }
+    },
+    "matches.markRead": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Read"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Прочитано"
+          }
+        },
+        "kk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Оқылды"
           }
         }
       }
@@ -16837,6 +17228,121 @@
         }
       }
     },
+    "tips.noteBody": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hold the heart to write a few words. A note gets more replies."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Удерживайте сердце и напишите пару слов — на такие лайки отвечают чаще."
+          }
+        },
+        "kk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Жүрекшені басып тұрып, бірнеше сөз жазыңыз — мұндай лайктарға жиі жауап береді."
+          }
+        }
+      }
+    },
+    "tips.noteTitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add a note to a like"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Лайк с запиской"
+          }
+        },
+        "kk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Лайкқа жазба қосыңыз"
+          }
+        }
+      }
+    },
+    "tips.photosTitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tap the right side for the next photo"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Нажмите справа — следующее фото"
+          }
+        },
+        "kk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Келесі фото үшін оң жағын басыңыз"
+          }
+        }
+      }
+    },
+    "tips.swipeBody": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Right to like, left to skip. Or use the buttons below."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вправо — лайк, влево — пропуск. Или кнопки внизу."
+          }
+        },
+        "kk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Оңға — лайк, солға — өткізу. Не төмендегі батырмалар."
+          }
+        }
+      }
+    },
+    "tips.swipeTitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Swipe to decide"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Смахните, чтобы решить"
+          }
+        },
+        "kk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Шешу үшін сырғытыңыз"
+          }
+        }
+      }
+    },
     "travel.active": {
       "extractionState": "manual",
       "localizations": {
@@ -17040,6 +17546,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "Қонақта: {city}"
+          }
+        }
+      }
+    },
+    "typing.left": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "{n} characters left"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Осталось символов: {n}"
+          }
+        },
+        "kk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "{n} таңба қалды"
           }
         }
       }

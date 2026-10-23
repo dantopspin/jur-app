@@ -9,6 +9,11 @@ struct PromptsEditor: View {
     @State private var loaded = false
     @State private var saving = false
     @State private var choosing = false
+    @State private var original: [PromptAnswer]?
+    @State private var confirmLeave = false
+    @FocusState private var focus: Int?
+
+    private var dirty: Bool { loaded && original != nil && prompts != original }
 
     var body: some View {
         Form {
@@ -22,6 +27,10 @@ struct PromptsEditor: View {
                         set: { if i < prompts.count { prompts[i] = PromptAnswer(key: prompts[i].key, answer: String($0.prefix(150))) } }),
                               axis: .vertical)
                         .lineLimit(2...5)
+                        .focused($focus, equals: i)
+                    if i < prompts.count, prompts[i].answer.count >= 120 {
+                        HStack { Spacer(); CharCounter(count: prompts[i].answer.count, limit: 150) }
+                    }
                     Button(t("common.delete"), role: .destructive) { prompts.remove(at: i) }
                 } header: {
                     Text(t("prompts.\(prompts[i].key)")).qText(.callout).textCase(nil)
@@ -34,23 +43,44 @@ struct PromptsEditor: View {
             }
         }
         .scrollContentBackground(.hidden)
+        .scrollDismissesKeyboard(.interactively)
         .background(Color.q.bg)
         .navigationTitle(t("prompts.title"))
         .navigationBarTitleDisplayMode(.inline)
+        .navigationBarBackButtonHidden(dirty)
+        .confirmationDialog(t("edit.unsavedTitle"), isPresented: $confirmLeave, titleVisibility: .visible) {
+            Button(t("common.save")) { Task { await save() } }
+            Button(t("edit.discard"), role: .destructive) { original = nil; dismiss() }
+            Button(t("common.cancel"), role: .cancel) {}
+        }
         .toolbar {
+            if dirty {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button { confirmLeave = true } label: {
+                        Image(systemName: "chevron.backward").fontWeight(.semibold)
+                            .accessibilityLabel(t("common.back"))
+                    }
+                }
+            }
             ToolbarItem(placement: .confirmationAction) {
                 Button(t("common.save")) { Task { await save() } }.disabled(!loaded || saving)
             }
         }
         .confirmationDialog(t("prompts.choose"), isPresented: $choosing, titleVisibility: .visible) {
             ForEach(Backend.promptKeys.filter { k in !prompts.contains { $0.key == k } }, id: \.self) { k in
-                Button(t("prompts.\(k)")) { prompts.append(PromptAnswer(key: k, answer: "")) }
+                Button(t("prompts.\(k)")) {
+                    prompts.append(PromptAnswer(key: k, answer: ""))
+                    // Straight into typing the answer.
+                    let i = prompts.count - 1
+                    Task { try? await Task.sleep(for: .milliseconds(350)); focus = i }
+                }
             }
             Button(t("common.cancel"), role: .cancel) {}
         }
         .task {
             guard !loaded, let id = session.userId else { return }
             prompts = (try? await Backend.myPrompts(userId: id)) ?? []
+            original = prompts
             loaded = true
         }
     }
@@ -61,9 +91,10 @@ struct PromptsEditor: View {
         defer { saving = false }
         do {
             try await Backend.savePrompts(userId: id, prompts)
+            original = prompts
             toasts.show(t("edit.saved"))
             dismiss()
-        } catch { toasts.show(t("common.error"), error: true) }
+        } catch { toasts.show(error) }
     }
 }
 
@@ -115,10 +146,10 @@ struct TravelView: View {
         defer { busy = false }
         do {
             let r = try await Backend.setTravel(city: city, days: days)
-            if r.ok { await session.refreshProfile(); Haptics.success(); dismiss() }
+            if r.ok { await session.refreshProfile(); Haptics.tick(); dismiss() }
             else if r.error == "pro_only" { paywall = true }
             else { toasts.show(t("common.error"), error: true) }
-        } catch { toasts.show(t("common.error"), error: true) }
+        } catch { toasts.show(error) }
     }
 
     private func end() async {

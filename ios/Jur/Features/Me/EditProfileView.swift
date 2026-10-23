@@ -20,6 +20,23 @@ struct EditProfileView: View {
     @State private var sports: [String: Level] = [:]
     @State private var loaded = false
     @State private var saving = false
+    @FocusState private var focus: Field?
+    /// What was loaded, to tell whether anything changed.
+    @State private var original: Snapshot?
+    @State private var confirmLeave = false
+
+    private enum Field { case name, challenge, bio }
+
+    private struct Snapshot: Equatable {
+        var photos: [String], name: String, bio: String, challenge: String, city: String, sports: [String: Level]
+    }
+
+    private var current: Snapshot {
+        Snapshot(photos: photos, name: name, bio: bio, challenge: challenge, city: city, sports: sports)
+    }
+
+    /// Unsaved edits: going back asks first (and the back swipe waits for the answer).
+    private var dirty: Bool { loaded && original != nil && current != original }
 
     var body: some View {
         Form {
@@ -28,9 +45,31 @@ struct EditProfileView: View {
                     .listRowInsets(EdgeInsets(top: Sp.md, leading: Sp.md, bottom: Sp.md, trailing: Sp.md))
             }
             Section {
-                TextField(t("onboarding.namePlaceholder"), text: $name)
-                TextField(t("onboarding.challengePlaceholder"), text: $challenge, axis: .vertical).lineLimit(1...2)
-                TextField(t("onboarding.bioPlaceholder"), text: $bio, axis: .vertical).lineLimit(3...6)
+                // Return walks name → goal → about; "about" keeps Return for new lines.
+                field(count: name.count, limit: 40) {
+                    TextField(t("onboarding.namePlaceholder"), text: $name)
+                        .textContentType(.givenName)
+                        .textInputAutocapitalization(.words)
+                        .autocorrectionDisabled()
+                        .submitLabel(.next)
+                        .focused($focus, equals: .name)
+                        .limited($name, to: 40)
+                        .returnGoesNext($name) { focus = .challenge }
+                }
+                field(count: challenge.count, limit: 80) {
+                    TextField(t("onboarding.challengePlaceholder"), text: $challenge, axis: .vertical)
+                        .lineLimit(1...2)
+                        .submitLabel(.next)
+                        .focused($focus, equals: .challenge)
+                        .limited($challenge, to: 80)
+                        .returnGoesNext($challenge) { focus = .bio }
+                }
+                field(count: bio.count, limit: 500) {
+                    TextField(t("onboarding.bioPlaceholder"), text: $bio, axis: .vertical)
+                        .lineLimit(3...6)
+                        .focused($focus, equals: .bio)
+                        .limited($bio, to: 500)
+                }
             }
             Section(t("onboarding.sportsTitle")) {
                 SportPicker(picked: $sports)
@@ -46,10 +85,26 @@ struct EditProfileView: View {
             }
         }
         .scrollContentBackground(.hidden)
+        .scrollDismissesKeyboard(.interactively)
         .background(Color.q.bg)
         .navigationTitle(t("edit.title"))
         .navigationBarTitleDisplayMode(.inline)
+        // With unsaved edits the system back button (and its swipe) gives way to one that asks.
+        .navigationBarBackButtonHidden(dirty)
+        .confirmationDialog(t("edit.unsavedTitle"), isPresented: $confirmLeave, titleVisibility: .visible) {
+            Button(t("common.save")) { Task { await save() } }
+            Button(t("edit.discard"), role: .destructive) { original = nil; dismiss() }
+            Button(t("common.cancel"), role: .cancel) {}
+        }
         .toolbar {
+            if dirty {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button { confirmLeave = true } label: {
+                        Image(systemName: "chevron.backward").fontWeight(.semibold)
+                            .accessibilityLabel(t("common.back"))
+                    }
+                }
+            }
             ToolbarItem(placement: .confirmationAction) {
                 Button(t("common.save")) { Task { await save() } }
                     .disabled(!loaded || saving || uploading || photos.isEmpty || sports.isEmpty
@@ -80,7 +135,17 @@ struct EditProfileView: View {
         ageMin = p.ageMin ?? 18
         ageMax = p.ageMax ?? 60
         sports = (try? await Backend.mySports(userId: p.id)) ?? [:]
+        original = current
         loaded = true
+    }
+
+    /// A field with its counter underneath (the counter shows only near the limit).
+    private func field<Content: View>(count: Int, limit: Int, @ViewBuilder _ content: () -> Content) -> some View {
+        VStack(alignment: .trailing, spacing: Sp.xxs) {
+            content()
+            CharCounter(count: count, limit: limit)
+        }
+        .animation(Motion.adaptive(Motion.snappy), value: Double(count) >= Double(limit) * 0.8)
     }
 
     private func save() async {
@@ -94,9 +159,10 @@ struct EditProfileView: View {
         do {
             try await Backend.updateProfile(userId: id, u, sports: sports)
             await session.refreshProfile()
+            original = current
             toasts.show(t("edit.saved"))
             dismiss()
-        } catch { toasts.show(t("common.error"), error: true) }
+        } catch { toasts.show(error) }
     }
 }
 
@@ -153,7 +219,7 @@ struct VerifyView: View {
             await session.refreshProfile()
             toasts.show(t("verify.sent"))
             dismiss()
-        } catch { toasts.show(t("common.error"), error: true) }
+        } catch { toasts.show(error) }
     }
 }
 

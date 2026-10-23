@@ -172,6 +172,7 @@ struct InviteView: View {
             }
         }
         .scrollContentBackground(.hidden)
+        .scrollDismissesKeyboard(.interactively)
         .background(Color.q.bg)
         .navigationTitle(t("me2.invite"))
         .navigationBarTitleDisplayMode(.inline)
@@ -195,7 +196,7 @@ struct InviteView: View {
                 toasts.show(t(key) == key ? t("common.error") : t(key), error: true)
             }
         } catch {
-            toasts.show(t("common.error"), error: true)
+            toasts.show(error)
         }
     }
 }

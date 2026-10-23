@@ -25,6 +25,27 @@ final class PairsModel {
         }
         loaded = true
     }
+
+    /// Swipe → "Read": the badge goes at once; the server follows.
+    func markRead(_ row: MatchRow) async {
+        guard let i = rows.firstIndex(where: { $0.matchId == row.matchId }) else { return }
+        let before = rows[i].unread
+        withMotion(Motion.snappy) { rows[i].unread = 0 }
+        do { try await Backend.markRead(row.matchId) }
+        catch { if let j = rows.firstIndex(where: { $0.matchId == row.matchId }) { rows[j].unread = before } }
+    }
+
+    /// Unmatch from the list: the row leaves at once and comes back if the server says no.
+    func unmatch(_ row: MatchRow, toasts: ToastCenter) async {
+        guard let i = rows.firstIndex(where: { $0.matchId == row.matchId }) else { return }
+        withMotion(Motion.smooth) { _ = rows.remove(at: i) }
+        do {
+            try await Backend.unmatch(row.matchId)
+        } catch {
+            withMotion(Motion.smooth) { rows.insert(row, at: min(i, rows.count)) }
+            toasts.show(error)
+        }
+    }
 }
 
 struct PairsView: View {
@@ -33,6 +54,8 @@ struct PairsView: View {
     @Binding var showLikes: Bool
     var goDiscover: () -> Void = {}
     @Environment(SessionStore.self) private var session
+    @Environment(ToastCenter.self) private var toasts
+    @State private var unmatching: MatchRow?
 
     var body: some View {
         NavigationStack(path: $path) {
@@ -54,6 +77,20 @@ struct PairsView: View {
                 }
                 ForEach(model.rows) { row in
                     NavigationLink(value: row.matchId) { MatchRowView(row: row, me: session.userId) }
+                        .swipeActions(edge: .leading) {
+                            if row.unread > 0 {
+                                Button { Task { await model.markRead(row) } } label: {
+                                    Label(t("matches.markRead"), systemImage: "envelope.open")
+                                }
+                                .tint(Color.q.blue)
+                            }
+                        }
+                        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                            Button { unmatching = row } label: {
+                                Label(t("chat.unmatch"), systemImage: "person.crop.circle.badge.minus")
+                            }
+                            .tint(Color.q.danger)
+                        }
                 }
             }
             .listStyle(.plain)
@@ -68,6 +105,14 @@ struct PairsView: View {
                     AfterABlink { SkeletonRows() }
                         .frame(maxHeight: .infinity, alignment: .top)
                 }
+            }
+            .confirmationDialog(t("chat.unmatchConfirm", ["name": unmatching?.other.name ?? ""]),
+                                isPresented: Binding(get: { unmatching != nil }, set: { if !$0 { unmatching = nil } }),
+                                titleVisibility: .visible) {
+                Button(t("chat.unmatch"), role: .destructive) {
+                    if let r = unmatching { Task { await model.unmatch(r, toasts: toasts) } }
+                }
+                Button(t("common.cancel"), role: .cancel) {}
             }
             .navigationTitle(t("tabs.matches"))
             .toolbarTitleDisplayMode(.inlineLarge)

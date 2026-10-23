@@ -279,7 +279,7 @@ struct MeView: View {
             return true
         } catch {
             revert()
-            toasts.show(t("common.error"), error: true)
+            toasts.show(error)
             return false
         }
     }

@@ -75,6 +75,8 @@ const en = {
   },
   tabs: { discover: 'Discover', events: 'Events', matches: 'Matches', me: 'Me' },
   discover: {
+    passed: "{name} skipped",
+    undo: "Undo",
     empty: 'That\'s everyone for now.',
     emptySub: "Come to an event this weekend. It's easier in person.",
     seeEvents: 'See events',
@@ -108,6 +110,8 @@ const en = {
     years: '{n}',
   },
   events: {
+    discardTitle: "Discard this event?",
+    keepEditing: "Keep editing",
     title: 'Events',
     sub: 'Meet on a run, a slope or a court. Match after.',
     empty: 'No events in your city yet.',
@@ -148,6 +152,7 @@ const en = {
     tooMany: "You already have 3 upcoming events.",
   },
   matches: {
+    markRead: "Read",
     title: 'Matches',
     newMatches: 'New matches',
     messages: 'Messages',
@@ -223,6 +228,8 @@ const en = {
     apply: "Apply",
   },
   edit: {
+    unsavedTitle: "Save your changes?",
+    discard: "Discard",
     filtersMoved: "Who to show and their age are now in the filters on Discover (top right).",
     title: 'Edit profile',
     achievements: 'Races & personal bests',
@@ -538,6 +545,11 @@ const en = {
     privacy: "Numbers and emails are turned into one-way codes on your phone. Only the codes are sent.",
   },
   chat2: {
+    micFailed: "Couldn't start recording. Try again.",
+    newMessages: "NEW MESSAGES",
+    jumpNew: "{n} new, jump to latest",
+    jumpDown: "Jump to latest",
+    pastePhoto: "Paste photo",
     reply: 'Reply',
     copy: 'Copy',
     photo: 'Photo',
@@ -872,6 +884,23 @@ const en = {
       boost: "A boost every week",
       gift: "+ a week of Pro to give a friend",
     },
+  },
+  typing: {
+    left: "{n} characters left",
+  },
+  err: {
+    offline: "No internet connection. Check it and try again.",
+    slow: "The server isn't answering. Try again in a moment.",
+    session: "Your session expired. Sign in again.",
+    tooBig: "That file is too large. Try a smaller one.",
+    generic: "Something went wrong. Try again.",
+  },
+  tips: {
+    swipeTitle: "Swipe to decide",
+    swipeBody: "Right to like, left to skip. Or use the buttons below.",
+    noteTitle: "Add a note to a like",
+    noteBody: "Hold the heart to write a few words. A note gets more replies.",
+    photosTitle: "Tap the right side for the next photo",
   },
 };
 

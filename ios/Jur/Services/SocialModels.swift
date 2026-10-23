@@ -84,7 +84,8 @@ struct MatchRow: Decodable, Identifiable, Hashable {
     let createdAt: String
     let other: ProfileCard
     let lastMessage: LastMessage?
-    let unread: Int
+    /// var: marking a chat read updates the row at once.
+    var unread: Int
     var id: UUID { matchId }
 }
 
@@ -110,7 +111,8 @@ struct Message: Decodable, Identifiable, Hashable {
     let mediaPath: String?
     let mediaMs: Int?
     let replyTo: UUID?
-    let reactions: [MessageReaction]?
+    /// var: a reaction shows at once; the server's answer follows.
+    var reactions: [MessageReaction]?
     let reply: ReplyPreview?
 
     var isDate: Bool { kind == "date" }
@@ -143,8 +145,9 @@ struct EventItem: Decodable, Identifiable, Hashable {
     let capacity: Int
     let priceKzt: Int
     let cancelled: Bool
-    let goingCount: Int
-    let iAmGoing: Bool
+    /// var: joining and leaving update the screen at once.
+    var goingCount: Int
+    var iAmGoing: Bool
     let iCheckedIn: Bool
     let host: EventHost?
 

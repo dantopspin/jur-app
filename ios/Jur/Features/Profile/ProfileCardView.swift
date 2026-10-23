@@ -2,11 +2,14 @@
 // line (№ · city · departures), sports, and their words. Used in Discover (as a card),
 // Likes, picks and the full profile.
 import SwiftUI
+import TipKit
 
 struct ProfileCardView: View {
     let card: ProfileCard
     /// Discover's card: a shorter photo and only the first lines of text.
     var compact = false
+    /// Only the deck's top card shows first-session hints.
+    var showsTips = false
     @Environment(SportsCatalog.self) private var catalog
     @State private var page = 0
 
@@ -75,7 +78,9 @@ struct ProfileCardView: View {
                 HStack(spacing: 0) {
                     Color.clear.contentShape(Rectangle()).onTapGesture { turn(to: max(page - 1, 0)) }
                     Color.clear.contentShape(Rectangle()).onTapGesture { turn(to: min(page + 1, urls.count - 1)) }
+                        .popoverTip(showsTips ? PhotosTip() as (any Tip)? : nil, arrowEdge: .top)
                 }
+                .onAppear { if showsTips { PhotosTip.cardHasMore = true } }
             }
             VStack(alignment: .leading, spacing: Sp.xs) {
                 if card.superLikedMe == true { QTag(label: t("discover.superLikedYou"), tone: .gold, systemImage: "star.fill") }
@@ -103,6 +108,7 @@ struct ProfileCardView: View {
     }
 
     private func turn(to new: Int) {
+        PhotosTip().invalidate(reason: .actionPerformed)
         guard new != page else { return }
         withAnimation(Motion.fade) { page = new }
     }

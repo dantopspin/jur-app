@@ -345,26 +345,43 @@ struct EventDetailView: View {
         if event == nil { event = fresh } else { withMotion(Motion.smooth) { event = fresh } }
     }
 
+    /// Instant: "going" and the count change before the server answers, and change back
+    /// with a reason if it says no (full, cancelled).
     private func join() async {
         guard let e = event else { return }
         busy = true
         defer { busy = false }
+        withMotion(Motion.snappy) { event?.iAmGoing = true; event?.goingCount += 1 }
+        Haptics.success()
         do {
             let r = try await Backend.joinEvent(e.id)
-            if r.ok { Haptics.success(); toasts.show(t("events.youreIn")) }
-            else { toasts.show(t(r.error == "full" ? "events.full" : "common.error"), error: true) }
+            if r.ok { toasts.show(t("events.youreIn")) }
+            else {
+                withMotion(Motion.snappy) { event = e }
+                toasts.show(t(r.error == "full" ? "events.full" : "err.generic"), error: true)
+            }
             await load()
             onChange()
-        } catch { toasts.show(t("common.error"), error: true) }
+        } catch {
+            withMotion(Motion.snappy) { event = e }
+            toasts.show(error)
+        }
     }
 
     private func leave() async {
         guard let e = event else { return }
         busy = true
         defer { busy = false }
-        try? await Backend.leaveEvent(e.id)
-        await load()
-        onChange()
+        withMotion(Motion.snappy) { event?.iAmGoing = false; event?.goingCount = max(e.goingCount - 1, 0) }
+        Haptics.tick()
+        do {
+            try await Backend.leaveEvent(e.id)
+            await load()
+            onChange()
+        } catch {
+            withMotion(Motion.snappy) { event = e }
+            toasts.show(error)
+        }
     }
 
     private func checkIn() async {
@@ -384,7 +401,7 @@ struct EventDetailView: View {
                 Haptics.failure()
                 toasts.show(t(r.error == "not_now" ? "events.notNow" : "board.badCode"), error: true)
             }
-        } catch { toasts.show(t("common.error"), error: true) }
+        } catch { toasts.show(error) }
     }
 }
 
@@ -403,6 +420,13 @@ struct NewEventView: View {
     @State private var about = ""
     @State private var busy = false
     @State private var error: String?
+    @State private var confirmCancel = false
+    @FocusState private var focus: Field?
+
+    private enum Field { case title, place, about }
+
+    /// Anything typed or chosen: closing the sheet asks first.
+    private var dirty: Bool { !title.isEmpty || !place.isEmpty || !about.isEmpty || !sport.isEmpty }
 
     private var valid: Bool {
         title.trimmingCharacters(in: .whitespaces).count >= 3 && !sport.isEmpty
@@ -413,7 +437,15 @@ struct NewEventView: View {
         NavigationStack {
             Form {
                 Section {
-                    TextField(t("events.fieldTitle"), text: $title)
+                    VStack(alignment: .trailing, spacing: Sp.xxs) {
+                        TextField(t("events.fieldTitle"), text: $title)
+                            .textInputAutocapitalization(.sentences)
+                            .submitLabel(.next)
+                            .focused($focus, equals: .title)
+                            .limited($title, to: 80)
+                            .onSubmit { focus = .place }
+                        CharCounter(count: title.count, limit: 80)
+                    }
                     Picker(t("events.fieldSport"), selection: $sport) {
                         Text("—").tag("")
                         ForEach(catalog.all) { s in Text("\(s.emoji) \(s.name)").tag(s.code) }
@@ -427,19 +459,42 @@ struct NewEventView: View {
                     Stepper(t("events.capacityN", ["n": capacity]), value: $capacity, in: 2...50)
                 }
                 Section {
-                    TextField(t("events.fieldMeeting"), text: $place)
-                    TextField(t("events.fieldDescription"), text: $about, axis: .vertical).lineLimit(3...8)
+                    VStack(alignment: .trailing, spacing: Sp.xxs) {
+                        // Places and club names: no autocorrect turning "Padel Club" into something else.
+                        TextField(t("events.fieldMeeting"), text: $place)
+                            .autocorrectionDisabled()
+                            .submitLabel(.next)
+                            .focused($focus, equals: .place)
+                            .limited($place, to: 160)
+                            .onSubmit { focus = .about }
+                        CharCounter(count: place.count, limit: 160)
+                    }
+                    VStack(alignment: .trailing, spacing: Sp.xxs) {
+                        TextField(t("events.fieldDescription"), text: $about, axis: .vertical)
+                            .lineLimit(3...8)
+                            .focused($focus, equals: .about)
+                            .limited($about, to: 1500)
+                        CharCounter(count: about.count, limit: 1500)
+                    }
                 } footer: {
                     Text(t("events.memberRules")).qText(.footnote)
                 }
                 if let error { Section { Text(error).foregroundStyle(Color.q.danger) } }
             }
             .scrollContentBackground(.hidden)
+            .scrollDismissesKeyboard(.interactively)
             .background(Color.q.bg)
             .navigationTitle(t("events.create"))
             .navigationBarTitleDisplayMode(.inline)
+            .interactiveDismissDisabled(dirty)
+            .confirmationDialog(t("events.discardTitle"), isPresented: $confirmCancel, titleVisibility: .visible) {
+                Button(t("edit.discard"), role: .destructive) { dismiss() }
+                Button(t("events.keepEditing"), role: .cancel) {}
+            }
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button(t("common.cancel")) { dismiss() } }
+                ToolbarItem(placement: .cancellationAction) {
+                    Button(t("common.cancel")) { if dirty { confirmCancel = true } else { dismiss() } }
+                }
                 ToolbarItem(placement: .confirmationAction) {
                     Button(t("events.publish")) { Task { await publish() } }.disabled(!valid || busy)
                 }

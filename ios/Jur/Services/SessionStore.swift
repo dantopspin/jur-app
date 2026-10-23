@@ -92,6 +92,7 @@ final class SessionStore {
     func signOut() async {
         LiveDepartures.endAll()
         DataCache.clearAll()
+        Drafts.clearAll()
         ImageLoader.shared.clearMemory()
         Purchases.disconnect()
         try? await supabase.auth.signOut()

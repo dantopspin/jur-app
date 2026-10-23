@@ -230,11 +230,11 @@ struct FiltersSheet: View {
             let r = try await Backend.saveDiscoverFilters(f)
             guard r.ok else { toasts.show(t("common.error"), error: true); return }
             await session.refreshProfile()
-            Haptics.success()
+            Haptics.tick()
             onSaved()
             dismiss()
         } catch {
-            toasts.show(t("common.error"), error: true)
+            toasts.show(error)
         }
     }
 }

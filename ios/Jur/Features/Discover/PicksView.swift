@@ -55,10 +55,10 @@ struct PicksView: View {
             let r = try await Backend.swipe(p.id, kind)
             if r.ok {
                 withMotion(Motion.bouncy) { decided[p.id] = kind }
-                if kind == .like { Haptics.success() }
+                if kind == .like { Haptics.bump() }
                 if r.matchId != nil { toasts.show(t("match.title")) }
             } else if r.error == "like_limit" { paywall = true }
-        } catch { toasts.show(t("common.error"), error: true) }
+        } catch { toasts.show(error) }
     }
 }
 
@@ -117,6 +117,6 @@ struct BoostButton: View {
             } else {
                 onNeedPro()
             }
-        } catch { toasts.show(t("common.error"), error: true) }
+        } catch { toasts.show(error) }
     }
 }

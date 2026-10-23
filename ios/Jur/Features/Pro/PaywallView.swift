@@ -502,7 +502,7 @@ struct PaywallView: View {
             Haptics.success()
             withMotion(Motion.smooth) { welcome = true }
         } catch {
-            toasts.show(t("common.error"), error: true)
+            toasts.show(error)
         }
     }
 
@@ -515,7 +515,7 @@ struct PaywallView: View {
             toasts.show(t("paywall.restored"))
             if session.limits?.pro == true { withMotion(Motion.smooth) { welcome = true } }
         } catch {
-            toasts.show(t("common.error"), error: true)
+            toasts.show(error)
         }
     }
 
@@ -569,7 +569,7 @@ struct ProWelcomeView: View {
             let r = try await Backend.createGift()
             if let c = r.code { code = c; share(c) }
             else { toasts.show(t(r.error == "once_a_month" ? "cover.giftRule" : "common.error"), error: true) }
-        } catch { toasts.show(t("common.error"), error: true) }
+        } catch { toasts.show(error) }
     }
 
     private func share(_ code: String) {
@@ -592,6 +592,7 @@ struct RedeemGiftSheet: View {
     @State private var code = ""
     @State private var busy = false
     @State private var error: String?
+    @FocusState private var typing: Bool
 
     var body: some View {
         VStack(alignment: .leading, spacing: Sp.lg) {
@@ -601,6 +602,10 @@ struct RedeemGiftSheet: View {
                 .autocorrectionDisabled()
                 .font(.q(.title3))
                 .qField(isError: error != nil)
+                .focused($typing)
+                .submitLabel(.done)
+                .onSubmit { if code.count >= 4 { Task { await redeem() } } }
+                .onChange(of: code) { _, _ in error = nil }
             if let error { Text(error).qText(.callout).foregroundStyle(Color.q.danger) }
             Button { Task { await redeem() } } label: { BusyLabel(title: t("cover.redeem"), busy: busy) }
                 .buttonStyle(.qPrimary)
@@ -610,6 +615,7 @@ struct RedeemGiftSheet: View {
         .padding(.top, Sp.sm)
         .frame(maxHeight: .infinity, alignment: .top)
         .qSheet(detents: [.height(300)])
+        .onAppear { typing = true }
     }
 
     private func redeem() async {
@@ -625,6 +631,6 @@ struct RedeemGiftSheet: View {
             } else {
                 error = t("cover.err_\(r.error ?? "not_found")")
             }
-        } catch { self.error = t("common.error") }
+        } catch { self.error = errorText(error) }
     }
 }

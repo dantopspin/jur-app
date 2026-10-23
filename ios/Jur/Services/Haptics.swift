@@ -12,16 +12,25 @@ enum Haptics {
     private static let medium = UIImpactFeedbackGenerator(style: .medium)
     private static let notify = UINotificationFeedbackGenerator()
 
-    /// Chips, choices, toggles, reactions.
-    static func tick() { selection.selectionChanged(); selection.prepare() }
+    /// The one rule: a light tick for choices and confirmations, a bump when a gesture
+    /// crosses its line, success only for moments (a match, a check-in, joining, a purchase),
+    /// failure for errors. Two in a row within a quarter second play once.
+    private static var last = Date.distantPast
+    private static func fresh() -> Bool {
+        defer { last = .now }
+        return Date.now.timeIntervalSince(last) > 0.25
+    }
+
+    /// Chips, choices, toggles, reactions, plain confirmations.
+    static func tick() { guard fresh() else { return }; selection.selectionChanged(); selection.prepare() }
     /// A swipe crosses its threshold, a card flips, a photo pages.
     static func bump() { soft.impactOccurred(intensity: 0.7); soft.prepare() }
     /// Long-press menus, recording starts.
     static func knock() { medium.impactOccurred(); medium.prepare() }
     /// A stamp landing.
     static func thump() { rigid.impactOccurred(); rigid.prepare() }
-    static func success() { notify.notificationOccurred(.success); notify.prepare() }
-    static func failure() { notify.notificationOccurred(.error); notify.prepare() }
+    static func success() { guard fresh() else { return }; notify.notificationOccurred(.success); notify.prepare() }
+    static func failure() { guard fresh() else { return }; notify.notificationOccurred(.error); notify.prepare() }
 
     /// Warm the generators before a gesture that will need them (a drag starting).
     static func prepare() { soft.prepare(); selection.prepare() }

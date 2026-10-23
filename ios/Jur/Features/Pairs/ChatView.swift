@@ -67,7 +67,17 @@ final class ChatModel {
         } catch { return false }
     }
 
-    func react(_ m: Message, _ reaction: String) async {
+    /// The reaction shows at once (same one again takes it off); the server's list follows.
+    func react(_ m: Message, _ reaction: String, me: UUID?) async {
+        if let me, let i = messages.firstIndex(where: { $0.id == m.id }) {
+            var list = messages[i].reactions ?? []
+            if list.contains(where: { $0.profileId == me && $0.reaction == reaction }) {
+                list.removeAll { $0.profileId == me && $0.reaction == reaction }
+            } else {
+                list.append(MessageReaction(profileId: me, reaction: reaction))
+            }
+            withMotion(Motion.snappy) { messages[i].reactions = list }
+        }
         try? await Backend.react(m.id, reaction)
         if let fresh = try? await Backend.messages(matchId) { apply(fresh) }
     }
@@ -111,6 +121,12 @@ struct ChatView: View {
     @State private var micOff = false
     @State private var replyingTo: Message?
     @FocusState private var focused: Bool
+    /// "Новые сообщения": the first message that was unread when the chat opened.
+    @State private var firstUnread: UUID?
+    /// Whether the newest message is on screen; if not, new ones don't pull you down.
+    @State private var atBottom = true
+    /// Messages that arrived while you were reading further up (the jump-down badge).
+    @State private var missed = 0
 
     enum Confirm: Identifiable { case block, unmatch; var id: Self { self } }
 
@@ -119,6 +135,8 @@ struct ChatView: View {
         self.initial = initial
         self.onChange = onChange
         _model = State(initialValue: ChatModel(matchId: matchId, other: initial?.other))
+        // What you were typing here last time.
+        _draft = State(initialValue: Drafts.get("chat.\(matchId.uuidString.lowercased())"))
     }
 
     var body: some View {
@@ -198,20 +216,80 @@ struct ChatView: View {
                             .padding(.vertical, Sp.xl)
                     }
                     ForEach(model.messages) { m in
+                        if m.id == firstUnread { unreadDivider.id("unread") }
                         bubble(m).id(m.id)
                             .transition(.qBubble(mine: m.senderId == session.userId))
                     }
+                    // The newest message is on screen while this line is.
+                    Color.clear.frame(height: 1).id("bottom")
+                        .onAppear { atBottom = true; missed = 0 }
+                        .onDisappear { atBottom = false }
                 }
                 .padding(.horizontal, Layout.margin)
                 .padding(.vertical, Sp.md)
             }
             .defaultScrollAnchor(.bottom)
             .scrollDismissesKeyboard(.interactively)
-            .onChange(of: model.messages.last?.id) { _, id in
-                if let id { withMotion(Motion.smooth) { proxy.scrollTo(id, anchor: .bottom) } }
+            .onChange(of: model.loaded) { _, loaded in
+                guard loaded, let me = session.userId else { return }
+                // Open at the first unread message when there's history above it.
+                if let first = model.messages.first(where: { $0.senderId != me && $0.readAt == nil }),
+                   first.id != model.messages.first?.id {
+                    firstUnread = first.id
+                    Task { try? await Task.sleep(for: .milliseconds(50)); proxy.scrollTo("unread", anchor: .top) }
+                }
             }
+            .onChange(of: model.messages.last?.id) { _, id in
+                guard let id, let last = model.messages.last else { return }
+                // Yours, or you're already at the bottom: follow. Reading higher up: count it.
+                if atBottom || last.senderId == session.userId {
+                    withMotion(Motion.smooth) { proxy.scrollTo(id, anchor: .bottom) }
+                } else {
+                    missed += 1
+                }
+            }
+            .overlay(alignment: .bottomTrailing) {
+                if !atBottom {
+                    jumpDown { withMotion(Motion.smooth) { proxy.scrollTo("bottom", anchor: .bottom) } }
+                        .padding(Layout.margin)
+                        .transition(.qPop)
+                }
+            }
+            .animation(Motion.adaptive(Motion.snappy), value: atBottom)
         }
         .safeAreaInset(edge: .bottom) { composer }
+    }
+
+    private var unreadDivider: some View {
+        HStack(spacing: Sp.sm) {
+            Rectangle().fill(Color.q.blueText.opacity(0.35)).frame(height: 1)
+            Text(t("chat2.newMessages")).qText(.label).foregroundStyle(Color.q.blueText).fixedSize()
+            Rectangle().fill(Color.q.blueText.opacity(0.35)).frame(height: 1)
+        }
+        .padding(.vertical, Sp.sm)
+        .accessibilityAddTraits(.isHeader)
+    }
+
+    private func jumpDown(_ action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: "chevron.down")
+                .font(.q(.headline))
+                .foregroundStyle(Color.q.blueText)
+                .frame(width: 44, height: 44)
+                .background(Color.q.card, in: Circle())
+                .qElevated()
+                .overlay(alignment: .topTrailing) {
+                    if missed > 0 {
+                        Text(verbatim: "\(missed)").font(.q(.label)).foregroundStyle(.white)
+                            .padding(.horizontal, 6).frame(minWidth: 20, minHeight: 20)
+                            .background(Color.q.blue, in: Capsule())
+                            .offset(x: 4, y: -4)
+                            .contentTransition(.numericText())
+                    }
+                }
+        }
+        .buttonStyle(.qPress)
+        .accessibilityLabel(missed > 0 ? t("chat2.jumpNew", ["n": missed]) : t("chat2.jumpDown"))
     }
 
     @ViewBuilder private func bubble(_ m: Message) -> some View {
@@ -231,6 +309,7 @@ struct ChatView: View {
                 if m.isPhoto { PhotoBubble(message: m, mine: mine) } else { VoiceBubble(message: m, mine: mine) }
                 if !mine { Spacer(minLength: 48) }
             }
+            .swipeToReply { reply(to: m) }
         } else {
             HStack {
                 if mine { Spacer(minLength: 48) }
@@ -262,16 +341,23 @@ struct ChatView: View {
                 }
                 if !mine { Spacer(minLength: 48) }
             }
+            .swipeToReply { reply(to: m) }
             .accessibilityElement(children: .combine)
+            .accessibilityAction(named: t("chat2.reply")) { reply(to: m) }
         }
     }
 
+    private func reply(to m: Message) {
+        withMotion(Motion.snappy) { replyingTo = m }
+        focused = true
+    }
+
     @ViewBuilder private func messageMenu(_ m: Message) -> some View {
-        Button(t("chat2.reply"), systemImage: "arrowshape.turn.up.left") { replyingTo = m; focused = true }
+        Button(t("chat2.reply"), systemImage: "arrowshape.turn.up.left") { reply(to: m) }
         Button(t("chat2.copy"), systemImage: "doc.on.doc") { UIPasteboard.general.string = m.body }
         Divider()
         ForEach(Reactions.all, id: \.key) { r in
-            Button(r.emoji) { Haptics.tick(); Task { await model.react(m, r.key) } }
+            Button(r.emoji) { Haptics.tick(); Task { await model.react(m, r.key, me: session.userId) } }
         }
     }
 
@@ -289,7 +375,7 @@ struct ChatView: View {
                     .padding(.horizontal, Sp.sm).padding(.vertical, Sp.xxs)
                     .background(Color.q.card, in: Capsule())
                     .overlay(Capsule().stroke(Color.q.line, lineWidth: 1))
-                    .onTapGesture { Haptics.tick(); Task { await model.react(m, key) } }
+                    .onTapGesture { Haptics.tick(); Task { await model.react(m, key, me: session.userId) } }
                     .transition(.qPop)
                 }
             }
@@ -354,6 +440,14 @@ struct ChatView: View {
                     if model.photosUnlocked(me: session.userId) { pickingPhoto = true }
                     else { toasts.show(t("safety.photosLockedSub")) }
                 }
+                // A photo copied elsewhere: send it without going through the library.
+                if UIPasteboard.general.hasImages, model.photosUnlocked(me: session.userId) {
+                    Button(t("chat2.pastePhoto"), systemImage: "doc.on.clipboard") {
+                        if let image = UIPasteboard.general.image, let data = image.jpegData(compressionQuality: 0.9) {
+                            Task { await sendPhotoData(data) }
+                        }
+                    }
+                }
             } label: {
                 Group {
                     if uploading { ProgressView().tint(.white) } else { Image(systemName: "plus").font(.q(.headline)) }
@@ -369,14 +463,23 @@ struct ChatView: View {
                 .lineLimit(1...5)
                 .font(.q(.body))
                 .focused($focused)
+                .limited($draft, to: 2000)
+                .onChange(of: draft) { _, v in Drafts.set("chat.\(matchId.uuidString.lowercased())", v) }
                 .padding(.horizontal, Sp.md)
                 .padding(.vertical, Sp.sm)
                 .background(Color.q.bg, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                .overlay(alignment: .topTrailing) {
+                    CharCounter(count: draft.count, limit: 2000)
+                        .padding(.horizontal, Sp.sm)
+                        .offset(y: -18)
+                }
             micOrSend
         }
         .padding(.horizontal, Sp.sm)
         .padding(.vertical, Sp.xs)
         .background(Color.q.card)
+        // Tapping Send (or the field) keeps the keyboard up while you're in a conversation.
+        .keepsKeyboard()
     }
 
     /// Mic while the field is empty, send once there's text: one button whose symbol morphs.
@@ -400,11 +503,16 @@ struct ChatView: View {
     }
 
     private func sendPhoto(_ item: PhotosPickerItem) async {
+        defer { photoItem = nil }
+        guard let data = try? await item.loadTransferable(type: Data.self) else { return }
+        await sendPhotoData(data)
+    }
+
+    private func sendPhotoData(_ data: Data) async {
         guard let me = session.userId else { return }
         uploading = true
-        defer { uploading = false; photoItem = nil }
+        defer { uploading = false }
         do {
-            guard let data = try await item.loadTransferable(type: Data.self) else { return }
             try await ChatMedia.sendPhoto(data, match: matchId, me: me)
             await model.load()
         } catch let e as ServerError where e.code == "photo_too_soon" {
@@ -421,7 +529,7 @@ struct ChatView: View {
         } else if AVAudioApplication.shared.recordPermission == .denied {
             micOff = true
         } else {
-            toasts.show(t("common.error"), error: true)
+            toasts.show(t("chat2.micFailed"), error: true)
         }
     }
 
@@ -463,7 +571,7 @@ struct ChatView: View {
             }
             onChange()
             dismiss()
-        } catch { toasts.show(t("common.error"), error: true) }
+        } catch { toasts.show(error) }
     }
 }
 
@@ -500,12 +608,17 @@ struct DateComposerSheet: View {
                 }
                 Section(t("date.where")) {
                     TextField(t("date.wherePlaceholder"), text: $place)
+                        .autocorrectionDisabled()
+                        .submitLabel(.send)
+                        .limited($place, to: 120)
+                        .onSubmit { if place.trimmingCharacters(in: .whitespaces).count >= 3 { Task { await send() } } }
                 }
                 if let error {
                     Section { Text(error).foregroundStyle(Color.q.danger) }
                 }
             }
             .scrollContentBackground(.hidden)
+            .scrollDismissesKeyboard(.interactively)
             .background(Color.q.bg)
             .navigationTitle(t("date.title"))
             .navigationBarTitleDisplayMode(.inline)
@@ -533,7 +646,7 @@ struct DateComposerSheet: View {
             } else {
                 error = t("date.invalid")
             }
-        } catch { self.error = t("common.error") }
+        } catch { self.error = errorText(error) }
     }
 }
 
@@ -582,6 +695,6 @@ struct ReportSheet: View {
             toasts.show(t("report.thanks"))
             dismiss()
             onDone()
-        } catch { toasts.show(t("common.error"), error: true) }
+        } catch { toasts.show(error) }
     }
 }

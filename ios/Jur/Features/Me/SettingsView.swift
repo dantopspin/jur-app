@@ -79,7 +79,7 @@ struct SettingsView: View {
             toasts.show(t("settings.deleted"))
             await session.signOut()
         } catch {
-            toasts.show(t("common.error"), error: true)
+            toasts.show(error)
         }
     }
 }

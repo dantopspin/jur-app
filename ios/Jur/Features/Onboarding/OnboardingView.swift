@@ -566,7 +566,7 @@ struct OnboardingView: View {
             // The member number was assigned with the profile; it rolls in when it arrives.
             memberNo = (try? await Backend.profile(id))?.memberNo
         } catch {
-            self.error = t("common.error")
+            self.error = errorText(error)
         }
     }
 
