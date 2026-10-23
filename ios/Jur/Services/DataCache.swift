@@ -2,6 +2,7 @@
 // at once (on launch, on a tab switch) and refresh behind. Raw JSON is stored and decoded
 // with the same decoder as live answers, so the cache always reads like the server.
 import Foundation
+import Supabase
 
 enum DataCache {
     private static let queue = DispatchQueue(label: "kz.jur.datacache", qos: .utility)

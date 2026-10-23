@@ -60,7 +60,7 @@ struct EventsView: View {
                                 .transition(.opacity)
                         }
                     } else if !shown.isEmpty {
-                        DepartureBoard(departures: shown.map(\.departure), showsColumns: true) { d in path.append(d.id) }
+                        DepartureBoard(departures: shown.map(\.departure), showsColumns: true, onSelect: { d in path.append(d.id) })
                             .transition(.opacity)
                     } else if let next = nextUp {
                         dayEmpty(next)
@@ -150,7 +150,7 @@ struct EventsView: View {
 
             DepartureBoard(departures: next.events.prefix(3).map(\.departure),
                            header: t("empty.nextTitle", ["day": dayLabel(next.day)]),
-                           seeAll: target.map { w in { range = w } }) { d in path.append(d.id) }
+                           seeAll: target.map { w in { range = w } }, onSelect: { d in path.append(d.id) })
 
             HStack(spacing: Sp.md) {
                 Text(t("events2.makeYourOwn")).qText(.callout).foregroundStyle(Color.q.inkSoft)
