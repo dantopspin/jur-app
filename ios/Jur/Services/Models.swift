@@ -56,3 +56,11 @@ struct Limits: Decodable, Equatable {
 
 /// "№0042"
 func formatMemberNo(_ n: Int) -> String { "№" + String(format: "%04d", n) }
+
+extension MyProfile {
+    /// Where Discover, events and clubs are: the travel city while travel mode is on.
+    var effectiveCity: String {
+        if let c = travelCity, let until = travelUntil.flatMap({ Date.iso($0) }), until > .now { return c }
+        return city
+    }
+}

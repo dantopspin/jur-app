@@ -19,7 +19,7 @@ struct PicksView: View {
                         VStack(spacing: Sp.md) {
                             NavigationLink { ProfileView(id: p.id, initial: p) } label: { ProfileCardView(card: p, compact: true) }
                                 .buttonStyle(.plain)
-                            if let d = decided[p.id] {
+                            if let d = decided[p.id] ?? p.mySwipe {
                                 QTag(label: t(d == .pass ? "picks.passed" : "picks.liked"), tone: d == .pass ? .neutral : .good)
                                     .transition(.qPop)
                             } else {

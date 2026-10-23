@@ -42,6 +42,21 @@ enum Media {
         return url.absoluteString
     }
 
+    /// Photos taken off a profile (or uploaded and then discarded) are removed from storage
+    /// with their small copies, so they stop being reachable by link. Only files in your
+    /// own folder can be removed (storage rules), and a failure just leaves the file.
+    static func deletePhotos(_ urls: some Sequence<String>) async {
+        let marker = "/storage/v1/object/public/photos/"
+        let paths = urls.compactMap { url -> [String]? in
+            guard let r = url.range(of: marker) else { return nil }
+            let path = String(url[r.upperBound...])
+            guard path.hasSuffix(".jpg") else { return [path] }
+            return [path, String(path.dropLast(4)) + "_t.jpg"]
+        }.flatMap { $0 }
+        guard !paths.isEmpty else { return }
+        _ = try? await supabase.storage.from("photos").remove(paths: paths)
+    }
+
     static func uploadSelfie(_ jpeg: Data, userId: UUID) async throws -> String {
         let path = "\(userId.uuidString.lowercased())/selfie-\(UUID().uuidString.lowercased()).jpg"
         _ = try await supabase.storage.from("verification")

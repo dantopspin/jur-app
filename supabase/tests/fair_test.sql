@@ -19,9 +19,9 @@ grant execute on function pg_temp.ok(boolean, text) to public;
 \set norm '''f0000000-0000-0000-0000-000000000003'''
 insert into auth.users (id) values (:v), (:pop), (:norm);
 insert into profiles (id, name, birthdate, gender, interested_in, city, photos, created_at, last_active_at) values
-  (:v,    'Vlad',  '1994-01-01', 'man',   'women', 'oskemen', '{v.jpg}', now() - interval '30 days', now()),
-  (:pop,  'Polina','1996-01-01', 'woman', 'men',   'oskemen', '{p.jpg}', now() - interval '30 days', now() - interval '1 minute'),
-  (:norm, 'Nora',  '1996-01-01', 'woman', 'men',   'oskemen', '{n.jpg}', now() - interval '30 days', now() - interval '2 hours');
+  (:v,    'Vlad',  '1994-01-01', 'man',   'women', 'oskemen', array['https://test.supabase.co/storage/v1/object/public/photos/' || :v || '/v.jpg'], now() - interval '30 days', now()),
+  (:pop,  'Polina','1996-01-01', 'woman', 'men',   'oskemen', array['https://test.supabase.co/storage/v1/object/public/photos/' || :pop || '/p.jpg'], now() - interval '30 days', now() - interval '1 minute'),
+  (:norm, 'Nora',  '1996-01-01', 'woman', 'men',   'oskemen', array['https://test.supabase.co/storage/v1/object/public/photos/' || :norm || '/n.jpg'], now() - interval '30 days', now() - interval '2 hours');
 
 -- 30 admirers (other city, so they don't appear in v's deck)
 insert into auth.users (id) select ('f1000000-0000-0000-0000-' || lpad(g::text, 12, '0'))::uuid from generate_series(1, 30) g;
@@ -77,7 +77,7 @@ select pg_temp.ok(pending_likes(:pop) = 5, 'likes from banned accounts are ignor
 \set nu '''f0000000-0000-0000-0000-000000000004'''
 insert into auth.users (id) values (:nu);
 insert into profiles (id, name, birthdate, gender, interested_in, city, photos, last_active_at) values
-  (:nu, 'Nurai', '1997-01-01', 'woman', 'men', 'oskemen', '{nu.jpg}', now() - interval '5 hours');
+  (:nu, 'Nurai', '1997-01-01', 'woman', 'men', 'oskemen', array['https://test.supabase.co/storage/v1/object/public/photos/' || :nu || '/nu.jpg'], now() - interval '5 hours');
 select pg_temp.ok(is_newcomer(:nu) and not is_newcomer(:norm), 'a new member is a newcomer for 3 days');
 set role authenticated;
 set request.jwt.claim.sub = 'f0000000-0000-0000-0000-000000000001';

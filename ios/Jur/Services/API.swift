@@ -112,7 +112,12 @@ extension Backend {
         try await rpc("swipe", ["p_target": .uuid(target), "p_kind": .string(kind.rawValue), "p_note": .optional(note)])
     }
 
-    static func rewind() async throws -> RewindResult { try await rpc("rewind") }
+    /// Undo a pass: the given person (the toast's "Вернуть"), or the last swipe if it was a pass.
+    static func rewind(_ target: UUID? = nil) async throws -> RewindResult {
+        var params: [String: AnyJSON] = [:]
+        if let target { params["p_target"] = .uuid(target) }
+        return try await rpc("rewind", params)
+    }
 
     // MARK: discover filters
 
@@ -220,7 +225,7 @@ extension Backend {
         ])
     }
 
-    static func respondDate(_ message: UUID, accept: Bool) async throws -> OkResult {
+    static func respondDate(_ message: UUID, accept: Bool) async throws -> DateAnswer {
         try await rpc("respond_date", ["p_message": .uuid(message), "p_answer": .string(accept ? "accepted" : "declined")])
     }
 
@@ -254,7 +259,7 @@ extension Backend {
     static func event(_ id: UUID) async throws -> EventItem? { try await rpc("get_event", ["p_id": .uuid(id)], as: EventItem?.self) }
     static func joinEvent(_ id: UUID) async throws -> OkResult { try await rpc("join_event", ["p_event": .uuid(id)]) }
     static func leaveEvent(_ id: UUID) async throws { try await call("leave_event", ["p_event": .uuid(id)]) }
-    static func checkIn(_ id: UUID, code: String) async throws -> OkResult {
+    static func checkIn(_ id: UUID, code: String) async throws -> CheckInResult {
         try await rpc("check_in", ["p_event": .uuid(id), "p_code": .string(code)])
     }
     static func hostCode(_ id: UUID) async throws -> HostCode { try await rpc("host_checkin_code", ["p_event": .uuid(id)]) }
@@ -286,8 +291,26 @@ extension Backend {
 
     // MARK: push
 
+    /// The phone's token, kept so signing out can take it off this account.
+    private static let pushTokenKey = "jur.pushToken"
+
     static func registerPush(token: String) async throws {
         try await call("register_push_token", ["p_token": .string(token), "p_platform": .string("ios")])
+        UserDefaults.standard.set(token, forKey: pushTokenKey)
+    }
+
+    /// Signing out: this phone stops getting the account's notifications. Gives up after a
+    /// few seconds offline (signing in as someone else moves the token anyway).
+    static func unregisterPush() async {
+        guard let token = UserDefaults.standard.string(forKey: pushTokenKey) else { return }
+        let done = await withTaskGroup(of: Bool.self) { group in
+            group.addTask { (try? await call("unregister_push_token", ["p_token": .string(token)])) != nil }
+            group.addTask { try? await Task.sleep(for: .seconds(4)); return false }
+            let first = await group.next() ?? false
+            group.cancelAll()
+            return first
+        }
+        if done { UserDefaults.standard.removeObject(forKey: pushTokenKey) }
     }
 }
 

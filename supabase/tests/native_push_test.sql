@@ -15,7 +15,7 @@ grant execute on function pg_temp.ok(boolean, text) to public;
 \set nia '''c1000000-0000-0000-0000-000000000001'''
 insert into auth.users (id) values (:nia);
 insert into profiles (id, name, birthdate, gender, interested_in, city, photos, locale)
-values (:nia, 'Nia', '1997-05-05', 'woman', 'men', 'almaty', '{n.jpg}', 'en');
+values (:nia, 'Nia', '1997-05-05', 'woman', 'men', 'almaty', array['https://test.supabase.co/storage/v1/object/public/photos/' || :nia || '/n.jpg'], 'en');
 
 set role authenticated;
 set request.jwt.claim.sub = 'c1000000-0000-0000-0000-000000000001';

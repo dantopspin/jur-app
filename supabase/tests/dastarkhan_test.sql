@@ -16,8 +16,8 @@ grant execute on function pg_temp.ok(boolean, text) to public;
 \set guest '''b0000000-0000-0000-0000-000000000002'''
 insert into auth.users (id) values (:host), (:guest);
 insert into profiles (id, name, birthdate, gender, interested_in, city, photos, is_host) values
-  (:host, 'Madina', '1994-04-04', 'woman', 'men', 'almaty', '{m.jpg}', true),
-  (:guest, 'Nurlan', '1993-03-03', 'man', 'women', 'almaty', '{n.jpg}', false);
+  (:host, 'Madina', '1994-04-04', 'woman', 'men', 'almaty', array['https://test.supabase.co/storage/v1/object/public/photos/' || :host || '/m.jpg'], true),
+  (:guest, 'Nurlan', '1993-03-03', 'man', 'women', 'almaty', array['https://test.supabase.co/storage/v1/object/public/photos/' || :guest || '/n.jpg'], false);
 
 set role authenticated;
 set request.jwt.claim.sub = 'b0000000-0000-0000-0000-000000000001';

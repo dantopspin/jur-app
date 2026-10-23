@@ -63,6 +63,8 @@ final class DiscoverModel {
     /// When the top card appeared, and passes so far this session (for the undo toast).
     private var shownAt = Date.now
     private var passes = 0
+    /// Swipes still on their way to the server; undo waits for them so it never races one.
+    @ObservationIgnored private var sending: [UUID: Task<Void, Never>] = [:]
 
     /// Optimistic: the card leaves at once (animated); on a limit it comes back and the paywall opens.
     func commit(_ kind: SwipeKind, note: String? = nil, toasts: ToastCenter) {
@@ -79,13 +81,17 @@ final class DiscoverModel {
         if kind == .pass {
             passes += 1
             if quick || passes <= 3 {
+                // The toast names this person, so it brings back this person (not whoever was passed last).
                 toasts.show(t("discover.passed", ["name": card.name]), symbol: "arrow.uturn.backward",
                             action: t("discover.undo")) { [weak self] in
-                    Task { await self?.undo(toasts: toasts) }
+                    Task { await self?.undo(card.id, toasts: toasts) }
                 }
             }
         }
-        Task { await send(card, kind, note: note, toasts: toasts) }
+        sending[card.id] = Task { [weak self] in
+            await self?.send(card, kind, note: note, toasts: toasts)
+            self?.sending[card.id] = nil
+        }
     }
 
     private func send(_ card: ProfileCard, _ kind: SwipeKind, note: String?, toasts: ToastCenter) async {
@@ -121,10 +127,13 @@ final class DiscoverModel {
         withMotion(Motion.bouncy) { queue.insert(card, at: 0) }
     }
 
-    func undo(toasts: ToastCenter) async {
+    /// `target`: the person the toast named. Without one (the Undo button): the last swipe.
+    func undo(_ target: UUID? = nil, toasts: ToastCenter) async {
+        if let target { await sending[target]?.value } else { for task in sending.values { await task.value } }
         do {
-            let r = try await Backend.rewind()
+            let r = try await Backend.rewind(target)
             if let p = r.profile {
+                queue.removeAll { $0.id == p.id }
                 returningId = p.id
                 returningEdge = .leading
                 withMotion(Motion.bouncy) { queue.insert(p, at: 0) }
@@ -178,9 +187,12 @@ struct DiscoverView: View {
                         Text(t(greetingKey(), ["name": p.name])).qText(.footnote).foregroundStyle(Color.q.inkSoft)
                             .qScrollDepth()
                     }
+                    if session.profile?.paused == true {
+                        PausedBanner { await model.reload() }
+                    }
                     if !model.tonight.isEmpty {
                         DepartureBoard(departures: model.tonight.prefix(3).map(\.departure),
-                                       header: t("board.today", ["city": Cities.label(session.profile?.city ?? "")]),
+                                       header: t("board.today", ["city": Cities.label(session.profile?.effectiveCity ?? "")]),
                                        seeAll: openEvents) { d in
                             openEvent = model.tonight.first { $0.id == d.id }
                         }
@@ -309,6 +321,48 @@ struct DiscoverView: View {
         .padding(.bottom, Sp.lg)
     }
 
+}
+
+/// On pause nobody sees you in Discover, and likes you send wait until you're back.
+/// Said where it matters, with the way back right there.
+struct PausedBanner: View {
+    let onResumed: () async -> Void
+    @Environment(SessionStore.self) private var session
+    @Environment(ToastCenter.self) private var toasts
+    @State private var busy = false
+
+    var body: some View {
+        HStack(alignment: .top, spacing: Sp.md) {
+            Image(systemName: "pause.circle.fill").font(.q(.title3)).foregroundStyle(Color.q.clay)
+                .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: Sp.xxs) {
+                Text(t("discover.pausedTitle")).qText(.callout).foregroundStyle(Color.q.ink)
+                Text(t("discover.pausedBody")).qText(.footnote).foregroundStyle(Color.q.muted)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer(minLength: Sp.sm)
+            Button { Task { await resume() } } label: { BusyLabel(title: t("discover.resume"), busy: busy) }
+                .buttonStyle(.q(.secondary, compact: true))
+                .fixedSize()
+                .disabled(busy)
+        }
+        .padding(Sp.lg)
+        .background(Color.q.card, in: RoundedRectangle(cornerRadius: Radius.lg, style: .continuous))
+        .accessibilityElement(children: .combine)
+        .transition(.opacity)
+    }
+
+    private func resume() async {
+        busy = true
+        defer { busy = false }
+        do {
+            try await Backend.setPaused(false)
+            await session.refreshProfile()
+            Haptics.tick()
+            toasts.show(t("me2.resumed"), symbol: "eye.fill")
+            await onResumed()
+        } catch { toasts.show(error) }
+    }
 }
 
 extension ProfileCard {

@@ -23,12 +23,12 @@ grant execute on function pg_temp.ok(boolean, text) to public;
 insert into auth.users (id, email) values (:d1, 'Dana@Example.com'), (:d2, 'dina@example.com'), (:d3, 'dias@example.com'),
   (:d4, 'daur@example.com'), (:b1, 'bota@example.com'), (:b2, 'bolat@example.com');
 insert into profiles (id, name, birthdate, gender, interested_in, city, photos, mode) values
-  (:d1, 'Dana', '1996-01-01', 'woman', 'men',   'shymkent', '{1.jpg}', 'dating'),
-  (:d2, 'Dina', '1997-01-01', 'woman', 'men',   'shymkent', '{2.jpg}', 'both'),
-  (:d3, 'Dias', '1995-01-01', 'man',   'women', 'shymkent', '{3.jpg}', 'dating'),
-  (:d4, 'Daur', '1994-01-01', 'man',   'women', 'shymkent', '{4.jpg}', 'both'),
-  (:b1, 'Bota', '1998-01-01', 'woman', 'men',   'shymkent', '{5.jpg}', 'buddy'),
-  (:b2, 'Bolat','1993-01-01', 'man',   'women', 'shymkent', '{6.jpg}', 'buddy');
+  (:d1, 'Dana', '1996-01-01', 'woman', 'men',   'shymkent', array['https://test.supabase.co/storage/v1/object/public/photos/' || :d1 || '/1.jpg'], 'dating'),
+  (:d2, 'Dina', '1997-01-01', 'woman', 'men',   'shymkent', array['https://test.supabase.co/storage/v1/object/public/photos/' || :d2 || '/2.jpg'], 'both'),
+  (:d3, 'Dias', '1995-01-01', 'man',   'women', 'shymkent', array['https://test.supabase.co/storage/v1/object/public/photos/' || :d3 || '/3.jpg'], 'dating'),
+  (:d4, 'Daur', '1994-01-01', 'man',   'women', 'shymkent', array['https://test.supabase.co/storage/v1/object/public/photos/' || :d4 || '/4.jpg'], 'both'),
+  (:b1, 'Bota', '1998-01-01', 'woman', 'men',   'shymkent', array['https://test.supabase.co/storage/v1/object/public/photos/' || :b1 || '/5.jpg'], 'buddy'),
+  (:b2, 'Bolat','1993-01-01', 'man',   'women', 'shymkent', array['https://test.supabase.co/storage/v1/object/public/photos/' || :b2 || '/6.jpg'], 'buddy');
 update city_launch set opens_at_members = 0 where city = 'shymkent';
 
 -- ---------------------------------------------------------------

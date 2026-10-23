@@ -500,7 +500,16 @@ struct PaywallView: View {
             if result.userCancelled { return }
             await waitForPro()
             Haptics.success()
-            withMotion(Motion.smooth) { welcome = true }
+            if session.limits?.pro == true {
+                withMotion(Motion.smooth) { welcome = true }
+            } else {
+                // Paid, but the store's note to our server is late: say so instead of a welcome
+                // whose Pro features (like the gift) wouldn't work yet, and keep checking.
+                toasts.show(t("paywall.pending"), symbol: "hourglass")
+                let session = session
+                Task { await PaywallView.keepChecking(session) }
+                dismiss()
+            }
         } catch {
             toasts.show(error)
         }
@@ -516,6 +525,15 @@ struct PaywallView: View {
             if session.limits?.pro == true { withMotion(Motion.smooth) { welcome = true } }
         } catch {
             toasts.show(error)
+        }
+    }
+
+    /// After a slow purchase: check every 10 seconds for two minutes, so Pro turns on by itself.
+    @MainActor static func keepChecking(_ session: SessionStore) async {
+        for _ in 0..<12 {
+            try? await Task.sleep(for: .seconds(10))
+            await session.refreshLimits()
+            if session.limits?.pro == true { Haptics.success(); return }
         }
     }
 

@@ -35,6 +35,8 @@ struct ProfileCard: Decodable, Identifiable, Hashable {
     let superLikedMe: Bool?
     let boosted: Bool?
     let note: String?
+    // only in daily picks: what you already decided today
+    var mySwipe: SwipeKind? = nil
 
     var photoURLs: [URL] { photos.compactMap(URL.init(string:)) }
     var stamps: [StampData] {
@@ -49,7 +51,10 @@ struct ProfileCard: Decodable, Identifiable, Hashable {
 
 /// Friends who joined with your code, and how many more until the next free Pro week.
 struct Referrals: Decodable, Equatable {
+    /// Friends who are verified (they count towards Pro).
     let count: Int
+    /// Joined with your code but not verified yet.
+    let pending: Int?
     let every: Int
     let toNext: Int
     let bonusDays: Int
@@ -59,6 +64,21 @@ struct SwipeResult: Decodable {
     let ok: Bool
     let error: String?
     let matchId: UUID?
+}
+
+/// Saying yes to a date at an event: `joined` is false when the event had no spot left.
+struct DateAnswer: Decodable {
+    let ok: Bool
+    let error: String?
+    let joined: Bool?
+    let reason: String?
+}
+
+/// "too_many_tries" comes with the time the next try is allowed.
+struct CheckInResult: Decodable {
+    let ok: Bool
+    let error: String?
+    let retryAt: String?
 }
 
 struct RewindResult: Decodable {

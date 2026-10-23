@@ -17,9 +17,9 @@ grant execute on function pg_temp.ok(boolean, text) to public;
 \set plain '''e0000000-0000-0000-0000-000000000003'''
 insert into auth.users (id) values (:host), (:guest), (:plain);
 insert into profiles (id, name, birthdate, gender, interested_in, city, photos, verification_status) values
-  (:host,  'Hana',  '1995-01-01', 'woman', 'men',   'karaganda', '{h.jpg}', 'approved'),
-  (:guest, 'Gani',  '1994-01-01', 'man',   'women', 'karaganda', '{g.jpg}', 'none'),
-  (:plain, 'Pavel', '1993-01-01', 'man',   'women', 'karaganda', '{p.jpg}', 'none');
+  (:host,  'Hana',  '1995-01-01', 'woman', 'men',   'karaganda', array['https://test.supabase.co/storage/v1/object/public/photos/' || :host || '/h.jpg'], 'approved'),
+  (:guest, 'Gani',  '1994-01-01', 'man',   'women', 'karaganda', array['https://test.supabase.co/storage/v1/object/public/photos/' || :guest || '/g.jpg'], 'none'),
+  (:plain, 'Pavel', '1993-01-01', 'man',   'women', 'karaganda', array['https://test.supabase.co/storage/v1/object/public/photos/' || :plain || '/p.jpg'], 'none');
 
 -- ---------------------------------------------------------------
 -- Founding numbers

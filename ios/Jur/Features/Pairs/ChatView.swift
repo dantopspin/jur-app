@@ -70,21 +70,32 @@ final class ChatModel {
     /// The reaction shows at once (same one again takes it off); the server's list follows.
     func react(_ m: Message, _ reaction: String, me: UUID?) async {
         if let me, let i = messages.firstIndex(where: { $0.id == m.id }) {
+            // One reaction per person, as on the server: a new one replaces mine, the same one removes it.
             var list = messages[i].reactions ?? []
-            if list.contains(where: { $0.profileId == me && $0.reaction == reaction }) {
-                list.removeAll { $0.profileId == me && $0.reaction == reaction }
-            } else {
-                list.append(MessageReaction(profileId: me, reaction: reaction))
-            }
+            let same = list.contains { $0.profileId == me && $0.reaction == reaction }
+            list.removeAll { $0.profileId == me }
+            if !same { list.append(MessageReaction(profileId: me, reaction: reaction)) }
             withMotion(Motion.snappy) { messages[i].reactions = list }
         }
         try? await Backend.react(m.id, reaction)
         if let fresh = try? await Backend.messages(matchId) { apply(fresh) }
     }
 
-    func respond(_ m: Message, accept: Bool) async {
-        _ = try? await Backend.respondDate(m.id, accept: accept)
+    /// Returns what to tell the person, if anything (e.g. the event had no spot left).
+    func respond(_ m: Message, accept: Bool) async -> (text: String, isError: Bool)? {
+        var note: (text: String, isError: Bool)?
+        do {
+            let r = try await Backend.respondDate(m.id, accept: accept)
+            switch (r.ok, r.error, r.joined) {
+            case (true, _, false?): note = (t("chat.dateNoSpot"), false)
+            case (false, "event_cancelled"?, _): note = (t("chat.dateEventCancelled"), true)
+            case (false, "event_started"?, _): note = (t("chat.dateEventStarted"), true)
+            case (false, _, _): note = (t("common.error"), true)
+            default: break
+            }
+        } catch { note = (errorText(error), true) }
         if let fresh = try? await Backend.messages(matchId) { apply(fresh) }
+        return note
     }
 
     /// Photos unlock once both people have written a text message (the server enforces it too).
@@ -292,6 +303,11 @@ struct ChatView: View {
         .accessibilityLabel(missed > 0 ? t("chat2.jumpNew", ["n": missed]) : t("chat2.jumpDown"))
     }
 
+    private func answer(_ m: Message, accept: Bool) async {
+        guard let note = await model.respond(m, accept: accept) else { return }
+        if note.isError { toasts.show(note.text, error: true) } else { toasts.show(note.text, symbol: "info.circle.fill") }
+    }
+
     @ViewBuilder private func bubble(_ m: Message) -> some View {
         let mine = m.senderId == session.userId
         if m.isDate, let p = m.payload {
@@ -300,8 +316,11 @@ struct ChatView: View {
                 when: p.when.flatMap { Date.iso($0) }.map(Fmt.dayTime) ?? "",
                 place: p.place ?? "",
                 state: p.status == "accepted" ? .accepted : p.status == "declined" ? .declined : .pending(canAnswer: !mine),
-                onAccept: { Haptics.success(); Task { await model.respond(m, accept: true) } },
-                onDecline: { Task { await model.respond(m, accept: false) } })
+                onAccept: {
+                    Haptics.success()
+                    Task { await answer(m, accept: true) }
+                },
+                onDecline: { Task { await answer(m, accept: false) } })
             .padding(.vertical, Sp.sm)
         } else if m.isPhoto || m.isVoice {
             HStack {

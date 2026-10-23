@@ -75,6 +75,9 @@ const en = {
   },
   tabs: { discover: 'Discover', events: 'Events', matches: 'Matches', me: 'Me' },
   discover: {
+    pausedTitle: "You're paused",
+    pausedBody: "Nobody sees you in Discover. Likes you send arrive once you're back.",
+    resume: "Resume",
     passed: "{name} skipped",
     undo: "Undo",
     empty: 'That\'s everyone for now.',
@@ -167,6 +170,9 @@ const en = {
     newMatch: "New match. Say hi",
   },
   chat: {
+    dateNoSpot: "Date accepted, but the event is already full",
+    dateEventCancelled: "This event was cancelled",
+    dateEventStarted: "The event has already started",
     placeholder: 'Message',
     send: 'Send',
     icebreaker: 'You matched {when}. Suggest a run, a ski day or a coffee.',
@@ -247,6 +253,7 @@ const en = {
     sent: 'Sent for review. Usually within 24 hours.',
   },
   paywall: {
+    pending: "Payment done. Pro turns on within a minute",
     title: 'JÜR Pro',
     sub: "Find someone at your pace, faster.",
     f1: 'Unlimited likes',
@@ -654,6 +661,7 @@ const en = {
     again: "Again next week?",
   },
   board: {
+    tooManyTries: "Too many tries. Try again at {time}",
     today: "Today · {city}",
     all: "All events",
     time: "Time",
@@ -740,6 +748,7 @@ const en = {
     todo: "To do",
   },
   me2: {
+    invitePending: "Not verified yet: {n}",
     preview: "See how others see you",
     previewNote: "This is your card in Discover. Tap the photo to see the next one.",
     stamps: "Stamps: {n}",
@@ -754,11 +763,11 @@ const en = {
     boosts: "Boosts",
     balanceFooter: "Likes and super likes refill every day.",
     invite: "Invite a friend",
-    inviteLead: "Every {every} friends who join with your code give you {days} days of Pro.",
+    inviteLead: "Every {every} friends who join with your code and verify their profile give you {days} days of Pro.",
     yourCode: "Your code",
     copy: "Copy",
     copied: "Code copied",
-    inviteProgress: "Joined with your code: {n}. {left} more for {days} days of Pro.",
+    inviteProgress: "Verified: {n}. {left} more and {days} days of Pro are yours.",
     share: "Share invite",
     shareText: "Join me on JÜR, where people meet through sport. Use my code {code} when you sign up: {url}",
     friendCode: "Got a friend's code?",

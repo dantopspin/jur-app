@@ -399,7 +399,13 @@ struct EventDetailView: View {
             } else {
                 codeError = true
                 Haptics.failure()
-                toasts.show(t(r.error == "not_now" ? "events.notNow" : "board.badCode"), error: true)
+                switch r.error {
+                case "not_now": toasts.show(t("events.notNow"), error: true)
+                case "too_many_tries":
+                    let at = r.retryAt.flatMap { Date.iso($0) }.map(Fmt.time) ?? ""
+                    toasts.show(t("board.tooManyTries", ["time": at]), error: true)
+                default: toasts.show(t("board.badCode"), error: true)
+                }
             }
         } catch { toasts.show(error) }
     }

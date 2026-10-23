@@ -234,7 +234,7 @@ Before submitting you also need a hosted Privacy Policy and Terms of Use page; p
 ## Tests
 
 ```bash
-npm run test:db    # migrations + 205 behavioural tests on a throwaway local Postgres
+npm run test:db    # migrations + 289 behavioural tests (incl. a two-session race) on a throwaway local Postgres
 npm test           # date, inbox-time, age, contact-number and photo-blur logic
 ```
 

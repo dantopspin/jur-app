@@ -28,7 +28,7 @@ insert into auth.users (id) values (:aliya), (:timur), (:dana), (:arman), (:host
 set role authenticated;
 set request.jwt.claim.sub = '11111111-1111-1111-1111-111111111111';
 insert into profiles (id, name, birthdate, gender, interested_in, city, photos, next_challenge)
-values (:aliya, 'Aliya', '1997-05-01', 'woman', 'men', 'almaty', '{a.jpg}', 'First half marathon');
+values (:aliya, 'Aliya', '1997-05-01', 'woman', 'men', 'almaty', array['https://test.supabase.co/storage/v1/object/public/photos/' || :aliya || '/a.jpg'], 'First half marathon');
 insert into profile_sports (profile_id, sport_code, level) values (:aliya, 'running', 'regular'), (:aliya, 'skiing', 'casual');
 insert into achievements (profile_id, sport_code, title, result) values (:aliya, 'running', 'Almaty Marathon 10K', '52:10');
 
@@ -70,17 +70,17 @@ end $$;
 
 set request.jwt.claim.sub = '22222222-2222-2222-2222-222222222222';
 insert into profiles (id, name, birthdate, gender, interested_in, city, photos)
-values (:timur, 'Timur', '1994-02-10', 'man', 'women', 'almaty', '{t.jpg}');
+values (:timur, 'Timur', '1994-02-10', 'man', 'women', 'almaty', array['https://test.supabase.co/storage/v1/object/public/photos/' || :timur || '/t.jpg']);
 insert into profile_sports (profile_id, sport_code) values (:timur, 'skiing'), (:timur, 'tennis');
 select pg_temp.ok((select count(*) from profiles) = 1, 'a user sees only their own profile row');
 
 set request.jwt.claim.sub = '33333333-3333-3333-3333-333333333333';
 insert into profiles (id, name, birthdate, gender, interested_in, city, photos)
-values (:dana, 'Dana', '1998-08-08', 'woman', 'men', 'astana', '{d.jpg}');
+values (:dana, 'Dana', '1998-08-08', 'woman', 'men', 'astana', array['https://test.supabase.co/storage/v1/object/public/photos/' || :dana || '/d.jpg']);
 
 set request.jwt.claim.sub = '44444444-4444-4444-4444-444444444444';
 insert into profiles (id, name, birthdate, gender, interested_in, city, photos)
-values (:arman, 'Arman', '1990-01-01', 'man', 'women', 'almaty', '{ar.jpg}');
+values (:arman, 'Arman', '1990-01-01', 'man', 'women', 'almaty', array['https://test.supabase.co/storage/v1/object/public/photos/' || :arman || '/ar.jpg']);
 insert into profile_sports (profile_id, sport_code) values (:arman, 'running');
 
 set request.jwt.claim.sub = '66666666-6666-6666-6666-666666666666';
@@ -217,7 +217,7 @@ select pg_temp.ok(activate_boost()->>'error' = 'already_boosted', 'cannot stack 
 reset role;
 insert into auth.users (id) values ('77777777-7777-7777-7777-777777777777');
 insert into profiles (id, name, birthdate, gender, interested_in, city, photos)
-values ('77777777-7777-7777-7777-777777777777', 'Saule', '1995-03-03', 'woman', 'men', 'almaty', '{s.jpg}');
+values ('77777777-7777-7777-7777-777777777777', 'Saule', '1995-03-03', 'woman', 'men', 'almaty', array['https://test.supabase.co/storage/v1/object/public/photos/' || '77777777-7777-7777-7777-777777777777' || '/s.jpg']);
 set role authenticated;
 set request.jwt.claim.sub = '77777777-7777-7777-7777-777777777777';
 select pg_temp.ok(discover()->0->>'name' = 'Arman' and (discover()->0->>'boosted')::boolean, 'boosted profile leads the feed');
@@ -253,12 +253,14 @@ do $$ begin
 exception when insufficient_privilege then raise notice 'ok - cannot message after a block';
 end $$;
 
--- three different reporters auto-hide a profile
+-- three different reporters who crossed paths with someone auto-hide them (here: she liked them)
 reset role;
+insert into swipes (swiper_id, target_id, kind)
+select '33333333-3333-3333-3333-333333333333', id, 'like' from profiles where name like 'W%' order by id limit 3;
 do $$
 declare r uuid;
 begin
-  for r in select id from profiles where name like 'W%' limit 3 loop
+  for r in select id from profiles where name like 'W%' order by id limit 3 loop
     perform set_config('request.jwt.claim.sub', r::text, true);
     execute 'set local role authenticated';
     insert into reports (reporter_id, reported_id, reason) values (r, '33333333-3333-3333-3333-333333333333', 'fake');
@@ -272,7 +274,7 @@ select pg_temp.ok((select hidden from profiles where id = :dana), 'three reports
 -- ---------------------------------------------------------------
 reset role;
 insert into profiles (id, name, birthdate, gender, interested_in, city, photos)
-values (:host, 'Coach Erlan', '1988-01-01', 'man', 'women', 'almaty', '{h.jpg}');
+values (:host, 'Coach Erlan', '1988-01-01', 'man', 'women', 'almaty', array['https://test.supabase.co/storage/v1/object/public/photos/' || :host || '/h.jpg']);
 
 set role authenticated;
 set request.jwt.claim.sub = '55555555-5555-5555-5555-555555555555';
@@ -342,7 +344,15 @@ begin
     execute 'reset role';
   end loop;
 end $$;
-select pg_temp.ok(is_pro(:aliya), 'two referrals unlock a week of Pro');
+select pg_temp.ok(not is_pro(:aliya), 'two sign-ups alone don''t unlock Pro (friends must be verified)');
+update profiles set verification_status = 'approved' where name = 'W10';
+select pg_temp.ok(not is_pro(:aliya), 'one verified friend is not enough');
+update profiles set verification_status = 'approved' where name = 'W11';
+select pg_temp.ok(is_pro(:aliya), 'two verified referrals unlock a week of Pro');
+update profiles set verification_status = 'none' where name = 'W11';
+update profiles set verification_status = 'approved' where name = 'W11';
+select pg_temp.ok((select count(*) from referral_credits where referrer_id = :aliya) = 2,
+                  'a friend counts once, even if verified again');
 
 set role authenticated;
 set request.jwt.claim.sub = '22222222-2222-2222-2222-222222222222';

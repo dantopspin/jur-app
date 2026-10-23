@@ -20,11 +20,11 @@ grant execute on function pg_temp.ok(boolean, text) to public;
 
 insert into auth.users (id) values (:asel), (:bolat), (:cara), (:daur), (:erlan);
 insert into profiles (id, name, birthdate, gender, interested_in, city, photos, locale) values
-  (:asel,  'Asel',  '1996-03-02', 'woman', 'men',   'almaty', '{a.jpg}', 'kk'),
-  (:bolat, 'Bolat', '1994-07-11', 'man',   'women', 'almaty', '{b.jpg}', 'en'),
-  (:cara,  'Cara',  '1995-01-20', 'woman', 'men',   'almaty', '{c.jpg}', 'ru'),
-  (:daur,  'Daur',  '1993-09-09', 'man',   'women', 'almaty', '{d.jpg}', 'ru'),
-  (:erlan, 'Erlan', '1992-12-12', 'man',   'women', 'almaty', '{e.jpg}', 'ru');
+  (:asel,  'Asel',  '1996-03-02', 'woman', 'men',   'almaty', array['https://test.supabase.co/storage/v1/object/public/photos/' || :asel || '/a.jpg'], 'kk'),
+  (:bolat, 'Bolat', '1994-07-11', 'man',   'women', 'almaty', array['https://test.supabase.co/storage/v1/object/public/photos/' || :bolat || '/b.jpg'], 'en'),
+  (:cara,  'Cara',  '1995-01-20', 'woman', 'men',   'almaty', array['https://test.supabase.co/storage/v1/object/public/photos/' || :cara || '/c.jpg'], 'ru'),
+  (:daur,  'Daur',  '1993-09-09', 'man',   'women', 'almaty', array['https://test.supabase.co/storage/v1/object/public/photos/' || :daur || '/d.jpg'], 'ru'),
+  (:erlan, 'Erlan', '1992-12-12', 'man',   'women', 'almaty', array['https://test.supabase.co/storage/v1/object/public/photos/' || :erlan || '/e.jpg'], 'ru');
 
 -- ---------------------------------------------------------------
 -- Push tokens
@@ -83,7 +83,7 @@ select pg_temp.ok((select array_agg(body order by created_at) from messages wher
                   'both notes open the chat, earlier note first');
 select pg_temp.ok((select count(*) from push_outbox where kind = 'match' and profile_id in (:asel, :bolat)) = 2, 'both people get a match push');
 select pg_temp.ok((select count(*) from push_outbox where kind = 'message' and profile_id in (:asel, :bolat)) = 0, 'notes do not trigger extra message pushes');
-select pg_temp.ok((select title from push_outbox where profile_id = :asel and kind = 'match') = 'Жүректер сәйкес келді!',
+select pg_temp.ok((select title from push_outbox where profile_id = :asel and kind = 'match') = 'Бір қарқында!',
                   'push copy follows the recipient''s language (kk)');
 select pg_temp.ok((select body from push_outbox where profile_id = :bolat and kind = 'match') like 'You and Asel%',
                   'push copy follows the recipient''s language (en)');

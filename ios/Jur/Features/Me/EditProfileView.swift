@@ -10,6 +10,8 @@ struct EditProfileView: View {
     @State private var photos: [String] = []
     @State private var pickerItems: [PhotosPickerItem] = []
     @State private var uploading = false
+    /// Uploaded on this visit: removed from storage if the edit is thrown away.
+    @State private var uploadedNow: [String] = []
     @State private var name = ""
     @State private var bio = ""
     @State private var challenge = ""
@@ -93,7 +95,13 @@ struct EditProfileView: View {
         .navigationBarBackButtonHidden(dirty)
         .confirmationDialog(t("edit.unsavedTitle"), isPresented: $confirmLeave, titleVisibility: .visible) {
             Button(t("common.save")) { Task { await save() } }
-            Button(t("edit.discard"), role: .destructive) { original = nil; dismiss() }
+            Button(t("edit.discard"), role: .destructive) {
+                let unused = uploadedNow
+                uploadedNow = []
+                Task { await Media.deletePhotos(unused) }
+                original = nil
+                dismiss()
+            }
             Button(t("common.cancel"), role: .cancel) {}
         }
         .toolbar {
@@ -118,7 +126,13 @@ struct EditProfileView: View {
                 uploading = true
                 defer { uploading = false; pickerItems = [] }
                 for item in items where photos.count < 6 {
-                    if let url = try? await Media.uploadProfilePhoto(item, userId: id) { photos.append(url) }
+                    do {
+                        let url = try await Media.uploadProfilePhoto(item, userId: id)
+                        photos.append(url)
+                        uploadedNow.append(url)
+                    } catch {
+                        toasts.show(error)
+                    }
                 }
             }
         }
@@ -158,6 +172,10 @@ struct EditProfileView: View {
             nextChallenge: challenge.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty, photos: photos)
         do {
             try await Backend.updateProfile(userId: id, u, sports: sports)
+            // Photos that were on the profile or uploaded now, and aren't kept: gone from storage.
+            let dropped = Set((original?.photos ?? []) + uploadedNow).subtracting(photos)
+            uploadedNow = []
+            Task { await Media.deletePhotos(dropped) }
             await session.refreshProfile()
             original = current
             toasts.show(t("edit.saved"))

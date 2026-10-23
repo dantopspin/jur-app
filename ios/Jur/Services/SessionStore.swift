@@ -90,6 +90,8 @@ final class SessionStore {
     }
 
     func signOut() async {
+        // First, while still signed in: this phone stops getting the account's notifications.
+        await Backend.unregisterPush()
         LiveDepartures.endAll()
         DataCache.clearAll()
         Drafts.clearAll()

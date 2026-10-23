@@ -1036,6 +1036,29 @@
         }
       }
     },
+    "board.tooManyTries": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Too many tries. Try again at {time}"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Слишком много попыток. Снова можно в {time}"
+          }
+        },
+        "kk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Тым көп әрекет. {time} бастап қайталаңыз"
+          }
+        }
+      }
+    },
     "board.where": {
       "extractionState": "manual",
       "localizations": {
@@ -1216,6 +1239,75 @@
           "stringUnit": {
             "state": "translated",
             "value": "{name} бұғаттау керек пе? Ол сізді көре алмайды және жаза алмайды."
+          }
+        }
+      }
+    },
+    "chat.dateEventCancelled": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This event was cancelled"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Это событие отменили"
+          }
+        },
+        "kk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Бұл іс-шара тоқтатылды"
+          }
+        }
+      }
+    },
+    "chat.dateEventStarted": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The event has already started"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Событие уже началось"
+          }
+        },
+        "kk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Іс-шара басталып кетті"
+          }
+        }
+      }
+    },
+    "chat.dateNoSpot": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Date accepted, but the event is already full"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Встреча принята, но мест на событии уже нет"
+          }
+        },
+        "kk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Кездесу қабылданды, бірақ іс-шарада орын қалмады"
           }
         }
       }
@@ -4666,6 +4758,75 @@
           "stringUnit": {
             "state": "translated",
             "value": "{name} — өткізілді"
+          }
+        }
+      }
+    },
+    "discover.pausedBody": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nobody sees you in Discover. Likes you send arrive once you're back."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вас не видно в ленте. Лайки, которые вы ставите, дойдут, когда вернётесь."
+          }
+        },
+        "kk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сізді лентада көрмейді. Басқан лайктарыңыз қайтып оралғанда жетеді."
+          }
+        }
+      }
+    },
+    "discover.pausedTitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You're paused"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вы на паузе"
+          }
+        },
+        "kk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сіз үзілістесіз"
+          }
+        }
+      }
+    },
+    "discover.resume": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Resume"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вернуться"
+          }
+        },
+        "kk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Қайту"
           }
         }
       }
@@ -10840,19 +11001,42 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Every {every} friends who join with your code give you {days} days of Pro."
+            "value": "Every {every} friends who join with your code and verify their profile give you {days} days of Pro."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Каждые {every} друга, которые придут по вашему коду, — это {days} дней Pro."
+            "value": "Каждые {every} друга, которые придут по вашему коду и подтвердят профиль, — это {days} дней Pro."
           }
         },
         "kk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Сіздің кодыңызбен келген әр {every} дос — {days} күн Pro."
+            "value": "Сіздің кодыңызбен келіп, профилін растаған әр {every} дос — {days} күн Pro."
+          }
+        }
+      }
+    },
+    "me2.invitePending": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not verified yet: {n}"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ещё не подтвердили профиль: {n}"
+          }
+        },
+        "kk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Профилін әлі растамағандар: {n}"
           }
         }
       }
@@ -10863,19 +11047,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Joined with your code: {n}. {left} more for {days} days of Pro."
+            "value": "Verified: {n}. {left} more and {days} days of Pro are yours."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Пришли по вашему коду: {n}. Ещё {left} — и {days} дней Pro ваши."
+            "value": "Подтвердили профиль: {n}. Ещё {left} — и {days} дней Pro ваши."
           }
         },
         "kk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Кодыңызбен келді: {n}. Тағы {left} — және {days} күн Pro сіздікі."
+            "value": "Профилін растағандар: {n}. Тағы {left} — және {days} күн Pro сіздікі."
           }
         }
       }
@@ -13981,6 +14165,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ай"
+          }
+        }
+      }
+    },
+    "paywall.pending": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Payment done. Pro turns on within a minute"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Оплата прошла. Pro включится в течение минуты"
+          }
+        },
+        "kk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Төлем өтті. Pro бір минут ішінде қосылады"
           }
         }
       }

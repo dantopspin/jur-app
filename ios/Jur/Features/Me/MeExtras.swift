@@ -141,6 +141,10 @@ struct InviteView: View {
                     if let r = referrals {
                         Text(t("me2.inviteProgress", ["n": r.count, "left": r.toNext, "days": r.bonusDays]))
                             .qText(.footnote).foregroundStyle(Color.q.blueText)
+                        if let waiting = r.pending, waiting > 0 {
+                            Text(t("me2.invitePending", ["n": waiting]))
+                                .qText(.footnote).foregroundStyle(Color.q.muted)
+                        }
                     }
                     SharePassButton(pass: .invite(from: session.profile?.name ?? "", code: code), text: shareText) {
                         Label(t("me2.share"), systemImage: "square.and.arrow.up")

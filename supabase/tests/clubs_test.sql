@@ -18,10 +18,10 @@ grant execute on function pg_temp.ok(boolean, text) to public;
 \set stray '''c0000000-0000-0000-0000-000000000004'''
 insert into auth.users (id) values (:org), (:ana), (:ben), (:stray);
 insert into profiles (id, name, birthdate, gender, interested_in, city, photos) values
-  (:org, 'Dias', '1990-02-02', 'man', 'women', 'almaty', '{d.jpg}'),
-  (:ana, 'Ana', '1996-06-06', 'woman', 'men', 'almaty', '{a.jpg}'),
-  (:ben, 'Ben', '1995-05-05', 'man', 'women', 'almaty', '{b.jpg}'),
-  (:stray, 'Saule', '1997-07-07', 'woman', 'men', 'almaty', '{s.jpg}');
+  (:org, 'Dias', '1990-02-02', 'man', 'women', 'almaty', array['https://test.supabase.co/storage/v1/object/public/photos/' || :org || '/d.jpg']),
+  (:ana, 'Ana', '1996-06-06', 'woman', 'men', 'almaty', array['https://test.supabase.co/storage/v1/object/public/photos/' || :ana || '/a.jpg']),
+  (:ben, 'Ben', '1995-05-05', 'man', 'women', 'almaty', array['https://test.supabase.co/storage/v1/object/public/photos/' || :ben || '/b.jpg']),
+  (:stray, 'Saule', '1997-07-07', 'woman', 'men', 'almaty', array['https://test.supabase.co/storage/v1/object/public/photos/' || :stray || '/s.jpg']);
 
 -- ---------------------------------------------------------------
 -- Applying to start a club → moderator approves → organizer
@@ -114,7 +114,7 @@ reset role;
 update city_launch set opens_at_members = 2, opened_at = null where city = 'atyrau';
 insert into auth.users (id) values ('c0000000-0000-0000-0000-0000000000a1'), ('c0000000-0000-0000-0000-0000000000a2');
 insert into profiles (id, name, birthdate, gender, interested_in, city, photos) values
-  ('c0000000-0000-0000-0000-0000000000a1', 'Aru', '1998-01-01', 'woman', 'men', 'atyrau', '{x.jpg}');
+  ('c0000000-0000-0000-0000-0000000000a1', 'Aru', '1998-01-01', 'woman', 'men', 'atyrau', array['https://test.supabase.co/storage/v1/object/public/photos/' || 'c0000000-0000-0000-0000-0000000000a1' || '/x.jpg']);
 set role authenticated;
 set request.jwt.claim.sub = 'c0000000-0000-0000-0000-0000000000a1';
 select pg_temp.ok(not (city_status()->>'open')::boolean and (city_status()->>'members')::int = 1
@@ -122,7 +122,7 @@ select pg_temp.ok(not (city_status()->>'open')::boolean and (city_status()->>'me
 select pg_temp.ok((city_status('almaty')->>'open')::boolean, 'Almaty is open from day one');
 reset role;
 insert into profiles (id, name, birthdate, gender, interested_in, city, photos) values
-  ('c0000000-0000-0000-0000-0000000000a2', 'Erzhan', '1996-01-01', 'man', 'women', 'atyrau', '{y.jpg}');
+  ('c0000000-0000-0000-0000-0000000000a2', 'Erzhan', '1996-01-01', 'man', 'women', 'atyrau', array['https://test.supabase.co/storage/v1/object/public/photos/' || 'c0000000-0000-0000-0000-0000000000a2' || '/y.jpg']);
 select pg_temp.ok((select opened_at is not null from city_launch where city = 'atyrau'), 'the city opens when it reaches the bar');
 select pg_temp.ok((select count(*) from push_outbox where kind = 'city_open') = 2, 'everyone there hears the city opened');
 select pg_temp.ok((select body from push_outbox where kind = 'city_open' limit 1) like 'Атырау%', 'push names the city');
