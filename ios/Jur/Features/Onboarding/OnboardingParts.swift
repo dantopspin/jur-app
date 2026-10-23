@@ -1,143 +1,206 @@
-// The pieces every onboarding step shares: the ridge progress line, the passport strip
-// that fills in as people answer, the step header (a passport-style field label over
-// the title), the choice group, sport chips with level pips, and the photo mosaic.
+// The pieces onboarding shares: the gold segment progress, the live passport that fills
+// in as people answer (photo, name and age, sport stamps, what they look for, their
+// answer), the question header, the big choice tiles, the "who we show you" row, sport
+// tiles, intent cards, the age check, a burst of gold dust, the photo mosaic.
 import PhotosUI
 import SwiftUI
 
 // MARK: progress
 
-/// Progress drawn along the horizon's ridge: blue up to the current step, a dot at the tip.
-struct RidgeProgress: View {
+/// One gold segment per question. The current one fills as you arrive on it.
+struct SegmentProgress: View {
     /// 1-based step being answered; `total` when finished.
     let step: Int
     let total: Int
-
-    private var fraction: CGFloat { CGFloat(min(max(step, 0), total)) / CGFloat(max(total, 1)) }
+    @State private var fill: CGFloat = 0
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
-        let style = StrokeStyle(lineWidth: 2, lineCap: .round, lineJoin: .round)
-        ZStack {
-            RidgeShape(layer: .line).stroke(Color.q.line, style: style)
-            RidgeShape(layer: .line).trim(from: 0, to: fraction).stroke(Color.q.blue, style: style)
-            RidgeTip(progress: fraction).fill(Color.q.blue)
+        HStack(spacing: 6) {
+            ForEach(1...max(total, 1), id: \.self) { i in
+                Capsule()
+                    .fill(Color.q.onBlueFill)
+                    .overlay(alignment: .leading) {
+                        GeometryReader { g in
+                            Capsule()
+                                .fill(Color.q.gold)
+                                .frame(width: g.size.width * (i < step ? 1 : i == step ? fill : 0))
+                        }
+                    }
+                    .frame(height: 4)
+            }
         }
-        .frame(width: 168, height: 24)
-        .animation(Motion.adaptive(Motion.smooth), value: fraction)
+        .task(id: step) {
+            fill = 0
+            withAnimation(reduceMotion ? nil : .easeOut(duration: 0.5).delay(0.1)) { fill = 1 }
+        }
         .accessibilityElement()
         .accessibilityLabel(t("onboarding.step", ["n": min(max(step, 1), total), "total": total]))
     }
 }
 
-/// The dot riding at the end of the drawn part of the ridge.
-private struct RidgeTip: Shape {
-    var progress: CGFloat
-    var animatableData: CGFloat {
-        get { progress }
-        set { progress = newValue }
-    }
+// MARK: live passport
 
-    func path(in rect: CGRect) -> Path {
-        let line = RidgeShape(layer: .line).path(in: rect)
-        let end = line.trimmedPath(from: 0, to: max(progress, 0.001)).currentPoint
-            ?? CGPoint(x: rect.minX, y: rect.midY)
-        return Path(ellipseIn: CGRect(x: end.x - 3.5, y: end.y - 3.5, width: 7, height: 7))
+/// A sport stamp in miniature: the emoji in a dashed ring, tilted a little.
+struct MiniStamp: View {
+    let emoji: String
+    let index: Int
+    var size: CGFloat = 30
+
+    private static let inks = [Color.q.stampBlue, Color.q.stampGreen, Color.q.feltLabel]
+    private static let tilts: [Double] = [-8, 6, -3, 9, -6]
+
+    var body: some View {
+        Text(emoji)
+            .font(.system(size: size * 0.46))
+            .frame(width: size, height: size)
+            .overlay(Circle().strokeBorder(Self.inks[index % Self.inks.count],
+                                           style: StrokeStyle(lineWidth: 1.8, dash: [3, 2.5])))
+            .rotationEffect(.degrees(Self.tilts[index % Self.tilts.count]))
+            .accessibilityHidden(true)
     }
 }
 
-// MARK: passport strip
+/// Stamps land: big and faint, then pressed onto the page.
+private struct StampDrop: ViewModifier {
+    let active: Bool
+    func body(content: Content) -> some View {
+        content
+            .scaleEffect(active ? 1.9 : 1)
+            .opacity(active ? 0 : 1)
+            .rotationEffect(.degrees(active ? -20 : 0))
+    }
+}
 
-/// The passport being filled in: photo, name and age, then city and sports. Felt, like the
-/// passport page it becomes at the end.
-struct PassportStrip: View {
+extension AnyTransition {
+    /// A stamp pressed onto the passport (a plain fade under Reduce Motion).
+    static var qStampDrop: AnyTransition {
+        Motion.reduceMotion ? .opacity : .asymmetric(insertion: .modifier(active: StampDrop(active: true), identity: StampDrop(active: false)),
+                                                     removal: .opacity)
+    }
+}
+
+/// The passport being filled in, on felt, tilted like a card on a table. Every answer
+/// lands on it as it's given.
+struct LivePassport: View {
     let draft: OnboardingDraft
-    /// One line only, when the keyboard leaves little room.
+    /// Name only, when the keyboard leaves little room.
     var compact = false
     @Environment(SportsCatalog.self) private var catalog
 
+    private var stamps: [Sport] { draft.pickOrder.compactMap { catalog.sport($0) } }
+
     var body: some View {
-        HStack(spacing: Sp.md) {
-            avatar
-            VStack(alignment: .leading, spacing: Sp.xxs) {
-                HStack(spacing: 0) {
-                    Text(draft.name.trimmingCharacters(in: .whitespaces).isEmpty ? t("flow.lblName") : draft.name)
-                        .foregroundStyle(draft.name.isEmpty ? Color.q.feltMuted : Color.q.feltInk)
-                    if draft.birthConfirmed {
-                        Text(verbatim: ", \(draft.age)")
-                            .foregroundStyle(Color.q.feltInk)
-                            .contentTransition(.numericText())
-                            .transition(.qPop)
-                    }
-                }
-                .qText(.title3)
-                .lineLimit(1)
-                if !compact {
-                    Text(meta)
-                        .qText(.footnote)
-                        .foregroundStyle(Color.q.feltMuted)
-                        .lineLimit(1)
-                        .contentTransition(.opacity)
-                }
+        VStack(alignment: .leading, spacing: compact ? Sp.xs : Sp.sm) {
+            HStack {
+                Text(header).qText(.label).foregroundStyle(Color.q.feltLabel).lineLimit(1)
+                Spacer()
+                Text(verbatim: "№ ····").qText(.label).foregroundStyle(Color.q.feltLabel)
             }
-            Spacer(minLength: 0)
-            MarkView(size: 20, color: Color.q.feltLabel).accessibilityHidden(true)
+            HStack(alignment: .top, spacing: Sp.md) {
+                photo
+                VStack(alignment: .leading, spacing: Sp.xxs) {
+                    Text(t("flow.lblName").uppercased()).qText(.label).foregroundStyle(Color.q.feltLabel)
+                    HStack(spacing: 0) {
+                        Text(draft.trimmedName.isEmpty ? " " : draft.trimmedName)
+                        if draft.birthConfirmed {
+                            Text(verbatim: ", \(draft.age)").transition(.qPop)
+                        }
+                    }
+                    .qText(.title2)
+                    .foregroundStyle(Color.q.feltInk)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+                    if !compact { details }
+                }
+                Spacer(minLength: 0)
+            }
         }
-        .padding(.horizontal, Sp.md)
-        .padding(.vertical, compact ? Sp.sm : Sp.md)
-        .background(Color.q.feltGround, in: RoundedRectangle(cornerRadius: Radius.md, style: .continuous))
+        .padding(compact ? Sp.md : Sp.lg)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.q.feltGround, in: RoundedRectangle(cornerRadius: Radius.lg, style: .continuous))
+        .rotationEffect(.degrees(-2))
+        .shadow(color: Color.q.boardShade.opacity(0.5), radius: 16, y: 12)
         .animation(Motion.adaptive(Motion.bouncy), value: draft.birthConfirmed)
-        .animation(Motion.adaptive(Motion.smooth), value: meta)
-        .animation(Motion.adaptive(Motion.smooth), value: draft.photos.first)
+        .animation(Motion.adaptive(Motion.bouncy), value: draft.pickOrder)
+        .animation(Motion.adaptive(Motion.bouncy), value: draft.photos.first)
+        .animation(Motion.adaptive(Motion.smooth), value: draft.mode)
         .animation(Motion.adaptive(Motion.smooth), value: compact)
-        .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
+        .dynamicTypeSize(...DynamicTypeSize.xxLarge)
         .accessibilityElement(children: .combine)
+        .accessibilityLabel(t("passport.title"))
     }
 
-    private var avatar: some View {
-        ZStack {
+    private var header: String {
+        let city = draft.city.map(Cities.label).map { " · " + $0 } ?? ""
+        return (t("flow.passportHead") + city).uppercased()
+    }
+
+    private var photo: some View {
+        let shape = RoundedRectangle(cornerRadius: Radius.sm, style: .continuous)
+        return ZStack {
             if let first = draft.photos.first, let url = URL(string: first) {
                 QPhoto(url: url, size: .thumb, placeholder: Color.q.feltLine)
-                    .transition(.opacity)
+                    .clipShape(shape)
+                    .id(first)
+                    .transition(.qStampDrop)
             } else {
-                Circle().strokeBorder(Color.q.feltLine, style: StrokeStyle(lineWidth: 1.5, dash: [3, 3]))
-                Image(systemName: "person.fill").font(.q(.callout)).foregroundStyle(Color.q.feltLine)
+                shape.strokeBorder(Color.q.feltLine, style: StrokeStyle(lineWidth: 1.5, dash: [4, 3]))
+                Image(systemName: "person.fill").font(.q(.title3)).foregroundStyle(Color.q.feltLine)
             }
         }
-        .frame(width: compact ? 32 : 44, height: compact ? 32 : 44)
-        .clipShape(Circle())
+        .frame(width: compact ? 40 : 66, height: compact ? 50 : 84)
         .accessibilityHidden(true)
     }
 
-    private var meta: String {
-        let city = draft.city.map(Cities.label) ?? "—"
-        let codes = catalog.all.map(\.code).filter { draft.picked[$0] != nil }
-        let shown = codes.prefix(2).compactMap { catalog.sport($0)?.name }
-        var sports = shown.isEmpty ? "—" : shown.joined(separator: ", ")
-        if codes.count > 2 { sports += " +\(codes.count - 2)" }
-        return "\(city) · \(sports)"
+    @ViewBuilder private var details: some View {
+        if !stamps.isEmpty {
+            HStack(spacing: Sp.xs) {
+                ForEach(Array(stamps.prefix(4).enumerated()), id: \.element.code) { i, s in
+                    MiniStamp(emoji: s.emoji, index: i).transition(.qStampDrop)
+                }
+                if stamps.count > 4 {
+                    Text(verbatim: "+\(stamps.count - 4)").qText(.footnote).foregroundStyle(Color.q.feltMuted)
+                }
+            }
+            .padding(.top, Sp.xxs)
+        }
+        if let mode = draft.mode {
+            HStack(spacing: Sp.xs) {
+                Text(t("flow.lookingFor").uppercased()).qText(.label).foregroundStyle(Color.q.feltLabel)
+                Text(t("flow.look_\(mode.rawValue)")).qText(.footnote).fontWeight(.bold)
+                    .foregroundStyle(Color.q.stampBlue).lineLimit(1)
+                    .id(mode)
+                    .transition(.opacity.combined(with: .move(edge: .leading)))
+            }
+            .padding(.top, Sp.xxs)
+        }
+        if !draft.trimmedAnswer.isEmpty {
+            Text(verbatim: "«\(draft.trimmedAnswer)»")
+                .qText(.footnote)
+                .italic()
+                .foregroundStyle(Color.q.feltInk)
+                .lineLimit(2)
+                .padding(.top, Sp.xxs)
+        }
     }
 }
 
-// MARK: step header
+// MARK: question header
 
-/// "03 · CITY" in clay over the title, like a field on a passport.
-struct StepHeader: View {
-    let number: Int
-    let label: String
+struct QuestionHeader: View {
     let title: String
     var hint: String?
 
     var body: some View {
         VStack(alignment: .leading, spacing: Sp.sm) {
-            Text(verbatim: String(format: "%02d", number) + " · " + label.uppercased())
-                .qText(.overline)
-                .foregroundStyle(Color.q.clayDeep)
             Text(title)
                 .qText(.title1)
                 .foregroundStyle(Color.q.ink)
                 .fixedSize(horizontal: false, vertical: true)
                 .accessibilityAddTraits(.isHeader)
             if let hint {
-                Text(hint).qText(.body).foregroundStyle(Color.q.inkSoft)
+                Text(hint).qText(.callout).foregroundStyle(Color.q.muted)
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
@@ -147,124 +210,316 @@ struct StepHeader: View {
 
 // MARK: choices
 
-/// One-of-many choice. The blue selection slides from the old option to the new one.
-/// `board` sets the options as JÜR's departure board (night blue, gold markers).
-struct QChoiceGroup<Value: Hashable>: View {
-    enum Style { case rows, board }
-    let options: [(value: Value, label: String)]
-    @Binding var selection: Value?
-    var style: Style = .rows
-    /// Called after a tap stores its choice (onboarding uses it to move on by itself).
-    var onChoose: (() -> Void)?
-    @Namespace private var selectionSpace
-    @State private var appeared = false
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+/// The gold tick in a selected tile or card, drawn in as it appears.
+struct SelectedTick: View {
+    var size: CGFloat = 28
+    @State private var drawn: CGFloat = 0
 
     var body: some View {
-        Group {
-            switch style {
-            case .rows: rows
-            case .board: board
+        Circle()
+            .fill(Color.q.gold)
+            .frame(width: size, height: size)
+            .overlay {
+                TickShape()
+                    .trim(from: 0, to: drawn)
+                    .stroke(Color.q.onGold, style: StrokeStyle(lineWidth: 2.4, lineCap: .round, lineJoin: .round))
+                    .padding(size * 0.28)
             }
-        }
-        .sensoryFeedback(.selection, trigger: selection)
-        .onAppear { appeared = true }
-    }
-
-    private func choose(_ value: Value) {
-        withMotion(Motion.snappy) { selection = value }
-        onChoose?()
-    }
-
-    private var rows: some View {
-        VStack(spacing: Sp.sm) {
-            ForEach(options.indices, id: \.self) { i in
-                let option = options[i]
-                let on = selection == option.value
-                Button { choose(option.value) } label: {
-                    HStack {
-                        Text(option.label).qText(.headline)
-                        Spacer()
-                        if on { Image(systemName: "checkmark").font(.q(.headline)).transition(.qPop) }
-                    }
-                    .foregroundStyle(on ? .white : Color.q.ink)
-                    .padding(.horizontal, Sp.lg)
-                    .frame(minHeight: 60)
-                    .background {
-                        ZStack {
-                            RoundedRectangle(cornerRadius: Radius.md, style: .continuous).fill(Color.q.card)
-                            if on {
-                                RoundedRectangle(cornerRadius: Radius.md, style: .continuous)
-                                    .fill(Color.q.blue)
-                                    .matchedGeometryEffect(id: "selection", in: selectionSpace)
-                            }
-                        }
-                    }
-                    .contentShape(Rectangle())
-                }
-                .buttonStyle(.qPressCard)
-                .accessibilityAddTraits(on ? .isSelected : [])
-            }
-        }
-    }
-
-    private var board: some View {
-        VStack(spacing: 0) {
-            ForEach(options.indices, id: \.self) { i in
-                let option = options[i]
-                let on = selection == option.value
-                Button { choose(option.value) } label: {
-                    HStack(spacing: Sp.md) {
-                        Text(verbatim: String(format: "%02d", i + 1))
-                            .qText(.number)
-                            .foregroundStyle(on ? Color.q.onGold : Color.q.gold)
-                        Text(option.label)
-                            .qText(.title3)
-                            .foregroundStyle(on ? Color.q.onGold : .white)
-                        Spacer()
-                        if on { Image(systemName: "checkmark").font(.q(.headline)).foregroundStyle(Color.q.onGold).transition(.qPop) }
-                    }
-                    .padding(.horizontal, Sp.md)
-                    .frame(minHeight: 52)
-                    .background {
-                        if on {
-                            RoundedRectangle(cornerRadius: Radius.sm, style: .continuous)
-                                .fill(Color.q.gold)
-                                .matchedGeometryEffect(id: "selection", in: selectionSpace)
-                        }
-                    }
-                    .contentShape(Rectangle())
-                }
-                .buttonStyle(.qPressCard)
-                .accessibilityAddTraits(on ? .isSelected : [])
-                // Rows drop in one after another, like a board updating.
-                .opacity(appeared ? 1 : 0)
-                .offset(y: appeared || reduceMotion ? 0 : -6)
-                .animation(Motion.adaptive(Motion.smooth).delay(Double(i) * Motion.stagger), value: appeared)
-                if i < options.count - 1 {
-                    Rectangle().fill(Color.q.boardRule).frame(height: 1).padding(.horizontal, Sp.md)
-                }
-            }
-            ZStack {
-                RidgeShape(layer: .far).fill(Color.q.boardRidge)
-                RidgeShape(layer: .near).fill(Color.q.boardShade.opacity(0.6))
-            }
-            .frame(height: 38)
-            .padding(.horizontal, -Sp.sm)
-            .padding(.top, Sp.sm)
+            .onAppear { withAnimation(Motion.adaptive(Motion.draw).delay(0.08)) { drawn = 1 } }
             .accessibilityHidden(true)
-        }
-        .padding(.horizontal, Sp.sm)
-        .padding(.top, Sp.sm)
-        .background(Color.q.boardGround)
-        .clipShape(RoundedRectangle(cornerRadius: Radius.lg, style: .continuous))
     }
 }
 
-// MARK: sports
+private struct TickShape: Shape {
+    func path(in r: CGRect) -> Path {
+        var p = Path()
+        p.move(to: CGPoint(x: r.minX, y: r.midY + r.height * 0.05))
+        p.addLine(to: CGPoint(x: r.minX + r.width * 0.36, y: r.maxY - r.height * 0.1))
+        p.addLine(to: CGPoint(x: r.maxX, y: r.minY + r.height * 0.1))
+        return p
+    }
+}
+
+/// A big square choice ("Девушка" / "Парень"). Selected: blue with a gold tick.
+struct ChoiceTile: View {
+    let emoji: String
+    let label: String
+    let selected: Bool
+    let action: () -> Void
+    @State private var bounce = 0
+
+    var body: some View {
+        Button {
+            bounce += 1
+            action()
+        } label: {
+            VStack(alignment: .leading) {
+                HStack(alignment: .top) {
+                    Text(emoji).font(.system(size: 36))
+                        .keyframeAnimator(initialValue: 0.0, trigger: bounce) { content, angle in
+                            content.rotationEffect(.degrees(Motion.reduceMotion ? 0 : angle))
+                        } keyframes: { _ in
+                            KeyframeTrack {
+                                SpringKeyframe(-14, duration: 0.12)
+                                SpringKeyframe(10, duration: 0.14)
+                                SpringKeyframe(0, duration: 0.25)
+                            }
+                        }
+                    Spacer()
+                    if selected { SelectedTick().transition(.qPop) }
+                }
+                Spacer(minLength: Sp.lg)
+                Text(label).qText(.title3).lineLimit(1).minimumScaleFactor(0.8)
+            }
+            .foregroundStyle(selected ? .white : Color.q.ink)
+            .padding(Sp.lg)
+            .frame(maxWidth: .infinity, minHeight: 140, alignment: .leading)
+            .background(selected ? Color.q.blue : Color.q.card,
+                        in: RoundedRectangle(cornerRadius: Radius.lg, style: .continuous))
+            .animation(Motion.snappy, value: selected)
+        }
+        .buttonStyle(.qPressCard)
+        .sensoryFeedback(.selection, trigger: selected)
+        .accessibilityLabel(label)
+        .accessibilityAddTraits(selected ? .isSelected : [])
+    }
+}
+
+/// "Покажем вам девушек · Изменить": the usual choice is made for you; «Изменить» opens
+/// the three options (including «Всех»).
+struct ShowMeRow: View {
+    @Binding var interested: InterestedIn?
+    let onChange: () -> Void
+    @State private var open = false
+    @Namespace private var segment
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: Sp.md) {
+            HStack(spacing: Sp.md) {
+                Image(systemName: "heart.fill").foregroundStyle(Color.q.blueText).accessibilityHidden(true)
+                Text(t("flow.show_\(interested?.rawValue ?? "men")"))
+                    .qText(.headline)
+                    .foregroundStyle(Color.q.blueText)
+                    .contentTransition(.opacity)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                if !open {
+                    Button(t("flow.confirmEdit")) { withMotion(Motion.smooth) { open = true } }
+                        .buttonStyle(.q(.ghost, compact: true))
+                        .fixedSize()
+                        .background(Color.q.card, in: Capsule())
+                        .transition(.opacity)
+                }
+            }
+            if open {
+                HStack(spacing: 2) {
+                    ForEach(InterestedIn.allCases, id: \.self) { option in
+                        let on = interested == option
+                        Button {
+                            withMotion(Motion.snappy) { interested = option }
+                            onChange()
+                        } label: {
+                            Text(t("onboarding.\(option.rawValue)"))
+                                .qText(.callout)
+                                .fontWeight(on ? .bold : .regular)
+                                .foregroundStyle(Color.q.ink)
+                                .frame(maxWidth: .infinity, minHeight: 40)
+                                .background {
+                                    if on {
+                                        RoundedRectangle(cornerRadius: Radius.sm, style: .continuous)
+                                            .fill(Color.q.card)
+                                            .shadow(color: .black.opacity(0.1), radius: 2, y: 1)
+                                            .matchedGeometryEffect(id: "on", in: segment)
+                                    }
+                                }
+                                .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityAddTraits(on ? .isSelected : [])
+                    }
+                }
+                .padding(2)
+                .background(Color.q.line, in: RoundedRectangle(cornerRadius: Radius.sm + 2, style: .continuous))
+                .sensoryFeedback(.selection, trigger: interested)
+                .transition(.opacity.combined(with: .move(edge: .top)))
+            }
+        }
+        .padding(Sp.md)
+        .background(Color.q.blueTint, in: RoundedRectangle(cornerRadius: Radius.md, style: .continuous))
+        .animation(Motion.adaptive(Motion.smooth), value: interested)
+    }
+}
+
+/// A sport as a square tile: emoji over the name. Picked: blue, and the emoji hops.
+struct SportTile: View {
+    let sport: Sport
+    let selected: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            VStack(spacing: Sp.xs) {
+                Text(sport.emoji)
+                    .font(.system(size: 30))
+                    .keyframeAnimator(initialValue: CGFloat(0), trigger: selected) { content, y in
+                        content.offset(y: Motion.reduceMotion ? 0 : y)
+                    } keyframes: { _ in
+                        KeyframeTrack {
+                            SpringKeyframe(selected ? -10 : 0, duration: 0.15)
+                            SpringKeyframe(0, duration: 0.3, spring: .bouncy)
+                        }
+                    }
+                Text(sport.name).qText(.footnote).fontWeight(.bold).lineLimit(1).minimumScaleFactor(0.75)
+            }
+            .foregroundStyle(selected ? .white : Color.q.ink)
+            .frame(maxWidth: .infinity, minHeight: 88)
+            .padding(.horizontal, Sp.xs)
+            .background(selected ? Color.q.blue : Color.q.card,
+                        in: RoundedRectangle(cornerRadius: Radius.md, style: .continuous))
+            .animation(Motion.snappy, value: selected)
+        }
+        .buttonStyle(.qPressCard)
+        .accessibilityLabel(sport.name)
+        .accessibilityAddTraits(selected ? .isSelected : [])
+    }
+}
+
+/// What they're here for, as a big card: emoji, title, a line under it, a tick.
+struct IntentCard: View {
+    let emoji: String
+    let title: String
+    let sub: String
+    let selected: Bool
+    let action: () -> Void
+    @State private var wiggle = 0
+
+    var body: some View {
+        Button {
+            wiggle += 1
+            action()
+        } label: {
+            HStack(spacing: Sp.md) {
+                Text(emoji)
+                    .font(.system(size: 34))
+                    .keyframeAnimator(initialValue: 0.0, trigger: wiggle) { content, a in
+                        content
+                            .rotationEffect(.degrees(Motion.reduceMotion ? 0 : a))
+                            .scaleEffect(Motion.reduceMotion || a == 0 ? 1 : 1.15)
+                    } keyframes: { _ in
+                        KeyframeTrack {
+                            SpringKeyframe(-14, duration: 0.12)
+                            SpringKeyframe(10, duration: 0.14)
+                            SpringKeyframe(-4, duration: 0.12)
+                            SpringKeyframe(0, duration: 0.2)
+                        }
+                    }
+                VStack(alignment: .leading, spacing: Sp.xxs) {
+                    Text(title).qText(.title3)
+                    Text(sub).qText(.footnote).foregroundStyle(selected ? Color.q.blueMist : Color.q.muted)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                ZStack {
+                    Circle().strokeBorder(Color.q.line, lineWidth: 2).frame(width: 28, height: 28).opacity(selected ? 0 : 1)
+                    if selected { SelectedTick().transition(.qPop) }
+                }
+            }
+            .foregroundStyle(selected ? .white : Color.q.ink)
+            .padding(.horizontal, Sp.lg)
+            .frame(maxWidth: .infinity, minHeight: 84)
+            .background(selected ? Color.q.blue : Color.q.card,
+                        in: RoundedRectangle(cornerRadius: Radius.lg, style: .continuous))
+            .animation(Motion.snappy, value: selected)
+        }
+        .buttonStyle(.qPressCard)
+        .sensoryFeedback(.selection, trigger: selected)
+        .accessibilityElement(children: .combine)
+        .accessibilityAddTraits(selected ? .isSelected : [])
+    }
+}
+
+// MARK: age check
+
+/// "27 — вам 27? Потом не изменить", rising from the bottom over a scrim.
+struct AgeConfirmCard: View {
+    let age: Int
+    let onYes: () -> Void
+    let onEdit: () -> Void
+    @State private var shown = 0
+
+    var body: some View {
+        VStack(spacing: Sp.sm) {
+            Text(verbatim: "\(shown)")
+                .font(.q(.display))
+                .scaleEffect(1.6)
+                .padding(.vertical, Sp.md)
+                .foregroundStyle(Color.q.blueText)
+                .contentTransition(.numericText(value: Double(shown)))
+            Text(t("flow.confirmAge", ["age": age]) + "?").qText(.title2).foregroundStyle(Color.q.ink)
+            Text(t("flow.confirmAgeSub")).qText(.callout).foregroundStyle(Color.q.muted)
+                .multilineTextAlignment(.center)
+            Button(t("flow.confirmYes"), action: onYes).buttonStyle(.qPrimary).padding(.top, Sp.sm)
+            Button(t("flow.confirmEdit"), action: onEdit).buttonStyle(.qGhost)
+        }
+        .padding(.horizontal, Sp.lg)
+        .padding(.top, Sp.xl)
+        .padding(.bottom, Sp.sm)
+        .frame(maxWidth: .infinity)
+        .background(Color.q.card, in: RoundedRectangle(cornerRadius: Radius.xl, style: .continuous))
+        .shadow(color: .black.opacity(0.3), radius: 24, y: 12)
+        .padding(.horizontal, Sp.md)
+        .padding(.bottom, Sp.sm)
+        .task {
+            shown = max(age - 3, 18)
+            try? await Task.sleep(for: .milliseconds(120))
+            withAnimation(Motion.adaptive(Motion.bouncy)) { shown = age }
+            Haptics.tick()
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityAddTraits(.isModal)
+    }
+}
+
+// MARK: gold dust
+
+/// A small burst of gold specks, fired each time `trigger` changes. Nothing under Reduce Motion.
+struct DustBurst: View {
+    let trigger: Int
+    @State private var progress: CGFloat = 0
+    @State private var fired = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    private static let specks: [(dx: CGFloat, dy: CGFloat, size: CGFloat, color: Color)] = (0..<16).map { i in
+        let angle = Double(i) / 16 * 2 * .pi + (i.isMultiple(of: 2) ? 0.2 : -0.1)
+        let r = CGFloat(60 + (i * 37) % 70)
+        let colors = [Color.q.gold, Color(red: 0.96, green: 0.82, blue: 0.54), .white]
+        return (CGFloat(cos(angle)) * r, CGFloat(sin(angle)) * r - 20, CGFloat(4 + (i * 3) % 5), colors[i % 3])
+    }
+
+    var body: some View {
+        ZStack {
+            ForEach(Self.specks.indices, id: \.self) { i in
+                let s = Self.specks[i]
+                Circle()
+                    .fill(s.color)
+                    .frame(width: s.size, height: s.size)
+                    .offset(x: s.dx * progress, y: s.dy * progress + 30 * progress * progress)
+                    .opacity(fired ? Double(1 - progress) : 0)
+            }
+        }
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+        .onChange(of: trigger) { _, _ in
+            guard !reduceMotion else { return }
+            progress = 0
+            fired = true
+            withAnimation(.easeOut(duration: 0.9)) { progress = 1 }
+        }
+    }
+}
+
+// MARK: sports chip (filters and the profile editor use it too)
 
 extension Level {
-    /// 1 (beginner) to 4 (competitive), for the level pips.
+    /// 1 (beginner) to 4 (competitive).
     var pips: Int {
         switch self {
         case .beginner: 1
@@ -304,6 +559,76 @@ struct SportChip: View {
     }
 }
 
+// MARK: choices on the departure board (city)
+
+/// One-of-many choice set as JÜR's departure board (night blue, gold markers). The gold
+/// selection slides from the old option to the new one; rows drop in one after another.
+struct QChoiceGroup<Value: Hashable>: View {
+    let options: [(value: Value, label: String)]
+    @Binding var selection: Value?
+    /// Called after a tap stores its choice (onboarding uses it to move on by itself).
+    var onChoose: (() -> Void)?
+    @Namespace private var selectionSpace
+    @State private var appeared = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        VStack(spacing: 0) {
+            ForEach(options.indices, id: \.self) { i in
+                let option = options[i]
+                let on = selection == option.value
+                Button {
+                    withMotion(Motion.snappy) { selection = option.value }
+                    onChoose?()
+                } label: {
+                    HStack(spacing: Sp.md) {
+                        Text(verbatim: String(format: "%02d", i + 1))
+                            .qText(.number)
+                            .foregroundStyle(on ? Color.q.onGold : Color.q.gold)
+                        Text(option.label)
+                            .qText(.title3)
+                            .foregroundStyle(on ? Color.q.onGold : .white)
+                        Spacer()
+                        if on { Image(systemName: "checkmark").font(.q(.headline)).foregroundStyle(Color.q.onGold).transition(.qPop) }
+                    }
+                    .padding(.horizontal, Sp.md)
+                    .frame(minHeight: 52)
+                    .background {
+                        if on {
+                            RoundedRectangle(cornerRadius: Radius.sm, style: .continuous)
+                                .fill(Color.q.gold)
+                                .matchedGeometryEffect(id: "selection", in: selectionSpace)
+                        }
+                    }
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.qPressCard)
+                .accessibilityAddTraits(on ? .isSelected : [])
+                .opacity(appeared ? 1 : 0)
+                .offset(y: appeared || reduceMotion ? 0 : -6)
+                .animation(Motion.adaptive(Motion.smooth).delay(Double(i) * Motion.stagger), value: appeared)
+                if i < options.count - 1 {
+                    Rectangle().fill(Color.q.boardRule).frame(height: 1).padding(.horizontal, Sp.md)
+                }
+            }
+            ZStack {
+                RidgeShape(layer: .far).fill(Color.q.boardRidge)
+                RidgeShape(layer: .near).fill(Color.q.boardShade.opacity(0.6))
+            }
+            .frame(height: 38)
+            .padding(.horizontal, -Sp.sm)
+            .padding(.top, Sp.sm)
+            .accessibilityHidden(true)
+        }
+        .padding(.horizontal, Sp.sm)
+        .padding(.top, Sp.sm)
+        .background(Color.q.boardGround)
+        .clipShape(RoundedRectangle(cornerRadius: Radius.lg, style: .continuous))
+        .sensoryFeedback(.selection, trigger: selection)
+        .onAppear { appeared = true }
+    }
+}
+
 // MARK: photos
 
 /// Six photo slots: the main photo large (2×2, like the card), five small around it.
@@ -336,6 +661,21 @@ struct PhotoMosaic: SwiftUI.Layout {
             let f = frames[i]
             view.place(at: f.origin, proposal: ProposedViewSize(width: f.width, height: f.height))
         }
+    }
+}
+
+/// The next empty slot breathes, so it's clear where to tap.
+struct BreathingSlot: ViewModifier {
+    @State private var on = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    func body(content: Content) -> some View {
+        content
+            .scaleEffect(on ? 0.97 : 1)
+            .onAppear {
+                guard !reduceMotion else { return }
+                withAnimation(.easeInOut(duration: 1).repeatForever(autoreverses: true)) { on = true }
+            }
     }
 }
 

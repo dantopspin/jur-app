@@ -1,8 +1,9 @@
-// Onboarding: issuing your passport. Seven questions (name, birthdate, about you, city,
-// sports, photos, your words) fill a passport strip at the top; creating the profile
-// issues the passport with the member number and the "First step" stamp, then asks
-// about notifications. Answers are saved as people go (OnboardingDraft), so closing the
-// app resumes where they were. The profile is only created at the end.
+// Onboarding: issuing your passport. Eight questions (name, birthdate, who you are, city,
+// sports, what you're here for, photos, one question about you), one per screen, on a
+// cream sheet under a felt passport that fills in as people answer. Creating the profile
+// issues the passport: the member number rolls in, the "First step" stamp lands with a
+// thump and a burst of gold, then the notification ask. Answers are saved as people go
+// (OnboardingDraft), so closing the app resumes where they were.
 import PhotosUI
 import SwiftUI
 import UIKit
@@ -16,7 +17,6 @@ struct OnboardingView: View {
 
     @Environment(SessionStore.self) private var session
     @Environment(SportsCatalog.self) private var catalog
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.accessibilityVoiceOverEnabled) private var voiceOver
 
     @State private var d = OnboardingDraft.fresh()
@@ -30,50 +30,37 @@ struct OnboardingView: View {
     @State private var autoAdvance: Task<Void, Never>?
     @State private var memberNo: Int?
     @FocusState private var focus: Field?
-    @Namespace private var passportSpace
 
-    enum Field { case name, challenge, bio }
+    enum Field { case name, answer }
 
     private var owner: String { preview ? "preview" : (session.userId?.uuidString ?? "signed-out") }
     private var latestBirth: Date { Calendar.current.date(byAdding: .year, value: -18, to: .now) ?? .now }
     private var questions: Int { Step.questions }
 
     var body: some View {
-        GeometryReader { geo in
-            // With the keyboard up on a small phone, the strip shrinks to one line.
-            let compact = geo.size.height < 560
-            VStack(spacing: 0) {
-                topBar
-                if d.step == .issued {
-                    PassportIssuedView(draft: d, memberNo: memberNo, space: passportSpace)
-                        .transition(.opacity)
-                } else {
-                    PassportStrip(draft: d, compact: compact)
-                        .matchedGeometryEffect(id: "passport", in: passportSpace)
-                        .padding(.horizontal, Layout.margin)
-                        .padding(.top, Sp.xs)
-                    // Each step gets its own scroll view (so it always opens at the top); the ZStack
-                    // lets the leaving and arriving steps overlap instead of stacking.
-                    ZStack(alignment: .top) {
-                        ScrollView {
-                            VStack(alignment: .leading, spacing: Sp.xl) {
-                                content
-                            }
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(.horizontal, Layout.margin)
-                            .padding(.top, compact ? Sp.lg : Sp.xl)
-                            .padding(.bottom, Sp.xxl)
-                        }
-                        .scrollDismissesKeyboard(.interactively)
-                        .id(d.step)
-                        .transition(.qStep(forward: forward))
-                    }
-                    .frame(maxHeight: .infinity)
+        ZStack {
+            Color.q.blueNight.ignoresSafeArea()
+            if d.step == .issued {
+                PassportIssuedView(draft: d, memberNo: memberNo,
+                                   onAllow: { Task { await enterApp(askPush: true) } },
+                                   onLater: { Push.remindLater(); Task { await enterApp(askPush: false) } })
+                    .transition(.opacity)
+            } else {
+                flow
+            }
+            if confirmAge {
+                Color.q.scrim
+                    .ignoresSafeArea()
+                    .onTapGesture { withMotion(Motion.smooth) { confirmAge = false } }
+                    .transition(.opacity)
+                VStack {
+                    Spacer()
+                    AgeConfirmCard(age: d.age, onYes: confirmBirth,
+                                   onEdit: { withMotion(Motion.smooth) { confirmAge = false } })
                 }
-                bottomBar
+                .transition(.move(edge: .bottom))
             }
         }
-        .background(Color.q.bg)
         .task { await catalog.load() }
         .onAppear(perform: restore)
         // Save 0.3 s after the last change.
@@ -83,56 +70,94 @@ struct OnboardingView: View {
             guard !Task.isCancelled else { return }
             d.save(for: owner)
         }
-        .alert(t("flow.confirmAge", ["age": d.age]), isPresented: $confirmAge) {
-            Button(t("flow.confirmYes")) {
-                withMotion(Motion.bouncy) { d.birthConfirmed = true }
-                go(.identity)
-            }
-            Button(t("flow.confirmEdit"), role: .cancel) {}
-        } message: {
-            Text(t("flow.confirmAgeSub"))
-        }
         .onChange(of: pickerItems) { _, items in
             guard !items.isEmpty else { return }
             Task { await add(items) }
         }
     }
 
-    // MARK: chrome
+    // MARK: layout
+
+    private var flow: some View {
+        GeometryReader { geo in
+            // With the keyboard up on a small phone, the passport shrinks to its name line.
+            let compact = geo.size.height < 600
+            VStack(spacing: 0) {
+                topBar
+                LivePassport(draft: d, compact: compact)
+                    .padding(.horizontal, Sp.xl)
+                    .padding(.top, Sp.sm)
+                    .padding(.bottom, compact ? Sp.md : Sp.xl)
+                VStack(spacing: 0) {
+                    // Each step gets its own scroll view (so it always opens at the top); the ZStack
+                    // lets the leaving and arriving steps overlap instead of stacking.
+                    ZStack(alignment: .top) {
+                        ScrollView {
+                            VStack(alignment: .leading, spacing: Sp.lg) {
+                                content
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.horizontal, Layout.margin)
+                            .padding(.top, Sp.xl)
+                            .padding(.bottom, Sp.xxl)
+                        }
+                        .scrollDismissesKeyboard(.interactively)
+                        .id(d.step)
+                        .transition(.qStep(forward: forward))
+                    }
+                    .frame(maxHeight: .infinity)
+                    .clipped()
+                    bottomBar
+                }
+                .background(alignment: .top) {
+                    UnevenRoundedRectangle(topLeadingRadius: Radius.xl, topTrailingRadius: Radius.xl, style: .continuous)
+                        .fill(Color.q.bg)
+                        .ignoresSafeArea(edges: .bottom)
+                }
+            }
+        }
+    }
 
     private var topBar: some View {
-        HStack {
+        HStack(spacing: Sp.md) {
             Group {
                 if preview && d.step == .name {
                     CloseButton(action: onClosePreview)
                         .accessibilityLabel(t("flow.previewClose"))
-                        .frame(minWidth: 44, minHeight: 44, alignment: .leading)
                 } else if d.step == .name {
                     Button(t("settings.signOut")) {
                         OnboardingDraft.clear(for: owner)
                         Task { await session.signOut() }
                     }
-                    .font(.q(.callout))
-                } else if d.step != .issued {
-                    Button { back() } label: { Image(systemName: "chevron.left").font(.q(.headline)) }
-                        .accessibilityLabel(t("common.back"))
-                        .frame(minWidth: 44, minHeight: 44, alignment: .leading)
-                }
-            }
-            .frame(minWidth: 72, alignment: .leading)
-            Spacer()
-            RidgeProgress(step: d.step == .issued ? questions : d.step.rawValue + 1, total: questions)
-            Spacer()
-            Group {
-                if d.step == .about {
-                    Button(t("flow.skip")) { Task { await finish() } }.font(.q(.callout)).disabled(saving)
+                    .qText(.footnote)
+                    .foregroundStyle(Color.q.blueMist)
+                    .fixedSize()
                 } else {
-                    Color.clear.frame(width: 44, height: 44)
+                    Button { back() } label: {
+                        Image(systemName: "chevron.left")
+                            .font(.q(.callout).weight(.bold))
+                            .foregroundStyle(.white)
+                            .frame(width: 32, height: 32)
+                            .background(Color.q.onBlueFill, in: Circle())
+                            .frame(width: 44, height: 44)
+                            .contentShape(Rectangle())
+                    }
+                    .accessibilityLabel(t("common.back"))
                 }
             }
-            .frame(minWidth: 72, alignment: .trailing)
+            .frame(minHeight: 44)
+            SegmentProgress(step: d.step.rawValue + 1, total: questions)
+            if d.step == .prompt {
+                Button(t("flow.skip")) {
+                    d.promptAnswer = ""
+                    Task { await finish() }
+                }
+                .qText(.footnote)
+                .foregroundStyle(Color.q.blueMist)
+                .fixedSize()
+                .disabled(saving)
+            }
         }
-        .foregroundStyle(Color.q.blueText)
         .padding(.horizontal, Layout.margin)
         .frame(minHeight: Layout.rowMin)
     }
@@ -152,11 +177,6 @@ struct OnboardingView: View {
             .buttonStyle(.qPrimary)
             .disabled(!canContinue || saving)
             .animation(Motion.snappy, value: buttonTitle)
-            if d.step == .issued {
-                Button(t("flow.notifyLater")) { Push.remindLater(); Task { await enterApp(askPush: false) } }
-                    .buttonStyle(.qGhost)
-                    .transition(.qPop)
-            }
         }
         .padding(.horizontal, Layout.margin)
         .padding(.vertical, Sp.sm)
@@ -167,21 +187,24 @@ struct OnboardingView: View {
     private var buttonTitle: String {
         switch d.step {
         case .sports where !d.picked.isEmpty: "\(t("common.continue")) · \(d.picked.count)"
-        case .about: saving ? t("flow.issuing") : t("onboarding.finish")
-        case .issued: t("flow.notifyAllow")
+        case .photos where !d.photos.isEmpty: "\(t("common.continue")) · " + t("flow.photosCount", ["n": d.photos.count])
+        case .prompt: saving ? t("flow.issuing") : t("onboarding.finish")
         default: t("common.continue")
         }
     }
 
     private var canContinue: Bool {
         switch d.step {
-        case .name: !d.name.trimmingCharacters(in: .whitespaces).isEmpty
+        case .name: !d.trimmedName.isEmpty
         case .birth: d.birth <= latestBirth
         case .identity: d.gender != nil && d.interested != nil
         case .city: d.city != nil
         case .sports: !d.picked.isEmpty
-        case .photos: !d.photos.isEmpty && !pending.contains { !$0.failed }
-        case .about, .issued: true
+        case .intent: d.mode != nil
+        case .photos: d.photos.count >= OnboardingDraft.minPhotos && !pending.contains { !$0.failed }
+        // An answer of one character wouldn't be saved; skipping is the button at the top.
+        case .prompt: d.trimmedAnswer.count != 1
+        case .issued: true
         }
     }
 
@@ -194,15 +217,16 @@ struct OnboardingView: View {
         case .identity: identityStep
         case .city: cityStep
         case .sports: sportsStep
+        case .intent: intentStep
         case .photos: photosStep
-        case .about: aboutStep
+        case .prompt: promptStep
         case .issued: EmptyView()
         }
     }
 
     private var nameStep: some View {
         VStack(alignment: .leading, spacing: Sp.lg) {
-            StepHeader(number: 1, label: t("flow.lblName"), title: t("onboarding.nameTitle"))
+            QuestionHeader(title: t("onboarding.nameTitle"), hint: t("flow.nameHint"))
             VStack(alignment: .leading, spacing: Sp.sm) {
                 TextField(t("onboarding.namePlaceholder"), text: $d.name)
                     .font(.q(.title2))
@@ -220,78 +244,66 @@ struct OnboardingView: View {
                 }
             }
         }
+        .onAppear { if d.name.isEmpty { focus = .name } }
     }
 
     private var birthStep: some View {
         VStack(alignment: .leading, spacing: Sp.lg) {
-            StepHeader(number: 2, label: t("flow.lblBirth"), title: t("onboarding.birthTitle"),
-                       hint: t("onboarding.birthHint"))
+            QuestionHeader(title: t("onboarding.birthTitle"), hint: t("onboarding.birthHint"))
             DatePicker("", selection: $d.birth, in: ...latestBirth, displayedComponents: .date)
                 .datePickerStyle(.wheel)
                 .labelsHidden()
                 .frame(maxWidth: .infinity)
+                .background(Color.q.card, in: RoundedRectangle(cornerRadius: Radius.lg, style: .continuous))
                 .environment(\.locale, L10n.current.locale)
-            VStack(spacing: Sp.xxs) {
-                Text(t("flow.ageLabel")).qText(.overline).foregroundStyle(Color.q.clayDeep)
-                Text(verbatim: "\(d.age)")
-                    .font(.q(.display))
-                    .foregroundStyle(Color.q.ink)
-                    .contentTransition(.numericText())
-                    .animation(Motion.snappy, value: d.age)
-            }
-            .frame(maxWidth: .infinity)
-            .accessibilityElement(children: .combine)
-            .sensoryFeedback(.selection, trigger: d.age)
+                .sensoryFeedback(.selection, trigger: d.age)
         }
     }
 
     private var identityStep: some View {
-        VStack(alignment: .leading, spacing: Sp.xl) {
-            StepHeader(number: 3, label: t("flow.lblIdentity"), title: t("flow.identityTitle"))
-            VStack(alignment: .leading, spacing: Sp.sm) {
-                Text(t("onboarding.genderTitle")).qText(.headline).foregroundStyle(Color.q.inkSoft)
-                QChoiceGroup(options: [(value: Gender.woman, label: t("onboarding.woman")),
-                                       (value: Gender.man, label: t("onboarding.man"))],
-                             selection: $d.gender, onChoose: { scheduleAutoAdvance(from: .identity) })
+        VStack(alignment: .leading, spacing: Sp.lg) {
+            QuestionHeader(title: t("flow.identityQ"))
+            HStack(spacing: Sp.sm) {
+                ChoiceTile(emoji: "🙋‍♀️", label: t("onboarding.woman"), selected: d.gender == .woman) { pick(.woman) }
+                ChoiceTile(emoji: "🙋‍♂️", label: t("onboarding.man"), selected: d.gender == .man) { pick(.man) }
             }
-            VStack(alignment: .leading, spacing: Sp.sm) {
-                Text(t("onboarding.interestedTitle")).qText(.headline).foregroundStyle(Color.q.inkSoft)
-                QChoiceGroup(options: [(value: InterestedIn.women, label: t("onboarding.women")),
-                                       (value: InterestedIn.men, label: t("onboarding.men")),
-                                       (value: InterestedIn.everyone, label: t("onboarding.everyone"))],
-                             selection: $d.interested, onChoose: { scheduleAutoAdvance(from: .identity) })
+            if d.gender != nil {
+                ShowMeRow(interested: $d.interested) { d.interestedChanged = true }
+                    .transition(.opacity.combined(with: .move(edge: .bottom)))
             }
         }
+        .animation(Motion.adaptive(Motion.smooth), value: d.gender != nil)
+    }
+
+    private func pick(_ g: Gender) {
+        withMotion(Motion.snappy) { d.choose(g) }
     }
 
     private var cityStep: some View {
         VStack(alignment: .leading, spacing: Sp.lg) {
-            StepHeader(number: 4, label: t("flow.lblCity"), title: t("onboarding.cityTitle"),
-                       hint: t(Config.eventsEnabled ? "flow.cityHint" : "flow.cityHintApp"))
+            QuestionHeader(title: t("onboarding.cityTitle"),
+                           hint: t(Config.eventsEnabled ? "flow.cityHint" : "flow.cityHintApp"))
             QChoiceGroup(options: Cities.all.map { (value: $0, label: Cities.label($0)) }, selection: $d.city,
-                         style: .board, onChoose: { scheduleAutoAdvance(from: .city) })
+                         onChoose: { scheduleAutoAdvance(from: .city) })
         }
     }
 
     private var sportsStep: some View {
         VStack(alignment: .leading, spacing: Sp.lg) {
-            StepHeader(number: 5, label: t("flow.lblSports"), title: t("onboarding.sportsTitle"),
-                       hint: t("onboarding.sportsHint"))
+            QuestionHeader(title: t("onboarding.sportsTitle"), hint: t("onboarding.sportsHint"))
             if catalog.all.isEmpty {
                 ProgressView().frame(maxWidth: .infinity)
             }
             ForEach(seasonOrder, id: \.self) { season in
                 let sports = catalog.all.filter { $0.season == season }
                 if !sports.isEmpty {
-                    VStack(alignment: .leading, spacing: Sp.xs) {
+                    VStack(alignment: .leading, spacing: Sp.sm) {
                         Text(t(season == "summer" ? "onboarding.summer" : season == "winter" ? "onboarding.winter" : "onboarding.allYear"))
                             .qText(.overline)
                             .foregroundStyle(Color.q.clayDeep)
-                        FlowLayout(spacing: Sp.xs) {
+                        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: Sp.sm), count: 3), spacing: Sp.sm) {
                             ForEach(sports) { s in
-                                SportChip(label: "\(s.emoji) \(s.name)", selected: d.picked[s.code] != nil) {
-                                    toggle(s.code)
-                                }
+                                SportTile(sport: s, selected: d.picked[s.code] != nil) { toggle(s.code) }
                             }
                         }
                     }
@@ -306,13 +318,40 @@ struct OnboardingView: View {
         return (4...9).contains(month) ? ["summer", "all", "winter"] : ["all", "winter", "summer"]
     }
 
+    private static let intents: [(ProfileMode, String)] = [(.dating, "💛"), (.buddy, "🤝"), (.both, "✨")]
+
+    private var intentStep: some View {
+        VStack(alignment: .leading, spacing: Sp.lg) {
+            QuestionHeader(title: t("flow.intentTitle"))
+            VStack(spacing: Sp.sm) {
+                ForEach(Self.intents.indices, id: \.self) { i in
+                    let (mode, emoji) = Self.intents[i]
+                    IntentCard(emoji: emoji, title: t("flow.intent_\(mode.rawValue)"),
+                               sub: t("flow.intentSub_\(mode.rawValue)"), selected: d.mode == mode) {
+                        withMotion(Motion.snappy) { d.mode = mode }
+                        scheduleAutoAdvance(from: .intent, after: 650)
+                    }
+                }
+            }
+            Text(t("flow.intentNote"))
+                .qText(.footnote)
+                .foregroundStyle(Color.q.muted)
+                .frame(maxWidth: .infinity)
+        }
+    }
+
     private var photosStep: some View {
         VStack(alignment: .leading, spacing: Sp.lg) {
-            StepHeader(number: 6, label: t("flow.lblPhotos"), title: t("onboarding.photosTitle"),
-                       hint: t("onboarding.photosHint"))
+            QuestionHeader(title: t("onboarding.photosTitle"), hint: t("onboarding.photosHint"))
             PhotoMosaic {
                 ForEach(0..<6, id: \.self) { slot in photoSlot(slot) }
             }
+            Label(t("flow.photosTip"), systemImage: "camera.fill")
+                .qText(.footnote)
+                .foregroundStyle(Color.q.blueText)
+                .padding(Sp.md)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(Color.q.blueTint, in: RoundedRectangle(cornerRadius: Radius.md, style: .continuous))
         }
     }
 
@@ -335,7 +374,7 @@ struct OnboardingView: View {
                     }
                     .accessibilityLabel(t("common.delete"))
                 }
-                .overlay(alignment: .bottomLeading) {
+                .overlay(alignment: .topLeading) {
                     if slot == 0 { QTag(label: t("edit.main"), tone: .gold).padding(Sp.sm) }
                 }
                 .transition(.qPop)
@@ -367,67 +406,88 @@ struct OnboardingView: View {
             PhotosPicker(selection: $pickerItems, maxSelectionCount: max(6 - d.photos.count - pending.count, 1),
                          matching: .images) {
                 ZStack {
+                    shape.fill(Color.q.card)
                     shape.stroke(Color.q.blueText, style: StrokeStyle(lineWidth: 1.5, dash: [6, 4]))
-                    Image(systemName: "plus").font(.q(.title2)).foregroundStyle(Color.q.blueText)
+                    Image(systemName: "plus")
+                        .font(.q(.headline))
+                        .foregroundStyle(.white)
+                        .frame(width: 32, height: 32)
+                        .background(Color.q.blue, in: Circle())
                 }
                 .contentShape(shape)
+                .modifier(BreathingSlot())
             }
             .buttonStyle(.qPressCard)
             .accessibilityLabel(t("onboarding.addPhoto"))
         } else {
-            shape.stroke(Color.q.line, style: StrokeStyle(lineWidth: 1, dash: [4, 4]))
-                .accessibilityHidden(true)
+            ZStack {
+                shape.fill(Color.q.card.opacity(0.6))
+                shape.stroke(Color.q.line, style: StrokeStyle(lineWidth: 1, dash: [4, 4]))
+            }
+            .accessibilityHidden(true)
         }
     }
 
-    @State private var exampleIndex = 0
-
-    private var aboutStep: some View {
+    private var promptStep: some View {
         VStack(alignment: .leading, spacing: Sp.lg) {
-            StepHeader(number: 7, label: t("flow.lblAbout"), title: t("onboarding.challengeTitle"))
-            // Drawn the way the card shows it, so what you type is what people will see.
-            VStack(alignment: .leading, spacing: Sp.xs) {
-                Text(t("card.nextChallenge")).qText(.label).foregroundStyle(Color.q.clayDeep)
-                ZStack(alignment: .topLeading) {
-                    if d.challenge.isEmpty {
-                        Text(t("flow.challengeEx\(exampleIndex + 1)"))
-                            .qText(.headline)
-                            .foregroundStyle(Color.q.hint)
-                            .id(exampleIndex)
-                            .transition(.opacity)
-                            .allowsHitTesting(false)
-                            .accessibilityHidden(true)
+            QuestionHeader(title: t("flow.promptTitle"), hint: t("flow.promptHint"))
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: Sp.sm) {
+                    ForEach(OnboardingDraft.promptChoices, id: \.self) { key in
+                        let on = d.promptKey == key
+                        Button {
+                            withMotion(Motion.snappy) { d.promptKey = key }
+                            focus = .answer
+                        } label: {
+                            Text(t("prompts.\(key)"))
+                                .qText(.callout)
+                                .fontWeight(.semibold)
+                                .lineLimit(1)
+                                .foregroundStyle(on ? .white : Color.q.ink)
+                                .padding(.horizontal, Sp.md)
+                                .frame(minHeight: 40)
+                                .background(on ? Color.q.blue : Color.q.card, in: Capsule())
+                                .padding(.vertical, Sp.xxs)
+                                .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.qPressCard)
+                        .accessibilityAddTraits(on ? .isSelected : [])
                     }
-                    TextField("", text: $d.challenge, axis: .vertical)
-                        .qText(.headline)
-                        .foregroundStyle(Color.q.ink)
-                        .lineLimit(1...3)
-                        .focused($focus, equals: .challenge)
-                        .accessibilityLabel(t("card.nextChallenge"))
+                }
+                .padding(.horizontal, Layout.margin)
+            }
+            .padding(.horizontal, -Layout.margin)
+            .sensoryFeedback(.selection, trigger: d.promptKey)
+            VStack(alignment: .leading, spacing: Sp.sm) {
+                Text(t("prompts.\(d.promptKey)").uppercased())
+                    .qText(.label)
+                    .foregroundStyle(Color.q.clayDeep)
+                    .contentTransition(.opacity)
+                TextField(t("prompts.answer"), text: $d.promptAnswer, axis: .vertical)
+                    .qText(.title3)
+                    .foregroundStyle(Color.q.ink)
+                    .lineLimit(2...5)
+                    .focused($focus, equals: .answer)
+                    .onChange(of: d.promptAnswer) { _, new in
+                        if new.count > 150 { d.promptAnswer = String(new.prefix(150)) }
+                    }
+                HStack {
+                    Text(t("flow.promptMore")).qText(.footnote).foregroundStyle(Color.q.muted)
+                    Spacer()
+                    Text(verbatim: "\(d.promptAnswer.count) / 150")
+                        .qText(.footnote)
+                        .monospacedDigit()
+                        .foregroundStyle(Color.q.muted)
+                        .contentTransition(.numericText())
                 }
             }
-            .padding(Sp.md)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Color.q.bg, in: RoundedRectangle(cornerRadius: Radius.md, style: .continuous))
-            .padding(Sp.sm)
+            .padding(Sp.lg)
             .background(Color.q.card, in: RoundedRectangle(cornerRadius: Radius.lg, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: Radius.lg, style: .continuous)
+                .strokeBorder(focus == .answer ? Color.q.blueText : Color.clear, lineWidth: 2))
+            .animation(Motion.snappy, value: focus == .answer)
             .contentShape(Rectangle())
-            .onTapGesture { focus = .challenge }
-            // Examples take turns while the field is empty and not being typed in.
-            .task(id: d.challenge.isEmpty && focus != .challenge && !reduceMotion) {
-                guard d.challenge.isEmpty, focus != .challenge, !reduceMotion else { return }
-                while !Task.isCancelled {
-                    try? await Task.sleep(for: .seconds(4))
-                    guard !Task.isCancelled else { return }
-                    withAnimation(Motion.fade) { exampleIndex = (exampleIndex + 1) % 3 }
-                }
-            }
-            Text(t("onboarding.bioTitle")).qText(.headline).foregroundStyle(Color.q.ink)
-            TextField(t("onboarding.bioPlaceholder"), text: $d.bio, axis: .vertical)
-                .lineLimit(3...6)
-                .padding(.vertical, Sp.md)
-                .focused($focus, equals: .bio)
-                .qField()
+            .onTapGesture { focus = .answer }
         }
     }
 
@@ -445,13 +505,23 @@ struct OnboardingView: View {
         // Return on the keyboard calls this too, so it checks the step like the button does.
         guard canContinue, !saving else { return }
         error = nil
+        autoAdvance?.cancel()
         switch d.step {
-        case .birth: confirmAge = true
-        case .about: Task { await finish() }
+        case .birth:
+            focus = nil
+            withMotion(Motion.hero) { confirmAge = true }
+        case .prompt: Task { await finish() }
         case .issued: Task { await enterApp(askPush: true) }
         default:
             if let n = Step(rawValue: d.step.rawValue + 1) { go(n) }
         }
+    }
+
+    private func confirmBirth() {
+        withMotion(Motion.smooth) { confirmAge = false }
+        withMotion(Motion.bouncy) { d.birthConfirmed = true }
+        Haptics.bump()
+        go(.identity)
     }
 
     private func back() {
@@ -470,23 +540,29 @@ struct OnboardingView: View {
     }
 
     /// After a single choice, move on by itself (not with VoiceOver, and only once the step is complete).
-    private func scheduleAutoAdvance(from step: OnboardingDraft.Step) {
+    private func scheduleAutoAdvance(from step: Step, after ms: Int = 400) {
         autoAdvance?.cancel()
-        // Runs after the choice is stored, so canContinue sees it.
         guard d.step == step, !voiceOver else { return }
         autoAdvance = Task { @MainActor in
-            try? await Task.sleep(for: .milliseconds(400))
+            try? await Task.sleep(for: .milliseconds(ms))
             guard !Task.isCancelled, d.step == step, canContinue else { return }
             next()
         }
     }
 
-    /// A tap picks a sport, another removes it. Levels aren't asked for: every sport is
-    /// stored as `.casual`, which the server still expects.
+    /// A tap picks a sport (its stamp lands on the passport), another removes it. Levels
+    /// aren't asked for: every sport is stored as `.casual`, which the server still expects.
     private func toggle(_ code: String) {
-        withMotion(Motion.snappy) {
-            d.picked[code] = d.picked[code] == nil ? .casual : nil
+        withMotion(Motion.bouncy) {
+            if d.picked[code] == nil {
+                d.picked[code] = .casual
+                d.pickOrder.append(code)
+            } else {
+                d.picked[code] = nil
+                d.pickOrder.removeAll { $0 == code }
+            }
         }
+        if d.picked[code] != nil, d.pickOrder.count <= 4 { Haptics.bump() }
     }
 
     // MARK: photos
@@ -553,13 +629,16 @@ struct OnboardingView: View {
         f.calendar = Calendar(identifier: .gregorian)
         f.dateFormat = "yyyy-MM-dd"
         let p = Backend.NewProfile(
-            id: id, name: d.name.trimmingCharacters(in: .whitespaces), birthdate: f.string(from: d.birth),
+            id: id, name: d.trimmedName, birthdate: f.string(from: d.birth),
             gender: gender.rawValue, interestedIn: interested.rawValue, city: city,
-            bio: d.bio.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty,
-            nextChallenge: d.challenge.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty,
-            photos: d.photos, locale: L10n.current.rawValue)
+            bio: nil, nextChallenge: nil, photos: d.photos, locale: L10n.current.rawValue,
+            mode: (d.mode ?? .dating).rawValue)
         do {
             try await Backend.createProfile(p, sports: d.picked)
+            // The answer is a bonus: if it fails to save, the profile still exists and it can be added later.
+            if d.trimmedAnswer.count >= 2 {
+                try? await Backend.savePrompts(userId: id, [PromptAnswer(key: d.promptKey, answer: d.trimmedAnswer)])
+            }
             UserDefaults.standard.removeObject(forKey: "jur.prefillName")
             OnboardingDraft.clear(for: owner)
             go(.issued)
@@ -582,59 +661,123 @@ extension String {
     var nilIfEmpty: String? { isEmpty ? nil : self }
 }
 
-/// The end of onboarding: the strip has become the passport page, the member number rolls
-/// in and the "First step" stamp lands. Then an example notification and the ask below.
+/// The end of onboarding, on night blue: "Паспорт выдан · Добро пожаловать, Айгерім". The
+/// finished passport slides in, the member number rolls, the "First step" stamp slams down
+/// (the card dips, gold dust bursts, a thump), then the notification ask.
 struct PassportIssuedView: View {
     let draft: OnboardingDraft
     let memberNo: Int?
-    let space: Namespace.ID
+    let onAllow: () -> Void
+    let onLater: () -> Void
+
+    @Environment(SportsCatalog.self) private var catalog
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var cardIn = false
     @State private var shownNo = 0
     @State private var stamped = false
-    @State private var exampleShown = false
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var dip = false
+    @State private var burst = 0
+    @State private var askShown = false
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: Sp.xl) {
-                passport
-                    .matchedGeometryEffect(id: "passport", in: space)
-                VStack(alignment: .leading, spacing: Sp.sm) {
-                    Text(t("flow.issuedTitle")).qText(.title1).foregroundStyle(Color.q.ink)
-                        .accessibilityAddTraits(.isHeader)
-                    Text(t(Config.eventsEnabled ? "flow.notifySub" : "flow.notifySubApp"))
-                        .qText(.body).foregroundStyle(Color.q.inkSoft)
-                        .fixedSize(horizontal: false, vertical: true)
+        VStack(spacing: 0) {
+            ScrollView {
+                VStack(spacing: Sp.xl) {
+                    VStack(spacing: Sp.sm) {
+                        Text(t("flow.issuedTitle").uppercased())
+                            .qText(.overline)
+                            .foregroundStyle(Color.q.gold)
+                        Text(t("flow.welcome", ["name": draft.trimmedName]))
+                            .qText(.title1)
+                            .foregroundStyle(.white)
+                            .multilineTextAlignment(.center)
+                            .accessibilityAddTraits(.isHeader)
+                    }
+                    .opacity(cardIn ? 1 : 0)
+                    .offset(y: cardIn || reduceMotion ? 0 : -10)
+                    passport
+                        .padding(.horizontal, Sp.sm)
+                        .opacity(cardIn ? 1 : 0)
+                        .offset(y: cardIn || reduceMotion ? 0 : 60)
+                        .rotationEffect(.degrees(cardIn || reduceMotion ? -2 : -7))
+                        .scaleEffect(dip ? 0.985 : 1)
+                        .offset(y: dip ? 4 : 0)
+                    if askShown {
+                        VStack(spacing: Sp.md) {
+                            NotificationExample()
+                            Text(t(Config.eventsEnabled ? "flow.notifySub" : "flow.notifySubApp"))
+                                .qText(.callout)
+                                .foregroundStyle(Color.q.blueMist)
+                                .multilineTextAlignment(.center)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                        .transition(.opacity.combined(with: .move(edge: .bottom)))
+                    }
                 }
-                NotificationExample()
-                    .opacity(exampleShown ? 1 : 0)
-                    .offset(y: exampleShown || reduceMotion ? 0 : -16)
+                .padding(.horizontal, Layout.margin)
+                .padding(.top, Sp.xxl)
+                .padding(.bottom, Sp.xl)
+            }
+            .scrollBounceBehavior(.basedOnSize)
+            VStack(spacing: Sp.xs) {
+                Button(t("flow.notifyAllow"), action: onAllow).buttonStyle(.qAccent)
+                Button(t("flow.notifyLater"), action: onLater).buttonStyle(.qOnBlue)
             }
             .padding(.horizontal, Layout.margin)
-            .padding(.top, Sp.sm)
-            .padding(.bottom, Sp.xl)
+            .padding(.vertical, Sp.sm)
+            .opacity(askShown ? 1 : 0)
+            .disabled(!askShown)
+        }
+        .background(alignment: .bottom) {
+            ZStack {
+                RidgeShape(layer: .far).fill(Color.q.boardRidge.opacity(0.6))
+                RidgeShape(layer: .near).fill(Color.q.boardShade)
+            }
+            .frame(height: 200)
+            .ignoresSafeArea(edges: .bottom)
+            .accessibilityHidden(true)
+        }
+        .onAppear {
+            withAnimation(Motion.adaptive(Motion.hero)) { cardIn = true }
         }
         .task(id: memberNo) {
             guard let memberNo else { return }
-            try? await Task.sleep(for: .milliseconds(450))
+            try? await Task.sleep(for: .milliseconds(500))
             withAnimation(Motion.adaptive(Motion.hero)) { shownNo = memberNo }
             guard !stamped else { return }
-            try? await Task.sleep(for: .milliseconds(450))
-            withAnimation(Motion.adaptive(Motion.bouncy)) { stamped = true }
-            try? await Task.sleep(for: .milliseconds(150))
+            try? await Task.sleep(for: .milliseconds(500))
+            withAnimation(reduceMotion ? Motion.fade : .spring(duration: 0.28, bounce: 0.35)) { stamped = true }
+            try? await Task.sleep(for: .milliseconds(140))
             Haptics.thump()
+            burst += 1
+            if !reduceMotion {
+                withAnimation(.easeOut(duration: 0.08)) { dip = true }
+                try? await Task.sleep(for: .milliseconds(90))
+                withAnimation(.spring(duration: 0.35, bounce: 0.5)) { dip = false }
+            }
             Haptics.success()
             Sounds.play(.checkin)
-            try? await Task.sleep(for: .milliseconds(600))
-            withAnimation(Motion.adaptive(Motion.smooth)) { exampleShown = true }
+            try? await Task.sleep(for: .milliseconds(700))
+            withAnimation(Motion.adaptive(Motion.smooth)) { askShown = true }
+        }
+        // If the number never arrives, still let them in.
+        .task {
+            try? await Task.sleep(for: .seconds(4))
+            if !askShown { withAnimation(Motion.adaptive(Motion.smooth)) { askShown = true } }
         }
     }
+
+    private var stamps: [Sport] { draft.pickOrder.compactMap { catalog.sport($0) } }
 
     private var passport: some View {
         VStack(alignment: .leading, spacing: Sp.md) {
             HStack {
-                Text(t("passport.title")).qText(.overline).foregroundStyle(Color.q.feltLabel)
+                Text(t("passport.title").uppercased()).qText(.label).foregroundStyle(Color.q.feltLabel)
                 Spacer()
-                MarkView(size: 24, color: Color.q.feltLabel).accessibilityHidden(true)
+                Text(verbatim: memberNo == nil ? "№ ····" : formatMemberNo(shownNo))
+                    .qText(.number)
+                    .foregroundStyle(Color.q.feltLabel)
+                    .contentTransition(.numericText(value: Double(shownNo)))
             }
             HStack(alignment: .top, spacing: Sp.md) {
                 QPhoto(url: draft.photos.first.flatMap { URL(string: $0) }, placeholder: Color.q.feltLine)
@@ -642,36 +785,55 @@ struct PassportIssuedView: View {
                     .clipShape(RoundedRectangle(cornerRadius: Radius.sm, style: .continuous))
                     .accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: Sp.xs) {
-                    Text(verbatim: "\(draft.name.trimmingCharacters(in: .whitespaces)), \(draft.age)")
+                    Text(verbatim: "\(draft.trimmedName), \(draft.age)")
                         .qText(.title2)
                         .foregroundStyle(Color.q.feltInk)
                         .lineLimit(2)
-                    Text(verbatim: memberNo == nil ? "№ …" : formatMemberNo(shownNo))
-                        .qText(.display)
-                        .foregroundStyle(Color.q.feltInk)
-                        .contentTransition(.numericText())
-                        .minimumScaleFactor(0.6)
-                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
+                    if let city = draft.city {
+                        Text(Cities.label(city)).qText(.callout).foregroundStyle(Color.q.feltMuted)
+                    }
+                    if let mode = draft.mode {
+                        Text(t("flow.look_\(mode.rawValue)")).qText(.footnote).fontWeight(.bold)
+                            .foregroundStyle(Color.q.stampBlue)
+                    }
+                    HStack(spacing: Sp.xs) {
+                        ForEach(Array(stamps.prefix(4).enumerated()), id: \.element.code) { i, s in
+                            MiniStamp(emoji: s.emoji, index: i, size: 28)
+                        }
+                    }
+                    .padding(.top, Sp.xxs)
                 }
+            }
+            if !draft.trimmedAnswer.isEmpty {
+                Text(verbatim: "«\(draft.trimmedAnswer)»")
+                    .qText(.callout)
+                    .italic()
+                    .foregroundStyle(Color.q.feltInk)
+                    .lineLimit(3)
+                    .padding(.trailing, 72)
             }
             HStack(alignment: .bottom) {
                 VStack(alignment: .leading, spacing: Sp.xxs) {
-                    Text(t("passport.city")).qText(.label).foregroundStyle(Color.q.feltMuted)
-                    Text(draft.city.map(Cities.label) ?? "").qText(.headline).foregroundStyle(Color.q.feltInk)
-                    Text(t("passport.since")).qText(.label).foregroundStyle(Color.q.feltMuted).padding(.top, Sp.xs)
+                    Text(t("passport.since")).qText(.label).foregroundStyle(Color.q.feltMuted)
                     Text(Fmt.monthYear(.now)).qText(.headline).foregroundStyle(Color.q.feltInk)
                 }
                 Spacer()
-                Stamp(data: StampData(kind: .first_step))
-                    .scaleEffect(stamped || reduceMotion ? 1 : 1.4)
-                    .rotationEffect(.degrees(stamped || reduceMotion ? 0 : -12))
-                    .opacity(stamped ? 1 : 0)
+                ZStack {
+                    DustBurst(trigger: burst)
+                    Stamp(data: StampData(kind: .first_step))
+                        .scaleEffect(stamped || reduceMotion ? 1 : 2.4)
+                        .rotationEffect(.degrees(stamped || reduceMotion ? 0 : -28))
+                        .opacity(stamped ? 1 : 0)
+                }
             }
             .padding(.top, Sp.sm)
             .overlay(alignment: .top) { Rectangle().fill(Color.q.feltLine).frame(height: 1) }
         }
         .padding(Sp.lg)
         .background(Color.q.feltGround, in: RoundedRectangle(cornerRadius: Radius.lg, style: .continuous))
+        .shadow(color: Color.q.boardShade.opacity(0.6), radius: 24, y: 18)
+        .dynamicTypeSize(...DynamicTypeSize.xxLarge)
         .accessibilityElement(children: .combine)
     }
 }

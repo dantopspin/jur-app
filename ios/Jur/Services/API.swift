@@ -40,8 +40,10 @@ extension Backend {
         let nextChallenge: String?
         let photos: [String]
         let locale: String
+        /// dating, buddy or both: what they said they're here for.
+        let mode: String
         enum CodingKeys: String, CodingKey {
-            case id, name, birthdate, gender, city, bio, photos, locale
+            case id, name, birthdate, gender, city, bio, photos, locale, mode
             case interestedIn = "interested_in", nextChallenge = "next_challenge"
         }
     }

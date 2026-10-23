@@ -381,7 +381,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Меньше переписки. Больше встреч."
+            "value": "Меньше переписок. Больше встреч."
           }
         },
         "kk": {
@@ -8925,6 +8925,29 @@
         }
       }
     },
+    "flow.identityQ": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Who are you?"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Кто вы?"
+          }
+        },
+        "kk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сіз кімсіз?"
+          }
+        }
+      }
+    },
     "flow.identityTitle": {
       "extractionState": "manual",
       "localizations": {
@@ -8944,6 +8967,190 @@
           "stringUnit": {
             "state": "translated",
             "value": "Сіз кімсіз, кімді көрсетейік?"
+          }
+        }
+      }
+    },
+    "flow.intentNote": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You can change this in Settings"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Можно поменять в настройках"
+          }
+        },
+        "kk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Баптауларда өзгертуге болады"
+          }
+        }
+      }
+    },
+    "flow.intentSub_both": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Let’s see where it goes"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Посмотрим, как пойдёт"
+          }
+        },
+        "kk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Көре жатармыз"
+          }
+        }
+      }
+    },
+    "flow.intentSub_buddy": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Run, ride and play together"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вместе бегать, кататься, играть"
+          }
+        },
+        "kk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Бірге жүгіру, тебу, ойнау"
+          }
+        }
+      }
+    },
+    "flow.intentSub_dating": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Meeting someone to date"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Знакомства для отношений"
+          }
+        },
+        "kk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Қарым-қатынас үшін танысу"
+          }
+        }
+      }
+    },
+    "flow.intentTitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What are you looking for?"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Что ищете?"
+          }
+        },
+        "kk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не іздейсіз?"
+          }
+        }
+      }
+    },
+    "flow.intent_both": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Both"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "И то и другое"
+          }
+        },
+        "kk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Екеуі де"
+          }
+        }
+      }
+    },
+    "flow.intent_buddy": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A training partner"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Напарника"
+          }
+        },
+        "kk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Серіктес"
+          }
+        }
+      }
+    },
+    "flow.intent_dating": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dates"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Свидания"
+          }
+        },
+        "kk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Кездесу"
           }
         }
       }
@@ -9178,6 +9385,121 @@
         }
       }
     },
+    "flow.look_both": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dates and a partner"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Свидания и напарника"
+          }
+        },
+        "kk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Кездесу мен серіктес"
+          }
+        }
+      }
+    },
+    "flow.look_buddy": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A training partner"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Напарника"
+          }
+        },
+        "kk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Серіктес"
+          }
+        }
+      }
+    },
+    "flow.look_dating": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dates"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Свидания"
+          }
+        },
+        "kk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Кездесу"
+          }
+        }
+      }
+    },
+    "flow.lookingFor": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Looking for"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ищу"
+          }
+        },
+        "kk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Іздеймін"
+          }
+        }
+      }
+    },
+    "flow.nameHint": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This is how others will see you. No surname needed."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Так вас увидят другие. Фамилия не нужна."
+          }
+        },
+        "kk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Басқалар сізді осылай көреді. Тегі керек емес."
+          }
+        }
+      }
+    },
     "flow.notifyAllow": {
       "extractionState": "manual",
       "localizations": {
@@ -9339,6 +9661,75 @@
         }
       }
     },
+    "flow.passportHead": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "JÜR passport"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Паспорт JÜR"
+          }
+        },
+        "kk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "JÜR паспорты"
+          }
+        }
+      }
+    },
+    "flow.photosCount": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "{n} of 6"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "{n} из 6"
+          }
+        },
+        "kk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "{n} / 6"
+          }
+        }
+      }
+    },
+    "flow.photosTip": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show your face in the first photo: it gets more matches"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Лицо видно на первом фото — так больше пар"
+          }
+        },
+        "kk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Бірінші фотода бетіңіз көрінсін: жұп көбірек болады"
+          }
+        }
+      }
+    },
     "flow.previewClose": {
       "extractionState": "manual",
       "localizations": {
@@ -9362,6 +9753,75 @@
         }
       }
     },
+    "flow.promptHint": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pick a question and answer in a few words."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Выберите вопрос и ответьте парой слов."
+          }
+        },
+        "kk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сұрақ таңдап, бірер сөзбен жауап беріңіз."
+          }
+        }
+      }
+    },
+    "flow.promptMore": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "More questions in your profile"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ещё вопросы — в профиле"
+          }
+        },
+        "kk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Басқа сұрақтар — профильде"
+          }
+        }
+      }
+    },
+    "flow.promptTitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "One question about you"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Один вопрос о вас"
+          }
+        },
+        "kk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сіз туралы бір сұрақ"
+          }
+        }
+      }
+    },
     "flow.removeSport": {
       "extractionState": "manual",
       "localizations": {
@@ -9381,6 +9841,75 @@
           "stringUnit": {
             "state": "translated",
             "value": "Алып тастау"
+          }
+        }
+      }
+    },
+    "flow.show_everyone": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "We’ll show you everyone"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Покажем вам всех"
+          }
+        },
+        "kk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сізге бәрін көрсетеміз"
+          }
+        }
+      }
+    },
+    "flow.show_men": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "We’ll show you men"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Покажем вам парней"
+          }
+        },
+        "kk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сізге жігіттерді көрсетеміз"
+          }
+        }
+      }
+    },
+    "flow.show_women": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "We’ll show you women"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Покажем вам девушек"
+          }
+        },
+        "kk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сізге қыздарды көрсетеміз"
           }
         }
       }
@@ -9473,6 +10002,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "Жүктелмеді. Қайталау үшін басыңыз."
+          }
+        }
+      }
+    },
+    "flow.welcome": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Welcome, {name}"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Добро пожаловать, {name}"
+          }
+        },
+        "kk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Қош келдіңіз, {name}"
           }
         }
       }
@@ -13807,19 +14359,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "1 to 6 real photos of you. Action shots welcome."
+            "value": "At least 2. Best of all: you, in action."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "От 1 до 6. Настоящие фото — в движении особенно хорошо."
+            "value": "Минимум 2. Лучше всего — вы в деле."
           }
         },
         "kk": {
           "stringUnit": {
             "state": "translated",
-            "value": "1-ден 6-ға дейін. Өзіңіздің шынайы суреттеріңіз."
+            "value": "Кемінде 2. Ең жақсысы — қозғалыстағы сіз."
           }
         }
       }
