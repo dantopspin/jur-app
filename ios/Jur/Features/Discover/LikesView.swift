@@ -8,6 +8,8 @@ struct LikesView: View {
     @State private var likes: LikesReceived? = DataCache.get(CacheKey.likes, as: LikesReceived.self)
     @State private var failed = false
     @State private var paywall = false
+    /// People just liked back: their tiles turn over into match tiles before the list refreshes.
+    @State private var matched: Set<UUID> = []
     @Namespace private var zoom
 
     private let columns = Array(repeating: GridItem(.flexible(), spacing: Sp.md), count: 2)
@@ -27,8 +29,12 @@ struct LikesView: View {
                             NavigationLink {
                                 ProfileView(id: p.id, initial: p) { kind in Task { await decide(p, kind) } }
                                     .qZoomDestination(id: p.id, in: zoom)
-                            } label: { tile(p).qZoomSource(id: p.id, in: zoom) }
+                            } label: {
+                                LikeTile(card: p, matched: matched.contains(p.id)) { tile(p) }
+                                    .qZoomSource(id: p.id, in: zoom)
+                            }
                             .buttonStyle(.qPressCard)
+                            .disabled(matched.contains(p.id))
                         }
                     }
                     .padding(Layout.margin)
@@ -92,9 +98,85 @@ struct LikesView: View {
     private func decide(_ p: ProfileCard, _ kind: SwipeKind) async {
         do {
             let r = try await Backend.swipe(p.id, kind)
-            if r.matchId != nil { toasts.show(t("match.title")) }
             if r.error == "like_limit" { paywall = true }
+            if r.matchId != nil {
+                // Back on the grid first, so the turn is seen.
+                try? await Task.sleep(for: .milliseconds(350))
+                matched.insert(p.id)
+                Haptics.success()
+                Sounds.play(.match)
+                try? await Task.sleep(for: .seconds(2.4))
+            }
             await load()
+            matched.remove(p.id)
         } catch { toasts.show(error) }
+    }
+}
+
+/// A Likes tile that, once liked back, turns over into a match tile: blue, their photo in
+/// a gold ring, the gold tick drawing itself in, "В одном темпе!".
+private struct LikeTile<Front: View>: View {
+    let card: ProfileCard
+    let matched: Bool
+    @ViewBuilder let front: () -> Front
+    @State private var showBack = false
+    @State private var angle: Double = 0
+
+    var body: some View {
+        ZStack {
+            front().modifier(FlipFace(angle: angle, back: false))
+            if showBack {
+                back.modifier(FlipFace(angle: angle, back: true))
+            }
+        }
+        .onChange(of: matched) { _, now in
+            guard now else { return }
+            // The back goes in face-down first, then the tile turns.
+            showBack = true
+            DispatchQueue.main.async {
+                withAnimation(Motion.reduceMotion ? Motion.fade : Motion.flip) { angle = 180 }
+            }
+        }
+    }
+
+    private var back: some View {
+        Color.q.blue
+            .aspectRatio(3 / 4, contentMode: .fit)
+            .overlay {
+                VStack(spacing: Sp.md) {
+                    Avatar(url: card.photoURLs.first, size: 84)
+                        .overlay(Circle().stroke(Color.q.gold, lineWidth: 3))
+                        .overlay(alignment: .bottomTrailing) { SelectedTick(size: 30, delay: 0.45).offset(x: 4, y: 4) }
+                    Text(t("match.title"))
+                        .qText(.headline)
+                        .foregroundStyle(.white)
+                        .multilineTextAlignment(.center)
+                    Text(t("likes.nowMatched"))
+                        .qText(.footnote)
+                        .foregroundStyle(Color.q.blueMist)
+                        .multilineTextAlignment(.center)
+                }
+                .padding(Sp.md)
+            }
+            .clipShape(RoundedRectangle(cornerRadius: Radius.lg, style: .continuous))
+            .accessibilityElement(children: .combine)
+    }
+}
+
+/// One face of a tile turning over: the front shows until it's edge-on, then the back.
+private struct FlipFace: ViewModifier, Animatable {
+    var angle: Double
+    let back: Bool
+    var animatableData: Double {
+        get { angle }
+        set { angle = newValue }
+    }
+
+    func body(content: Content) -> some View {
+        let reduce = Motion.reduceMotion
+        let showing = back ? angle >= 90 : angle < 90
+        return content
+            .rotation3DEffect(.degrees(reduce ? 0 : (back ? angle - 180 : angle)), axis: (x: 0, y: 1, z: 0), perspective: 0.5)
+            .opacity(reduce ? (back ? angle / 180 : 1 - angle / 180) : (showing ? 1 : 0))
     }
 }

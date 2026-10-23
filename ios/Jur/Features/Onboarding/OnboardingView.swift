@@ -700,8 +700,7 @@ struct PassportIssuedView: View {
                         .opacity(cardIn ? 1 : 0)
                         .offset(y: cardIn || reduceMotion ? 0 : 60)
                         .rotationEffect(.degrees(cardIn || reduceMotion ? -2 : -7))
-                        .scaleEffect(dip ? 0.985 : 1)
-                        .offset(y: dip ? 4 : 0)
+                        .stampDip(dip)
                     if askShown {
                         VStack(spacing: Sp.md) {
                             NotificationExample()
@@ -746,16 +745,7 @@ struct PassportIssuedView: View {
             withAnimation(Motion.adaptive(Motion.hero)) { shownNo = memberNo }
             guard !stamped else { return }
             try? await Task.sleep(for: .milliseconds(500))
-            withAnimation(reduceMotion ? Motion.fade : .spring(duration: 0.28, bounce: 0.35)) { stamped = true }
-            try? await Task.sleep(for: .milliseconds(140))
-            Haptics.thump()
-            burst += 1
-            if !reduceMotion {
-                withAnimation(.easeOut(duration: 0.08)) { dip = true }
-                try? await Task.sleep(for: .milliseconds(90))
-                withAnimation(.spring(duration: 0.35, bounce: 0.5)) { dip = false }
-            }
-            Haptics.success()
+            await StampMoment.play(land: { stamped = true }, dip: { dip = $0 }, dust: { burst += 1 })
             Sounds.play(.checkin)
             try? await Task.sleep(for: .milliseconds(700))
             withAnimation(Motion.adaptive(Motion.smooth)) { askShown = true }
@@ -822,9 +812,7 @@ struct PassportIssuedView: View {
                 ZStack {
                     DustBurst(trigger: burst)
                     Stamp(data: StampData(kind: .first_step))
-                        .scaleEffect(stamped || reduceMotion ? 1 : 2.4)
-                        .rotationEffect(.degrees(stamped || reduceMotion ? 0 : -28))
-                        .opacity(stamped ? 1 : 0)
+                        .stampSlam(stamped)
                 }
             }
             .padding(.top, Sp.sm)

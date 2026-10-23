@@ -3,6 +3,7 @@
 // Everything else lives one step in: the editor (with a preview tab) and Settings
 // (dating preferences, travel, pause, app, subscription, account).
 import SwiftUI
+import UIKit
 
 struct MeView: View {
     @Environment(SessionStore.self) private var session
@@ -11,6 +12,11 @@ struct MeView: View {
     /// Your own card (for the checklist's prompts item), loaded alongside the profile.
     @State private var card: ProfileCard? = DataCache.get(CacheKey.card, as: ProfileCard?.self) ?? nil
     @State private var opened: ProfileStrength.Kind?
+    /// A stamp earned since «Я» was last open: it slams onto your photo.
+    @State private var newStamp: StampData?
+    @State private var stampLanded = false
+    @State private var stampDip = false
+    @State private var stampBurst = 0
 
     var body: some View {
         NavigationStack {
@@ -39,6 +45,8 @@ struct MeView: View {
             }
             // Runs on first show and again whenever the profile changes (after an edit).
             .task(id: session.profile) { await loadCard() }
+            // Coming back to «Я» from another tab: check again for a new stamp.
+            .onAppear { if let card { Task { await landNewStamp(card) } } }
             .navigationDestination(item: $opened) { $0.destination }
             .sheet(isPresented: $paywall) { PaywallView() }
             .fullScreenCover(isPresented: $proWelcome) { ProWelcomeView { proWelcome = false } }
@@ -66,6 +74,21 @@ struct MeView: View {
                     Avatar(url: p.photos.first.flatMap { URL(string: $0) }, size: 112)
                 }
                 .frame(width: 128, height: 128)
+                .stampDip(stampDip)
+                .overlay(alignment: .bottomTrailing) {
+                    if let newStamp {
+                        ZStack {
+                            DustBurst(trigger: stampBurst)
+                            Stamp(data: newStamp)
+                                .dynamicTypeSize(.large)
+                                .scaleEffect(0.5)
+                                .frame(width: 48, height: 48)
+                                .stampSlam(stampLanded)
+                        }
+                        .offset(x: 12, y: 4)
+                        .accessibilityHidden(true)
+                    }
+                }
                 .overlay(alignment: .bottom) {
                     if share < 1 {
                         Text(verbatim: "\(Int((share * 100).rounded()))%")
@@ -218,6 +241,20 @@ struct MeView: View {
     private func loadCard() async {
         guard let id = session.userId, let c = try? await Backend.myCard(id) else { return }
         withMotion(Motion.fade) { card = c }
+        await landNewStamp(c)
+    }
+
+    /// The newest stamp you haven't seen yet drops onto your photo, with the thump and the
+    /// dust of every stamp landing. Each one lands once.
+    private func landNewStamp(_ c: ProfileCard) async {
+        guard let id = session.userId, newStamp == nil,
+              let fresh = StampLedger.unseen(c.stamps, owner: id).last else { return }
+        StampLedger.markSeen(c.stamps, owner: id)
+        newStamp = fresh
+        stampLanded = false
+        try? await Task.sleep(for: .milliseconds(500))
+        await StampMoment.play(land: { stampLanded = true }, dip: { stampDip = $0 }, dust: { stampBurst += 1 })
+        UIAccessibility.post(notification: .announcement, argument: t("me3.newStamp", ["stamp": fresh.kind.label]))
     }
 
     private func age(_ p: MyProfile) -> Int? {
@@ -304,5 +341,28 @@ extension ISO8601DateFormatter {
         if let d = a.date(from: s) { return d }
         a.formatOptions = [.withInternetDateTime]
         return a.date(from: s)
+    }
+}
+
+/// Which stamps you've already seen land, per account. A stamp counts as new when its
+/// kind or its small line changes ("×5" becoming "×6" is a new one). The very first time,
+/// everything you already have counts as seen, so nothing old drops in.
+enum StampLedger {
+    private static func key(_ owner: UUID) -> String { "jur.stampsSeen.\(owner.uuidString)" }
+    private static func token(_ s: StampData) -> String { "\(s.kind.rawValue)|\(s.detail ?? "")" }
+
+    static func unseen(_ stamps: [StampData], owner: UUID) -> [StampData] {
+        guard let seen = UserDefaults.standard.stringArray(forKey: key(owner)) else {
+            markSeen(stamps, owner: owner)
+            return []
+        }
+        let set = Set(seen)
+        return stamps.filter { !set.contains(token($0)) }
+    }
+
+    static func markSeen(_ stamps: [StampData], owner: UUID) {
+        let old = UserDefaults.standard.stringArray(forKey: key(owner)) ?? []
+        let all = Set(old).union(stamps.map(token))
+        UserDefaults.standard.set(Array(all), forKey: key(owner))
     }
 }

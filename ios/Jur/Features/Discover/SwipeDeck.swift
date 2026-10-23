@@ -22,6 +22,8 @@ struct SwipeDeck: View {
 
     @State private var drag: CGSize = .zero
     @State private var lift: CGFloat = 0
+    /// The top card rising off the table before a like with a note flies.
+    @State private var lifted: CGFloat = 1
     @State private var leaving = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -38,7 +40,7 @@ struct SwipeDeck: View {
                 ProfileCardView(card: card, compact: true, showsTips: top)
                     // The next card waits slightly smaller, its lower edge peeking out under the
                     // top one, and rises into place as the top one is dragged away.
-                    .scaleEffect(top ? 1 : 0.95 + 0.05 * progress, anchor: .bottom)
+                    .scaleEffect(top ? lifted : 0.95 + 0.05 * progress, anchor: .bottom)
                     .brightness(top ? 0 : -0.03 * (1 - progress))
                     .offset(x: top ? drag.width : 0, y: top ? drag.height * 0.2 + lift : 10 * (1 - progress))
                     .rotationEffect(.degrees(top ? rotation : 0), anchor: .bottom)
@@ -113,6 +115,10 @@ struct SwipeDeck: View {
             return
         }
         leaving = true
+        if kind == .like, note != nil {
+            liftOff(note: note)
+            return
+        }
         var target = drag
         var up: CGFloat = 0
         switch kind {
@@ -124,16 +130,41 @@ struct SwipeDeck: View {
             drag = target
             lift = up
         } completion: {
-            // Reset the offset and remove the card in the same update, so the next card
-            // never sees the old offset.
-            var reset = Transaction()
-            reset.disablesAnimations = true
-            withTransaction(reset) {
-                drag = .zero
-                lift = 0
-            }
-            leaving = false
-            onCommit(kind, note)
+            land(kind, note: note)
         }
+    }
+
+    /// A like with a note: once the note sheet has gone, the card lifts off the table with
+    /// a light tap, then flies up and away to the right, like a letter sent.
+    private func liftOff(note: String?) {
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(350))
+            withAnimation(Motion.bouncy) {
+                lifted = 1.04
+                lift = -24
+            }
+            Haptics.tick()
+            try? await Task.sleep(for: .milliseconds(220))
+            withAnimation(Motion.liftOff) {
+                drag = CGSize(width: 520, height: 0)
+                lift = -900
+            } completion: {
+                land(.like, note: note)
+            }
+        }
+    }
+
+    /// Resets the offsets and removes the card in the same update, so the next card never
+    /// sees the old offset.
+    private func land(_ kind: SwipeKind, note: String?) {
+        var reset = Transaction()
+        reset.disablesAnimations = true
+        withTransaction(reset) {
+            drag = .zero
+            lift = 0
+            lifted = 1
+        }
+        leaving = false
+        onCommit(kind, note)
     }
 }

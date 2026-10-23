@@ -437,14 +437,18 @@ struct NoteSheet: View {
     }
 }
 
-/// The match moment: the two dots meet once, the photos slide together, then the
-/// words and the buttons rise in turn. Plays match.wav (from the model).
+/// The match moment, JÜR's biggest: the two dots meet once, the photos slide together,
+/// then the match seal slams down where they overlap (they give under it, gold dust
+/// flies, a thump), and the words and buttons rise in turn. Plays match.wav (from the model).
 struct MatchMoment: View {
     let other: ProfileCard
     let myPhoto: String?
     let onWrite: () -> Void
     let onKeep: () -> Void
     @State private var shown = false
+    @State private var sealed = false
+    @State private var dip = false
+    @State private var burst = 0
     @State private var wordsShown = false
     @State private var buttonsShown = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -468,7 +472,16 @@ struct MatchMoment: View {
                         .rotationEffect(.degrees(shown ? 6 : 0))
                         .offset(x: shown ? 0 : 60)
                 }
+                .stampDip(dip)
+                .overlay(alignment: .bottom) {
+                    ZStack {
+                        DustBurst(trigger: burst)
+                        MatchSeal().stampSlam(sealed)
+                    }
+                    .offset(y: 36)
+                }
                 .opacity(shown ? 1 : 0)
+                .padding(.bottom, Sp.xl)
                 VStack(spacing: Sp.sm) {
                     Text(t("match.title")).qText(.title1).foregroundStyle(.white).accessibilityAddTraits(.isHeader)
                     Text(t("match.sub", ["name": other.name])).qText(.body).foregroundStyle(Color.q.blueMist)
@@ -486,14 +499,42 @@ struct MatchMoment: View {
             }
             .padding(Layout.margin)
         }
-        .onAppear {
-            if reduceMotion {
-                withAnimation(Motion.fade) { shown = true; wordsShown = true; buttonsShown = true }
-                return
-            }
-            withAnimation(Motion.hero) { shown = true }
-            withAnimation(Motion.smooth.delay(0.3)) { wordsShown = true }
-            withAnimation(Motion.smooth.delay(0.45)) { buttonsShown = true }
+        .task {
+            withAnimation(Motion.adaptive(Motion.hero)) { shown = true }
+            try? await Task.sleep(for: .milliseconds(reduceMotion ? 150 : 650))
+            // The success haptic and the sound already played when the match came back.
+            await StampMoment.play(land: { sealed = true }, dip: { dip = $0 }, dust: { burst += 1 }, success: false)
+            try? await Task.sleep(for: .milliseconds(200))
+            withAnimation(Motion.adaptive(Motion.smooth)) { wordsShown = true }
+            try? await Task.sleep(for: .milliseconds(150))
+            withAnimation(Motion.adaptive(Motion.smooth)) { buttonsShown = true }
         }
+    }
+}
+
+/// The seal on a match: the mark in gold inside a double gold ring, on blue.
+struct MatchSeal: View {
+    @ScaledMetric(relativeTo: .caption) private var size: CGFloat = 84
+
+    var body: some View {
+        ZStack {
+            Circle().fill(Color.q.blueDeep)
+            Circle().strokeBorder(Color.q.gold, lineWidth: 3)
+            Circle().strokeBorder(Color.q.gold.opacity(0.7), lineWidth: 1).padding(6)
+            VStack(spacing: 0) {
+                MarkView(size: size * 0.36, color: Color.q.gold)
+                Text(t("match.seal").uppercased())
+                    .font(.q(.label))
+                    .tracking(1.5)
+                    .foregroundStyle(Color.q.gold)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
+            }
+            .padding(.horizontal, Sp.md)
+        }
+        .frame(width: size, height: size)
+        .rotationEffect(.degrees(-10))
+        .shadow(color: Color.q.boardShade.opacity(0.5), radius: 8, y: 4)
+        .accessibilityHidden(true)
     }
 }

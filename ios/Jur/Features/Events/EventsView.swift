@@ -720,40 +720,47 @@ struct NewEventView: View {
     }
 }
 
-/// Check-in's moment: the "showed up" stamp lands on a felt card with a thump, then
-/// clears itself (or on tap).
+/// Check-in's moment, the same as the passport being issued: the felt card rises, the
+/// "showed up" stamp slams down big and turned, the card dips, gold dust flies, a thump.
+/// Then it clears itself (or on tap).
 struct StampLanding: View {
     let data: StampData
     var city: String?
     let onDone: () -> Void
+    @State private var cardIn = false
     @State private var landed = false
+    @State private var dip = false
+    @State private var burst = 0
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         ZStack {
             Color.q.overlay.ignoresSafeArea()
             VStack(spacing: Sp.lg) {
-                Stamp(data: data, city: city)
-                    .scaleEffect(landed || reduceMotion ? 1 : 1.4)
-                    .rotationEffect(.degrees(landed || reduceMotion ? 0 : -12))
-                    .opacity(landed ? 1 : 0)
+                ZStack {
+                    DustBurst(trigger: burst)
+                    Stamp(data: data, city: city).stampSlam(landed)
+                }
                 Text(t("events.checkedIn")).qText(.headline).foregroundStyle(Color.q.feltInk)
             }
             .padding(Sp.xxl)
             .background(Color.q.feltGround, in: RoundedRectangle(cornerRadius: Radius.lg, style: .continuous))
             .qElevated()
+            .rotationEffect(.degrees(cardIn || reduceMotion ? -2 : -7))
+            .offset(y: cardIn || reduceMotion ? 0 : 60)
+            .opacity(cardIn ? 1 : 0)
+            .stampDip(dip)
         }
         .contentShape(Rectangle())
         .onTapGesture(perform: onDone)
         .accessibilityElement(children: .combine)
         .accessibilityAddTraits(.isModal)
         .task {
-            withAnimation(Motion.adaptive(Motion.bouncy)) { landed = true }
-            try? await Task.sleep(for: .seconds(0.15))
-            Haptics.thump()
-            Haptics.success()
+            withAnimation(Motion.adaptive(Motion.hero)) { cardIn = true }
+            try? await Task.sleep(for: .milliseconds(350))
+            await StampMoment.play(land: { landed = true }, dip: { dip = $0 }, dust: { burst += 1 })
             Sounds.play(.checkin)
-            try? await Task.sleep(for: .seconds(1.8))
+            try? await Task.sleep(for: .seconds(2))
             onDone()
         }
     }

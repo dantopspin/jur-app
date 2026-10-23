@@ -32,7 +32,7 @@ struct SegmentProgress: View {
         }
         .task(id: step) {
             fill = 0
-            withAnimation(reduceMotion ? nil : .easeOut(duration: 0.5).delay(0.1)) { fill = 1 }
+            withAnimation(reduceMotion ? nil : Motion.fill.delay(0.1)) { fill = 1 }
         }
         .accessibilityElement()
         .accessibilityLabel(t("onboarding.step", ["n": min(max(step, 1), total), "total": total]))
@@ -213,6 +213,8 @@ struct QuestionHeader: View {
 /// The gold tick in a selected tile or card, drawn in as it appears.
 struct SelectedTick: View {
     var size: CGFloat = 28
+    /// When the tick starts drawing after the circle appears.
+    var delay: Double = 0.08
     @State private var drawn: CGFloat = 0
 
     var body: some View {
@@ -225,7 +227,7 @@ struct SelectedTick: View {
                     .stroke(Color.q.onGold, style: StrokeStyle(lineWidth: 2.4, lineCap: .round, lineJoin: .round))
                     .padding(size * 0.28)
             }
-            .onAppear { withAnimation(Motion.adaptive(Motion.draw).delay(0.08)) { drawn = 1 } }
+            .onAppear { withAnimation(Motion.adaptive(Motion.draw).delay(delay)) { drawn = 1 } }
             .accessibilityHidden(true)
     }
 }
@@ -478,44 +480,6 @@ struct AgeConfirmCard: View {
     }
 }
 
-// MARK: gold dust
-
-/// A small burst of gold specks, fired each time `trigger` changes. Nothing under Reduce Motion.
-struct DustBurst: View {
-    let trigger: Int
-    @State private var progress: CGFloat = 0
-    @State private var fired = false
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-
-    private static let specks: [(dx: CGFloat, dy: CGFloat, size: CGFloat, color: Color)] = (0..<16).map { i in
-        let angle = Double(i) / 16 * 2 * .pi + (i.isMultiple(of: 2) ? 0.2 : -0.1)
-        let r = CGFloat(60 + (i * 37) % 70)
-        let colors = [Color.q.gold, Color(red: 0.96, green: 0.82, blue: 0.54), .white]
-        return (CGFloat(cos(angle)) * r, CGFloat(sin(angle)) * r - 20, CGFloat(4 + (i * 3) % 5), colors[i % 3])
-    }
-
-    var body: some View {
-        ZStack {
-            ForEach(Self.specks.indices, id: \.self) { i in
-                let s = Self.specks[i]
-                Circle()
-                    .fill(s.color)
-                    .frame(width: s.size, height: s.size)
-                    .offset(x: s.dx * progress, y: s.dy * progress + 30 * progress * progress)
-                    .opacity(fired ? Double(1 - progress) : 0)
-            }
-        }
-        .allowsHitTesting(false)
-        .accessibilityHidden(true)
-        .onChange(of: trigger) { _, _ in
-            guard !reduceMotion else { return }
-            progress = 0
-            fired = true
-            withAnimation(.easeOut(duration: 0.9)) { progress = 1 }
-        }
-    }
-}
-
 // MARK: sports chip (filters and the profile editor use it too)
 
 extension Level {
@@ -674,7 +638,7 @@ struct BreathingSlot: ViewModifier {
             .scaleEffect(on ? 0.97 : 1)
             .onAppear {
                 guard !reduceMotion else { return }
-                withAnimation(.easeInOut(duration: 1).repeatForever(autoreverses: true)) { on = true }
+                withAnimation(Motion.breathe) { on = true }
             }
     }
 }

@@ -28,6 +28,22 @@ enum Motion {
     /// The mark loader breathing in and out (loading only).
     static let loader = Animation.timingCurve(0.2, 0, 0, 1, duration: 0.7)
 
+    /// A stamp hitting the page: fast, with a little rebound (check-in, match, passport issued).
+    static let slam = Animation.spring(duration: 0.28, bounce: 0.35)
+    /// The card giving under a stamp, and springing back.
+    static let dip = Animation.easeOut(duration: 0.08)
+    static let dipBack = Animation.spring(duration: 0.35, bounce: 0.5)
+    /// Gold dust flying off a landed stamp.
+    static let burst = Animation.easeOut(duration: 0.9)
+    /// A progress segment filling as you arrive on a step.
+    static let fill = Animation.easeOut(duration: 0.5)
+    /// The next empty slot breathing (the only loop, never under Reduce Motion).
+    static let breathe = Animation.easeInOut(duration: 1).repeatForever(autoreverses: true)
+    /// A tile turning over to show its other side.
+    static let flip = Animation.spring(duration: 0.7, bounce: 0.15)
+    /// A card leaving upward on purpose (a like with a note), after lifting.
+    static let liftOff = Animation.easeIn(duration: 0.32)
+
     /// Delay between items that arrive together (board rows, staggered titles).
     static let stagger: Double = 0.03
 

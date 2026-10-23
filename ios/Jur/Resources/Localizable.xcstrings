@@ -10627,6 +10627,29 @@
         }
       }
     },
+    "likes.nowMatched": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Now in your Matches"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Теперь вы в «Мэтчах»"
+          }
+        },
+        "kk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Енді «Мэтчтерде»"
+          }
+        }
+      }
+    },
     "likes.proOnly": {
       "extractionState": "manual",
       "localizations": {
@@ -10830,6 +10853,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "Әрі қарай қарау"
+          }
+        }
+      }
+    },
+    "match.seal": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Match"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Мэтч"
+          }
+        },
+        "kk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Мэтч"
           }
         }
       }
@@ -12969,6 +13015,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "бүгінгі лайк"
+          }
+        }
+      }
+    },
+    "me3.newStamp": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New stamp: {stamp}"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Новая отметка: {stamp}"
+          }
+        },
+        "kk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Жаңа белгі: {stamp}"
           }
         }
       }

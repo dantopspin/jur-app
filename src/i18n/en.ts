@@ -100,6 +100,7 @@ const en = {
     super: "Super like",
   },
   match: {
+    seal: "Match",
     title: "Same pace!",
     sub: 'You and {name} liked each other.',
     write: 'Say hi',
@@ -199,6 +200,7 @@ const en = {
     thanks: 'Thanks. We’ll review this. You won’t see this person again.',
   },
   likes: {
+    nowMatched: "Now in your Matches",
     title: 'Liked you',
     empty: 'No new likes yet.',
     proOnly: 'See everyone who liked you with JÜR Pro.',
@@ -937,6 +939,7 @@ const en = {
     photosTitle: "Tap the right side for the next photo",
   },
   me3: {
+    newStamp: "New stamp: {stamp}",
     passport: "Passport and stamps",
     settings: "Settings",
     edit: "Edit",
