@@ -292,7 +292,7 @@ struct ChatView: View {
                 .overlay(alignment: .topTrailing) {
                     if missed > 0 {
                         Text(verbatim: "\(missed)").font(.q(.label)).foregroundStyle(.white)
-                            .padding(.horizontal, 6).frame(minWidth: 20, minHeight: 20)
+                            .padding(.horizontal, Sp.xs).frame(minWidth: 20, minHeight: 20)
                             .background(Color.q.blue, in: Capsule())
                             .offset(x: 4, y: -4)
                             .contentTransition(.numericText())
@@ -338,10 +338,10 @@ struct ChatView: View {
                             Text(r.kind == "photo" ? t("chat2.photo") : r.kind == "voice" ? t("chat2.voice") : r.body)
                                 .qText(.footnote)
                                 .lineLimit(2)
-                                .foregroundStyle(mine ? Color.white.opacity(0.85) : Color.q.inkSoft)
+                                .foregroundStyle(mine ? Color.q.blueMist : Color.q.inkSoft)
                                 .padding(.leading, Sp.sm)
                                 .overlay(alignment: .leading) {
-                                    Rectangle().fill(mine ? Color.white.opacity(0.6) : Color.q.blueText).frame(width: 2)
+                                    Rectangle().fill(mine ? Color.q.onBlueSoft : Color.q.blueText).frame(width: 2)
                                 }
                         }
                         Text(m.body)
@@ -350,7 +350,7 @@ struct ChatView: View {
                     }
                     .padding(.horizontal, Sp.md)
                     .padding(.vertical, Sp.sm)
-                    .background(mine ? Color.q.blue : Color.q.card, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                    .background(mine ? Color.q.blue : Color.q.card, in: RoundedRectangle(cornerRadius: Radius.bubble, style: .continuous))
                     .contextMenu { messageMenu(m) }
                     reactionsRow(m, mine: mine)
                     if mine, m.id == model.messages.last(where: { $0.senderId == session.userId })?.id, m.readAt != nil {
@@ -486,7 +486,7 @@ struct ChatView: View {
                 .onChange(of: draft) { _, v in Drafts.set("chat.\(matchId.uuidString.lowercased())", v) }
                 .padding(.horizontal, Sp.md)
                 .padding(.vertical, Sp.sm)
-                .background(Color.q.bg, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                .background(Color.q.bg, in: RoundedRectangle(cornerRadius: Radius.bubble, style: .continuous))
                 .overlay(alignment: .topTrailing) {
                     CharCounter(count: draft.count, limit: 2000)
                         .padding(.horizontal, Sp.sm)
@@ -612,8 +612,8 @@ struct DateComposerSheet: View {
 
     var body: some View {
         NavigationStack {
-            Form {
-                Section(t("date.sport")) {
+            QForm {
+                QSection(t("date.sport")) {
                     Picker(t("date.sport"), selection: $sport) {
                         Text("☕️ " + t("date.coffee")).tag(String?.none)
                         ForEach(options, id: \.self) { code in Text(catalog.label(code)).tag(String?.some(code)) }
@@ -621,11 +621,11 @@ struct DateComposerSheet: View {
                     .pickerStyle(.inline)
                     .labelsHidden()
                 }
-                Section(t("date.when")) {
+                QSection(t("date.when")) {
                     DatePicker(t("date.when"), selection: $when, in: Date.now..., displayedComponents: [.date, .hourAndMinute])
                         .environment(\.timeZone, Fmt.zone)
                 }
-                Section(t("date.where")) {
+                QSection(t("date.where")) {
                     TextField(t("date.wherePlaceholder"), text: $place)
                         .autocorrectionDisabled()
                         .submitLabel(.send)
@@ -683,7 +683,7 @@ struct ReportSheet: View {
 
     var body: some View {
         NavigationStack {
-            List {
+            QList {
                 Section {
                     ForEach(reasons, id: \.self) { r in
                         Button { Task { await report(r) } } label: {

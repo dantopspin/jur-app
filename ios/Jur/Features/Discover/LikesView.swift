@@ -59,7 +59,7 @@ struct LikesView: View {
                 }
                 .padding(Sp.md)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .background(LinearGradient(colors: [.clear, .black.opacity(0.6)], startPoint: .top, endPoint: .bottom))
+                .background(LinearGradient(colors: [.clear, Color.q.scrim], startPoint: .top, endPoint: .bottom))
             }
             .clipShape(RoundedRectangle(cornerRadius: Radius.lg, style: .continuous))
             .accessibilityElement(children: .combine)

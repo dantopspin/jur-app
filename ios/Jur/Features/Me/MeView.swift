@@ -125,8 +125,7 @@ struct MeView: View {
                             .qText(.footnote).foregroundStyle(Color.q.muted)
                     }
                     Spacer(minLength: Sp.sm)
-                    Image(systemName: "chevron.right").font(.q(.footnote).weight(.semibold)).foregroundStyle(Color.q.hint)
-                        .accessibilityHidden(true)
+                    QChevron()
                 }
                 .padding(Sp.lg)
                 .background(Color.q.card, in: RoundedRectangle(cornerRadius: Radius.lg, style: .continuous))
@@ -207,8 +206,7 @@ struct MeView: View {
                     .multilineTextAlignment(.leading)
             }
             Spacer(minLength: Sp.sm)
-            Image(systemName: "chevron.right").font(.q(.footnote).weight(.semibold)).foregroundStyle(Color.q.hint)
-                .accessibilityHidden(true)
+            QChevron()
         }
         .padding(Sp.lg)
         .background(Color.q.card, in: RoundedRectangle(cornerRadius: Radius.lg, style: .continuous))
@@ -240,7 +238,7 @@ struct RoundHubButton: View {
     var body: some View {
         VStack(spacing: Sp.sm) {
             Image(systemName: symbol)
-                .font(.system(size: primary ? 24 : 20, weight: .semibold))
+                .font(.system(size: (primary ? 64 : 56) * 0.38, weight: .bold))
                 .foregroundStyle(primary ? .white : Color.q.inkSoft)
                 .frame(width: primary ? 64 : 56, height: primary ? 64 : 56)
                 .background(primary ? Color.q.blue : Color.q.card, in: Circle())

@@ -21,6 +21,8 @@ enum Motion {
     static let fade = Animation.easeOut(duration: 0.2)
     /// The brand mark drawing its horns in (an ease-out-expo, the mark's own curve).
     static let draw = Animation.timingCurve(0.2, 0, 0, 1, duration: 0.6)
+    /// The one sweep of light across the Pro card (once, after it lands).
+    static let sheen = Animation.easeInOut(duration: 1.1)
     /// A skeleton's light sweep (loading only).
     static let shimmer = Animation.linear(duration: 1.4)
     /// The mark loader breathing in and out (loading only).

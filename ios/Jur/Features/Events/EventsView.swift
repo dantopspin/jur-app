@@ -462,7 +462,7 @@ struct NewEventView: View {
 
     var body: some View {
         NavigationStack {
-            Form {
+            QForm {
                 Section {
                     VStack(alignment: .trailing, spacing: Sp.xxs) {
                         TextField(t("events.fieldTitle"), text: $title)
@@ -563,7 +563,7 @@ struct StampLanding: View {
 
     var body: some View {
         ZStack {
-            Color.black.opacity(0.3).ignoresSafeArea()
+            Color.q.overlay.ignoresSafeArea()
             VStack(spacing: Sp.lg) {
                 Stamp(data: data, city: city)
                     .scaleEffect(landed || reduceMotion ? 1 : 1.4)

@@ -26,12 +26,12 @@ struct SettingsView: View {
     @State private var restoring = false
 
     var body: some View {
-        List {
+        QList {
             dating
             app
             subscription
 
-            Section(t("settings2.support")) {
+            QSection(t("settings2.support")) {
                 SettingsLink(symbol: "questionmark.circle", title: t("settings.support")) {
                     if let url = URL(string: "mailto:\(Config.supportEmail)") { openURL(url) }
                 }
@@ -104,7 +104,7 @@ struct SettingsView: View {
             Toggle(t("me2.pause"), isOn: Binding(get: { paused }, set: { new in Task { await setPaused(new) } }))
                 .tint(Color.q.good)
         } header: {
-            Text(t("settings2.dating"))
+            QSectionHeader(t("settings2.dating"))
         } footer: {
             Text(mode != .dating ? t("mode.buddyHint") + " " + t("me2.pauseFooter") : t("me2.pauseFooter"))
                 .qText(.footnote).foregroundStyle(Color.q.muted)
@@ -125,9 +125,8 @@ struct SettingsView: View {
     }
 
     private var travelValue: String {
-        guard let p = session.profile, let c = p.travelCity,
-              let until = p.travelUntil.flatMap({ Date.iso($0) }), until > .now else { return t("settings2.off") }
-        return Cities.label(c)
+        guard let p = session.profile, p.effectiveCity != p.city else { return t("settings2.off") }
+        return Cities.label(p.effectiveCity)
     }
 
     // MARK: the app
@@ -153,7 +152,7 @@ struct SettingsView: View {
             .pickerStyle(.menu)
             .tint(Color.q.inkSoft)
         } header: {
-            Text(t("settings2.app"))
+            QSectionHeader(t("settings2.app"))
         } footer: {
             Text(t("safety.footer") + " " + t("safety.footerDevice")).qText(.footnote).foregroundStyle(Color.q.muted)
         }
@@ -162,7 +161,7 @@ struct SettingsView: View {
     // MARK: subscription
 
     private var subscription: some View {
-        Section(t("settings2.subscription")) {
+        QSection(t("settings2.subscription")) {
             SettingsLink(symbol: "creditcard", title: t("settings.manageSub")) { manageSubscription = true }
             SettingsLink(symbol: "arrow.clockwise", title: t("paywall.restore")) { Task { await restore() } }
                 .disabled(restoring)
@@ -175,8 +174,7 @@ struct SettingsView: View {
             Text(title).foregroundStyle(Color.q.ink)
             Spacer()
             Text(value).foregroundStyle(Color.q.muted).lineLimit(1)
-            Image(systemName: "chevron.right").font(.q(.footnote).weight(.semibold)).foregroundStyle(Color.q.hint)
-                .accessibilityHidden(true)
+            QChevron()
         }
         .contentShape(Rectangle())
     }
@@ -275,10 +273,7 @@ struct SettingsLink: View {
                     .qText(.body)
                     .foregroundStyle(Color.q.ink)
                 Spacer()
-                Image(systemName: "chevron.right")
-                    .font(.q(.footnote).weight(.semibold))
-                    .foregroundStyle(Color.q.hint)
-                    .accessibilityHidden(true)
+                QChevron()
             }
             .contentShape(Rectangle())
         }

@@ -16,7 +16,7 @@ struct PromptsEditor: View {
     private var dirty: Bool { loaded && original != nil && prompts != original }
 
     var body: some View {
-        Form {
+        QForm {
             Section {
                 Text(t("prompts.hint")).qText(.footnote).foregroundStyle(Color.q.muted)
             }
@@ -112,7 +112,7 @@ struct TravelView: View {
     }
 
     var body: some View {
-        Form {
+        QForm {
             Section { Text(t("travel.hint")).qText(.callout).foregroundStyle(Color.q.inkSoft) }
             if let until = activeUntil, let c = session.profile?.travelCity {
                 Section {

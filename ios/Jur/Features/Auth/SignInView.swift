@@ -72,7 +72,7 @@ struct SignInView: View {
                         .foregroundStyle(on ? .white : Color.q.blueMist)
                         .padding(.horizontal, Sp.md)
                         .frame(minHeight: 32)
-                        .background(on ? Color.white.opacity(0.16) : .clear, in: Capsule())
+                        .background(on ? Color.q.onBlueFill : .clear, in: Capsule())
                         .frame(minWidth: 44, minHeight: 44)
                         .contentShape(Rectangle())
                 }

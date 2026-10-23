@@ -16,7 +16,7 @@ struct PairsEmpty: View {
             VStack(spacing: Sp.xl) {
                 VStack(spacing: Sp.sm) {
                     Image(systemName: "bubble.left.and.bubble.right")
-                        .font(.system(size: 40, weight: .regular))
+                        .font(.system(size: IconSize.hero))
                         .foregroundStyle(Color.q.muted)
                         .accessibilityHidden(true)
                     Text(t("matches.empty")).qText(.title3).foregroundStyle(Color.q.ink)

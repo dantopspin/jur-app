@@ -201,7 +201,7 @@ struct DiscoverView: View {
                     deck
                 }
                 .padding(.horizontal, Layout.margin)
-                .padding(.bottom, 120)
+                .padding(.bottom, Layout.floatingBarClearance)
             }
             .scrollDisabled(dragging)
             .background(Color.q.bg)

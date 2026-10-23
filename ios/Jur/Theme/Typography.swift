@@ -130,8 +130,8 @@ extension View {
     func qText(_ type: QType) -> some View { modifier(QTextModifier(type: type)) }
 }
 
-/// Navigation bar titles are drawn by UIKit, so they need the brand faces set separately:
-/// Unbounded ExtraBold for large titles, Manrope ExtraBold for the inline title.
+/// The parts UIKit draws need the brand faces set separately: navigation titles (Unbounded
+/// ExtraBold large, Manrope ExtraBold inline), bar buttons, segmented controls, tab labels.
 /// Kazakh uses the system faces, as in `Font.qFont`. Bars created after a language change
 /// pick up the new style (the root view is rebuilt on a change).
 @MainActor
@@ -152,5 +152,24 @@ enum QNavBar {
             bar.largeTitleTextAttributes = nil
             bar.titleTextAttributes = nil
         }
+
+        let face = { (name: String, size: CGFloat, style: UIFont.TextStyle, weight: UIFont.Weight) -> UIFont in
+            if brand, let f = UIFont(name: name, size: size) {
+                return UIFontMetrics(forTextStyle: style).scaledFont(for: f, maximumPointSize: size * 1.4)
+            }
+            return UIFont.systemFont(ofSize: size, weight: weight)
+        }
+        // Toolbar buttons ("Готово", "Сохранить").
+        let button = UIBarButtonItem.appearance()
+        for state: UIControl.State in [.normal, .highlighted, .disabled] {
+            button.setTitleTextAttributes([.font: face("Manrope-SemiBold", 17, .body, .medium)], for: state)
+        }
+        // Segmented pickers (Today / Tomorrow / Weekend, Edit / Preview, filters).
+        let segmented = UISegmentedControl.appearance()
+        segmented.setTitleTextAttributes([.font: face("Manrope-SemiBold", 13, .footnote, .medium)], for: .normal)
+        segmented.setTitleTextAttributes([.font: face("Manrope-ExtraBold", 13, .footnote, .bold)], for: .selected)
+        // Tab bar labels.
+        let tab = UITabBarItem.appearance()
+        tab.setTitleTextAttributes([.font: face("Manrope-Bold", 10, .caption2, .semibold)], for: .normal)
     }
 }

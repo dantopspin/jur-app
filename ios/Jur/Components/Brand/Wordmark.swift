@@ -62,7 +62,7 @@ struct DotsMeeting: View {
 }
 
 #Preview {
-    VStack(spacing: 40) {
+    VStack(spacing: Sp.xxl) {
         Wordmark(size: 84, ink: .white, dots: Color.q.gold).padding().background(Color.q.blue)
         Wordmark(size: 22)
         DotsMeeting()

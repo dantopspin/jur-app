@@ -102,7 +102,7 @@ struct GiftCard: View {
 
 #Preview {
     ScrollView {
-        VStack(spacing: 24) {
+        VStack(spacing: Sp.xl) {
             MembershipCover(memberNo: "№0042")
             Text(t("cover.welcome")).qText(.title2).foregroundStyle(.white)
             GiftCard(code: "K7MD-P2QA", onSend: {})

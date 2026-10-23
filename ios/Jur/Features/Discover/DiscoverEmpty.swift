@@ -23,17 +23,14 @@ struct DiscoverEmpty: View {
 
     private var city: String {
         guard let p = profile else { return "" }
-        if let c = p.travelCity, let until = p.travelUntil.flatMap({ Date.iso($0) }), until > .now {
-            return Cities.label(c)
-        }
-        return Cities.label(p.city)
+        return Cities.label(p.effectiveCity)
     }
 
     var body: some View {
         VStack(spacing: Sp.xl) {
             VStack(spacing: Sp.sm) {
                 Image(systemName: "figure.run")
-                    .font(.system(size: 40, weight: .regular))
+                    .font(.system(size: IconSize.hero))
                     .foregroundStyle(Color.q.muted)
                     .accessibilityHidden(true)
                 Text(t("discover.empty")).qText(.title3).foregroundStyle(Color.q.ink)

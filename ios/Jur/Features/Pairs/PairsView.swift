@@ -74,6 +74,8 @@ struct PairsView: View {
                             }
                         }
                     }
+                    .listRowBackground(Color.q.bg)
+                    .listRowSeparatorTint(Color.q.line)
                 }
                 ForEach(model.rows) { row in
                     NavigationLink(value: row.matchId) { MatchRowView(row: row, me: session.userId) }
@@ -91,6 +93,8 @@ struct PairsView: View {
                             }
                             .tint(Color.q.danger)
                         }
+                        .listRowBackground(Color.q.bg)
+                        .listRowSeparatorTint(Color.q.line)
                 }
             }
             .listStyle(.plain)

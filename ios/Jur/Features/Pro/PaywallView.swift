@@ -115,7 +115,7 @@ struct PaywallView: View {
         .onAppear {
             withAnimation(Motion.adaptive(Motion.hero)) { appeared = true }
             guard !Motion.reduceMotion else { return }
-            withAnimation(.easeInOut(duration: 1.1).delay(0.9)) { shine = true }
+            withAnimation(Motion.sheen.delay(0.9)) { shine = true }
         }
     }
 
@@ -155,7 +155,7 @@ struct PaywallView: View {
                 }
             case .boost, .undo, .filters:
                 Image(systemName: context == .boost ? "bolt.fill" : context == .undo ? "arrow.uturn.backward" : "line.3.horizontal.decrease")
-                    .font(.system(size: fit == .compact ? 26 : 30, weight: .bold))
+                    .font(.system(size: IconSize.action, weight: .bold))
                     .foregroundStyle(Color.q.onGold)
                     .frame(width: fit == .compact ? 64 : 76, height: fit == .compact ? 64 : 76)
                     .background(Color.q.gold, in: Circle())
@@ -229,7 +229,7 @@ struct PaywallView: View {
     private func benefit(_ text: String, symbol: String, index: Int) -> some View {
         HStack(spacing: Sp.md) {
             Image(systemName: symbol)
-                .font(.system(size: 11, weight: .heavy))
+                .font(.system(size: IconSize.inline - 2, weight: .heavy))
                 .foregroundStyle(Color.q.onGold)
                 .frame(width: 22, height: 22)
                 .background(Color.q.gold, in: Circle())
@@ -253,7 +253,7 @@ struct PaywallView: View {
             VStack(spacing: Sp.sm) {
                 ForEach(0..<2, id: \.self) { _ in
                     RoundedRectangle(cornerRadius: Radius.md + 4, style: .continuous)
-                        .fill(Color.white.opacity(0.08)).frame(height: fit.row)
+                        .fill(Color.q.onBlueFaint).frame(height: fit.row)
                 }
             }
             .qShimmer()
@@ -289,20 +289,20 @@ struct PaywallView: View {
         } label: {
             HStack(spacing: Sp.md + 2) {
                 ZStack {
-                    Circle().strokeBorder(on ? Color.q.gold : Color.white.opacity(0.45), lineWidth: 2)
+                    Circle().strokeBorder(on ? Color.q.gold : Color.q.onBlueSoft, lineWidth: 2)
                     if on {
                         Circle().fill(Color.q.gold)
                         Circle().fill(Color.q.onGold).frame(width: 8, height: 8)
                     }
                 }
                 .frame(width: 22, height: 22)
-                VStack(alignment: .leading, spacing: 1) {
+                VStack(alignment: .leading, spacing: Sp.xxs) {
                     HStack(spacing: Sp.sm) {
                         Text(planName(p)).qText(.headline).lineLimit(1)
                         if let off = discount(p) {
                             Text(verbatim: "−\(off)%")
                                 .font(.q(.label)).foregroundStyle(Color.q.onGold)
-                                .padding(.horizontal, Sp.sm).padding(.vertical, 2)
+                                .padding(.horizontal, Sp.sm).padding(.vertical, Sp.xxs)
                                 .background(Color.q.gold, in: Capsule())
                                 .fixedSize()
                         }
@@ -321,9 +321,9 @@ struct PaywallView: View {
             .foregroundStyle(.white)
             .padding(.horizontal, Sp.lg)
             .frame(minHeight: fit.row)
-            .background(Color.white.opacity(on ? 0.16 : 0.06), in: RoundedRectangle(cornerRadius: Radius.md + 4, style: .continuous))
+            .background(on ? Color.q.onBlueFill : Color.q.onBlueFaint, in: RoundedRectangle(cornerRadius: Radius.md + 4, style: .continuous))
             .overlay(RoundedRectangle(cornerRadius: Radius.md + 4, style: .continuous)
-                .strokeBorder(on ? Color.q.gold : Color.white.opacity(0.14), lineWidth: 2))
+                .strokeBorder(on ? Color.q.gold : Color.q.onBlueLine, lineWidth: 2))
             .animation(Motion.snappy, value: on)
         }
         .buttonStyle(.qPressCard)
@@ -451,7 +451,7 @@ struct PaywallView: View {
         .frame(maxWidth: .infinity)
         .background {
             Rectangle().fill(.ultraThinMaterial).environment(\.colorScheme, .dark)
-                .overlay(alignment: .top) { Rectangle().fill(.white.opacity(0.12)).frame(height: 1) }
+                .overlay(alignment: .top) { Rectangle().fill(Color.q.onBlueLine).frame(height: 1) }
                 .ignoresSafeArea(edges: .bottom)
         }
     }

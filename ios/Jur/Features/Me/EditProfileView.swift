@@ -50,7 +50,7 @@ struct EditProfileView: View {
     private var dirty: Bool { loaded && original != nil && current != original }
 
     var body: some View {
-        Form {
+        QForm {
             Section {
                 Picker("", selection: $tab) {
                     Text(t("edit2.tabEdit")).tag(Tab.edit)
@@ -127,11 +127,11 @@ struct EditProfileView: View {
             PhotoGrid(photos: $photos, pickerItems: $pickerItems, uploading: uploading) { viewing = PhotoIndex(id: $0) }
                 .listRowInsets(EdgeInsets(top: Sp.md, leading: Sp.md, bottom: Sp.md, trailing: Sp.md))
         } header: {
-            Text(t("onboarding.photosTitle"))
+            QSectionHeader(t("onboarding.photosTitle"))
         } footer: {
             Text(t("edit2.photosHint")).qText(.footnote).foregroundStyle(Color.q.muted)
         }
-        Section(t("edit2.about")) {
+        QSection(t("edit2.about")) {
             // Return walks name → goal → about; "about" keeps Return for new lines.
             field(count: name.count, limit: 40) {
                 TextField(t("onboarding.namePlaceholder"), text: $name)
@@ -158,7 +158,7 @@ struct EditProfileView: View {
                     .limited($bio, to: 500)
             }
         }
-        Section(t("onboarding.sportsTitle")) {
+        QSection(t("onboarding.sportsTitle")) {
             SportPicker(picked: $sports)
                 .listRowInsets(EdgeInsets(top: Sp.md, leading: Sp.md, bottom: Sp.md, trailing: Sp.md))
         }
@@ -175,10 +175,10 @@ struct EditProfileView: View {
                     .foregroundStyle(Color.q.blueText)
             }
         } header: {
-            Text(t("edit2.prompts", ["n": prompts.count]))
+            QSectionHeader(t("edit2.prompts", ["n": prompts.count]))
         }
         if let p = session.profile {
-            Section(t("edit2.trust")) { verificationRow(p.verificationStatus) }
+            QSection(t("edit2.trust")) { verificationRow(p.verificationStatus) }
         }
     }
 

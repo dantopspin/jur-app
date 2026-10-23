@@ -104,7 +104,7 @@ struct OnboardingView: View {
         HStack {
             Group {
                 if preview && d.step == .name {
-                    Button(action: onClosePreview) { Image(systemName: "xmark").font(.q(.headline)) }
+                    CloseButton(action: onClosePreview)
                         .accessibilityLabel(t("flow.previewClose"))
                         .frame(minWidth: 44, minHeight: 44, alignment: .leading)
                 } else if d.step == .name {
@@ -329,7 +329,7 @@ struct OnboardingView: View {
                     } label: {
                         Image(systemName: "xmark.circle.fill")
                             .symbolRenderingMode(.palette)
-                            .foregroundStyle(.white, .black.opacity(0.5))
+                            .foregroundStyle(.white, Color.q.scrim)
                             .font(.q(.title3))
                             .frame(width: 44, height: 44)
                     }
@@ -356,7 +356,7 @@ struct OnboardingView: View {
                                 .font(.q(.title2))
                                 .foregroundStyle(.white)
                                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-                                .background(Color.black.opacity(0.35), in: shape)
+                                .background(Color.q.scrim, in: shape)
                         }
                         .accessibilityLabel(t("flow.uploadFailed"))
                     }

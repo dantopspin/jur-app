@@ -118,7 +118,7 @@ struct InviteView: View {
     }
 
     var body: some View {
-        List {
+        QList {
             Section {
                 VStack(alignment: .leading, spacing: Sp.md) {
                     Text(t("me2.inviteLead", ["every": referrals?.every ?? 2, "days": referrals?.bonusDays ?? 7]))
@@ -169,7 +169,7 @@ struct InviteView: View {
                             .disabled(friendCode.trimmingCharacters(in: .whitespaces).count < 4 || applying)
                     }
                 } header: {
-                    Text(t("me2.friendCode"))
+                    QSectionHeader(t("me2.friendCode"))
                 } footer: {
                     Text(t("me2.friendCodeHint"))
                 }
@@ -225,8 +225,8 @@ struct HelpSafetyView: View {
     ]
 
     var body: some View {
-        List {
-            Section(t("me2.tipsTitle")) {
+        QList {
+            QSection(t("me2.tipsTitle")) {
                 ForEach(tips) { tip in
                     Label {
                         Text(t(tip.key)).qText(.callout).foregroundStyle(Color.q.ink)
@@ -243,12 +243,12 @@ struct HelpSafetyView: View {
                 }
                 SettingsLink(symbol: "questionmark.circle", title: t("settings.support")) { openURL(Config.supportURL) }
             } header: {
-                Text(t("me2.contactTitle"))
+                QSectionHeader(t("me2.contactTitle"))
             } footer: {
                 Text(t("me2.emergency")).qText(.footnote).fontWeight(.semibold).foregroundStyle(Color.q.clay)
             }
 
-            Section(t("me2.legalTitle")) {
+            QSection(t("me2.legalTitle")) {
                 SettingsLink(symbol: "lock", title: t("settings.privacy")) { openURL(Config.privacyURL) }
                 SettingsLink(symbol: "doc.text", title: t("settings.terms")) { openURL(Config.termsURL) }
             }

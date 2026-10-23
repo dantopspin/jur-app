@@ -135,7 +135,7 @@ struct DateNudge: View {
 }
 
 #Preview {
-    VStack(spacing: 24) {
+    VStack(spacing: Sp.xl) {
         DateTicket(title: "Лыжи · Шымбулак", when: "Сб 25 окт · 09:30", place: "Медеу, канатка", state: .pending(canAnswer: true))
         DateNudge {}
     }

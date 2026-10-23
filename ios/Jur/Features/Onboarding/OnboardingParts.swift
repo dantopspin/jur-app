@@ -354,7 +354,7 @@ struct PendingPhoto: Identifiable, Equatable {
 struct NotificationExample: View {
     var body: some View {
         HStack(spacing: Sp.md) {
-            RoundedRectangle(cornerRadius: 9, style: .continuous)
+            RoundedRectangle(cornerRadius: Radius.sm, style: .continuous)
                 .fill(Color.q.blue)
                 .frame(width: 38, height: 38)
                 .overlay(MarkView(size: 26, color: Color.q.gold))

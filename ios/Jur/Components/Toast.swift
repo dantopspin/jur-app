@@ -68,7 +68,7 @@ struct ToastOverlay: View {
                 .padding(.horizontal, Sp.lg)
                 .padding(.vertical, Sp.md)
                 .background(.regularMaterial, in: Capsule())
-                .shadow(color: .black.opacity(0.12), radius: 12, y: 4)
+                .qElevated()
                 .transition(Motion.reduceMotion ? .opacity : .move(edge: .top).combined(with: .opacity))
                 .accessibilityAddTraits(.isStaticText)
             }

@@ -17,6 +17,9 @@ struct JurApp: App {
                 .environment(\.locale, (AppLanguage(rawValue: language) ?? .ru).locale)
                 .overlay(alignment: .top) { ToastOverlay().environment(toasts) }
                 .tint(Color.q.blueText)
+                // The brand face for every text that doesn't pick a style itself (list rows,
+                // toggles, pickers, menus), so nothing falls back to the system font.
+                .font(.q(.body))
                 // Terms and Privacy open in the app, not the browser.
                 .legalLinks()
                 // A tap anywhere outside a text field puts the keyboard away.

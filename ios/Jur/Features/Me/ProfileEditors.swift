@@ -54,7 +54,7 @@ struct PhotoGrid: View {
                         } label: {
                             Image(systemName: "xmark.circle.fill")
                                 .symbolRenderingMode(.palette)
-                                .foregroundStyle(.white, .black.opacity(0.5))
+                                .foregroundStyle(.white, Color.q.scrim)
                                 .font(.q(.title3))
                                 .frame(width: 44, height: 44)
                         }
@@ -144,12 +144,7 @@ struct PhotoViewer: View {
         }
         .overlay(alignment: .top) {
             HStack {
-                Button { dismiss() } label: {
-                    Image(systemName: "xmark").font(.system(size: 16, weight: .bold)).foregroundStyle(.white)
-                        .frame(width: 44, height: 44)
-                        .background(.white.opacity(0.14), in: Circle())
-                }
-                .accessibilityLabel(t("common.close"))
+                CloseButton(action: { dismiss() }, onBlue: true)
                 Spacer()
                 Text(t("viewer.of", ["i": index + 1, "n": photos.count]))
                     .qText(.callout).fontWeight(.semibold).foregroundStyle(.white)

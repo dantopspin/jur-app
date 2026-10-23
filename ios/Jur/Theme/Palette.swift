@@ -45,6 +45,8 @@ struct QColors {
     let goodTint = dynamic(0xE5F2EA, 0x163325)
     let danger = dynamic(0xB3261E, 0xFF7A6E)
     let dangerTint = dynamic(0xFBEAE8, 0x3A1F22)
+    /// Behind white controls and text laid over a photo.
+    let scrim = Color.black.opacity(0.5)
     let overlay = Color(UIColor { $0.userInterfaceStyle == .dark ? UIColor(white: 0, alpha: 0.6) : UIColor(hex: 0x123A64, alpha: 0.55) })
     // felt: a physical material, the same in both modes
     let feltGround = fixed(0xEFE6D6)
@@ -58,6 +60,11 @@ struct QColors {
     let boardShade = fixed(0x0B2440)
     let boardRule = fixed(0xDCE7F3).opacity(0.18)
     let coverGround = fixed(0x123A64)
+    // white on the blue grounds (Pro, sign-in, my chat bubbles): one set instead of one-off opacities
+    let onBlueFaint = Color.white.opacity(0.08)   // resting surfaces
+    let onBlueLine = Color.white.opacity(0.14)    // hairlines, idle strokes
+    let onBlueFill = Color.white.opacity(0.16)    // selected / pressed fills, round buttons
+    let onBlueSoft = Color.white.opacity(0.6)     // quiet strokes, quote bars
     // stamp ink on felt
     let stampBlue = fixed(0x1F5FA0)
     let stampGreen = fixed(0x256B42)

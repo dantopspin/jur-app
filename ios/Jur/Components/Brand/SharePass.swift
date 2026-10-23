@@ -31,10 +31,10 @@ struct SharePass: View {
 
             VStack(spacing: 0) {
                 Lockup(size: 26, onBlue: true)
-                    .padding(.top, 56)
+                    .padding(.top, Sp.xxl + Sp.xl)
                 Spacer(minLength: 24)
                 ticket
-                    .padding(.horizontal, 24)
+                    .padding(.horizontal, Sp.xl)
                 Spacer(minLength: 24)
                 Text(cta)
                     .font(.qFont("Manrope-ExtraBold", size: 15, relativeTo: .callout, weight: .bold))
@@ -42,8 +42,8 @@ struct SharePass: View {
                     .multilineTextAlignment(.center)
                     .lineLimit(2)
                     .minimumScaleFactor(0.8)
-                    .padding(.horizontal, 32)
-                    .padding(.bottom, 64)
+                    .padding(.horizontal, Sp.xxl)
+                    .padding(.bottom, Sp.xxl * 2)
             }
         }
         .frame(width: Self.size.width, height: Self.size.height)

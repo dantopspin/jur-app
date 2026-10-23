@@ -39,7 +39,7 @@ struct PhotoBubble: View {
             }
         }
         .frame(width: 220, height: 280)
-        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: Radius.bubble, style: .continuous))
         .qZoomSource(id: message.id, in: zoom)
         .contentShape(Rectangle())
         .onTapGesture {
@@ -110,7 +110,7 @@ struct VoiceBubble: View {
             .foregroundStyle(mine ? .white : Color.q.ink)
             .padding(.horizontal, Sp.md)
             .padding(.vertical, Sp.sm)
-            .background(mine ? Color.q.blue : Color.q.card, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+            .background(mine ? Color.q.blue : Color.q.card, in: RoundedRectangle(cornerRadius: Radius.bubble, style: .continuous))
         }
         .buttonStyle(.qPressCard)
         .onChange(of: playing) { _, now in

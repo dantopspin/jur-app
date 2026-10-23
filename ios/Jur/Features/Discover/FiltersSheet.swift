@@ -124,7 +124,7 @@ struct FiltersSheet: View {
                     .background(Color.q.card, in: RoundedRectangle(cornerRadius: Radius.lg, style: .continuous))
                 }
                 .padding(Layout.margin)
-                .padding(.bottom, 120)
+                .padding(.bottom, Layout.floatingBarClearance)
             }
             .background(Color.q.bg)
             .safeAreaInset(edge: .bottom) { footer }

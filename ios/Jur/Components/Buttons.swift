@@ -14,7 +14,7 @@ struct QButtonStyle: ButtonStyle {
         case .secondary: (Color.q.blueTint, Color.q.blueText)
         case .ghost: (.clear, Color.q.blueText)
         case .danger: (Color.q.dangerTint, Color.q.danger)
-        case .onBlue: (Color.white.opacity(0.16), .white)
+        case .onBlue: (Color.q.onBlueFill, .white)
         }
     }
 

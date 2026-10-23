@@ -84,10 +84,7 @@ struct ProfileStrengthCard: View {
                 .multilineTextAlignment(.leading)
                 .frame(maxWidth: .infinity, alignment: .leading)
             if !item.done {
-                Image(systemName: "chevron.right")
-                    .font(.q(.footnote).weight(.semibold))
-                    .foregroundStyle(Color.q.hint)
-                    .accessibilityHidden(true)
+                QChevron()
             }
         }
         .padding(.horizontal, Sp.md)

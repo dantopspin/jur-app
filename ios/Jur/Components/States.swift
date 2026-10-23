@@ -102,7 +102,7 @@ struct LegalFooter: View {
             .font(.q(.caption))
             .fontWeight(.medium)
             .multilineTextAlignment(.center)
-            .foregroundStyle(onBlue ? Color.white.opacity(0.8) : Color.q.muted)
+            .foregroundStyle(onBlue ? Color.q.blueMist : Color.q.muted)
             .tint(onBlue ? .white : Color.q.blueText)
             .dynamicTypeSize(...DynamicTypeSize.accessibility2)
     }

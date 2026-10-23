@@ -133,7 +133,7 @@ struct DepartureBoard: View {
             Text(t("board.boarding")).qText(.label)
                 .foregroundStyle(.white)
                 .padding(.horizontal, Sp.sm).padding(.vertical, Sp.xs)
-                .overlay(Capsule().stroke(.white.opacity(0.6), lineWidth: 1))
+                .overlay(Capsule().stroke(Color.q.onBlueSoft, lineWidth: 1))
                 .fixedSize()
         case .onTime:
             Text(t("board.onTime")).qText(.label).foregroundStyle(Color.q.blueMist).fixedSize()
