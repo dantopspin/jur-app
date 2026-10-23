@@ -3,7 +3,7 @@ import SwiftUI
 
 struct PicksView: View {
     @Environment(ToastCenter.self) private var toasts
-    @State private var picks: [ProfileCard]?
+    @State private var picks: [ProfileCard]? = DataCache.get(CacheKey.picks(Backend.today), as: [ProfileCard].self)
     @State private var decided: [UUID: SwipeKind] = [:]
     @State private var paywall = false
 
@@ -32,7 +32,9 @@ struct PicksView: View {
                         }
                     }
                 } else {
-                    ProgressView().frame(maxWidth: .infinity).padding(.top, Sp.xxl)
+                    AfterABlink {
+                        ProfileCardView(card: .placeholder, compact: true).redacted(reason: .placeholder).qShimmer()
+                    }
                 }
             }
             .padding(Layout.margin)
@@ -40,8 +42,12 @@ struct PicksView: View {
         .background(Color.q.bg)
         .navigationTitle(t("picks.title"))
         .navigationBarTitleDisplayMode(.inline)
-        .task { if picks == nil { picks = (try? await Backend.dailyPicks()) ?? [] } }
-        .sheet(isPresented: $paywall) { PaywallView() }
+        .task {
+            // Today's saved picks show at once; the server's answer replaces them quietly.
+            if let fresh = try? await Backend.dailyPicks() { withMotion(Motion.fade) { picks = fresh } }
+            else if picks == nil { picks = [] }
+        }
+        .sheet(isPresented: $paywall) { PaywallView(context: .outOfLikes) }
     }
 
     private func decide(_ p: ProfileCard, _ kind: SwipeKind) async {
@@ -58,6 +64,8 @@ struct PicksView: View {
 
 /// The boost: 30 minutes at the top of Discover. Free once a week for Pro, or from credits.
 struct BoostButton: View {
+    /// The round 48 pt button in Discover's action bar (otherwise a bar icon).
+    var round = false
     let onNeedPro: () -> Void
     @Environment(SessionStore.self) private var session
     @Environment(ToastCenter.self) private var toasts
@@ -72,7 +80,8 @@ struct BoostButton: View {
 
     var body: some View {
         Button { Task { await boost() } } label: {
-            Image(systemName: boostedUntil != nil ? "bolt.fill" : "bolt")
+            Image(systemName: boostedUntil != nil || round ? "bolt.fill" : "bolt")
+                .font(round ? .system(size: 18, weight: .bold) : nil)
                 .foregroundStyle(boostedUntil != nil ? Color.q.gold : Color.q.blueText)
                 .contentTransition(.symbolEffect(.replace))
                 // While a boost runs, the bolt breathes: it means "you're at the top now".
@@ -85,7 +94,10 @@ struct BoostButton: View {
                             .offset(x: 10, y: -8)
                     }
                 }
+                .frame(width: round ? 48 : nil, height: round ? 48 : nil)
+                .background { if round { Circle().fill(Color.q.card).qElevated() } }
         }
+        .buttonStyle(.qPress)
         .disabled(busy)
         .accessibilityLabel(boostedUntil.map { t("discover.boostActive", ["time": Fmt.time($0)]) } ?? t("discover.boost"))
     }

@@ -95,7 +95,7 @@ struct PassportStrip: View {
     private var avatar: some View {
         ZStack {
             if let first = draft.photos.first, let url = URL(string: first) {
-                QPhoto(url: url, placeholder: Color.q.feltLine)
+                QPhoto(url: url, size: .thumb, placeholder: Color.q.feltLine)
                     .transition(.opacity)
             } else {
                 Circle().strokeBorder(Color.q.feltLine, style: StrokeStyle(lineWidth: 1.5, dash: [3, 3]))

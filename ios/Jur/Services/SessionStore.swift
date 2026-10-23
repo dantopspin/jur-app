@@ -41,6 +41,13 @@ final class SessionStore {
     }
 
     private func load(userId: UUID) async {
+        // Launch: the profile saved last time opens the app at once; the server answer follows.
+        if profile == nil, let saved = DataCache.get(CacheKey.me, as: [MyProfile].self)?.first,
+           saved.id == userId, !saved.banned {
+            profile = saved
+            limits = DataCache.get(CacheKey.limits, as: Limits.self)
+            phase = .ready
+        }
         do {
             let p = try await Backend.myProfile(userId: userId)
             profile = p
@@ -62,7 +69,8 @@ final class SessionStore {
                 phase = .needsProfile
             }
         } catch {
-            phase = .profileFailed
+            // Already showing the saved profile: a weak connection isn't worth an error screen.
+            if phase != .ready { phase = .profileFailed }
         }
     }
 
@@ -83,6 +91,8 @@ final class SessionStore {
 
     func signOut() async {
         LiveDepartures.endAll()
+        DataCache.clearAll()
+        ImageLoader.shared.clearMemory()
         Purchases.disconnect()
         try? await supabase.auth.signOut()
     }

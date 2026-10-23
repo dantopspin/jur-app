@@ -107,3 +107,65 @@ struct LegalFooter: View {
             .dynamicTypeSize(...DynamicTypeSize.accessibility2)
     }
 }
+
+// MARK: loading
+
+/// Shows its content only if still on screen after a blink (350 ms), fading in. Most answers
+/// arrive sooner, and then no placeholder ever flashes. Use it around skeletons.
+struct AfterABlink<Content: View>: View {
+    @ViewBuilder var content: () -> Content
+    @State private var shown = false
+
+    var body: some View {
+        ZStack {
+            if shown { content().transition(.opacity) }
+        }
+        .task {
+            try? await Task.sleep(for: .milliseconds(350))
+            guard !Task.isCancelled else { return }
+            withAnimation(Motion.adaptive(Motion.fade)) { shown = true }
+        }
+    }
+}
+
+/// List rows while a list loads: a round photo and two lines, like the rows that follow.
+struct SkeletonRows: View {
+    var count = 4
+    var photo: CGFloat = 52
+
+    var body: some View {
+        VStack(spacing: Sp.lg) {
+            ForEach(0..<count, id: \.self) { i in
+                HStack(spacing: Sp.md) {
+                    Circle().fill(Color.q.line).frame(width: photo, height: photo)
+                    VStack(alignment: .leading, spacing: Sp.sm) {
+                        Capsule().fill(Color.q.line).frame(width: 120, height: 12)
+                        Capsule().fill(Color.q.line).frame(width: i.isMultiple(of: 2) ? 200 : 160, height: 10)
+                    }
+                    Spacer(minLength: 0)
+                }
+            }
+        }
+        .padding(Layout.margin)
+        .qShimmer()
+        .accessibilityHidden(true)
+    }
+}
+
+/// Photo tiles while a grid loads (Likes).
+struct SkeletonTiles: View {
+    var count = 4
+    private let columns = Array(repeating: GridItem(.flexible(), spacing: Sp.md), count: 2)
+
+    var body: some View {
+        LazyVGrid(columns: columns, spacing: Sp.md) {
+            ForEach(0..<count, id: \.self) { _ in
+                RoundedRectangle(cornerRadius: Radius.lg, style: .continuous).fill(Color.q.line)
+                    .aspectRatio(3 / 4, contentMode: .fit)
+            }
+        }
+        .padding(Layout.margin)
+        .qShimmer()
+        .accessibilityHidden(true)
+    }
+}

@@ -6,7 +6,8 @@ import SwiftUI
 @Observable
 final class DiscoverModel {
     var queue: [ProfileCard] = []
-    var tonight: [EventItem] = []
+    /// Today's events: last time's list first (no board popping in above the card later).
+    var tonight: [EventItem] = DiscoverModel.todays(DataCache.get(CacheKey.events, as: [EventItem].self) ?? [])
     /// The skeleton card: only on the first load, and only once it has taken a moment,
     /// so an empty or fast answer never flashes a grey card first.
     var loading = false
@@ -14,6 +15,7 @@ final class DiscoverModel {
     var failed = false
     var match: (card: ProfileCard, matchId: UUID)?
     var paywall = false
+    var paywallContext: PaywallContext = .outOfLikes
 
     var current: ProfileCard? { queue.first }
 
@@ -23,20 +25,34 @@ final class DiscoverModel {
             try? await Task.sleep(for: .milliseconds(350))
             if !Task.isCancelled { loading = true }
         }
-        defer {
-            skeleton?.cancel()
-            loading = false
-            loaded = true
-        }
+        // People and events load side by side; the card shows as soon as people arrive.
+        async let events: [EventItem]? = Config.eventsEnabled ? (try? await Backend.upcomingEvents()) : []
         do {
-            async let people = Backend.discover()
-            async let events: [EventItem] = Config.eventsEnabled ? Backend.upcomingEvents() : []
-            let (p, e) = try await (people, events)
-            queue = p
-            tonight = e.filter { Fmt.calendar.isDateInToday($0.start) && $0.end > .now }
+            queue = try await Backend.discover()
+            prefetchNext()
         } catch {
             failed = queue.isEmpty
         }
+        skeleton?.cancel()
+        loading = false
+        loaded = true
+        if let e = await events { tonight = Self.todays(e) }
+    }
+
+    /// Filters changed: start the deck over (the skeleton shows only if it takes a moment).
+    func reload() async {
+        queue = []
+        loaded = false
+        await load()
+    }
+
+    /// The next cards' photos load while you look at this one.
+    private func prefetchNext() {
+        ImageLoader.shared.prefetch(queue.prefix(3).flatMap(\.photoURLs), .full)
+    }
+
+    static func todays(_ events: [EventItem]) -> [EventItem] {
+        events.filter { Fmt.calendar.isDateInToday($0.start) && $0.end > .now }.sorted { $0.start < $1.start }
     }
 
     /// The card that just came back (undo, a rolled-back like) and the side it returns from.
@@ -47,6 +63,7 @@ final class DiscoverModel {
     func commit(_ kind: SwipeKind, note: String? = nil, toasts: ToastCenter) {
         guard let card = queue.first else { return }
         withMotion(Motion.smooth) { _ = queue.removeFirst() }
+        prefetchNext()
         Task { await send(card, kind, note: note, toasts: toasts) }
     }
 
@@ -56,7 +73,7 @@ final class DiscoverModel {
             if !r.ok {
                 restore(card, after: kind)
                 switch r.error {
-                case "like_limit": paywall = true
+                case "like_limit": paywallContext = .outOfLikes; paywall = true
                 case "super_limit": toasts.show(t("discover.superLimit"), error: true)
                 default: toasts.show(t("common.error"), error: true)
                 }
@@ -94,7 +111,7 @@ final class DiscoverModel {
                 return
             }
             switch r.error {
-            case "pro_only": paywall = true
+            case "pro_only": paywallContext = .undo; paywall = true
             default: toasts.show(t("undo.nothing"))
             }
         } catch { toasts.show(t("common.error"), error: true) }
@@ -105,6 +122,7 @@ final class DiscoverModel {
         let have = Set(queue.map(\.id))
         let fresh = more.filter { !have.contains($0.id) }
         withMotion(Motion.smooth) { queue += fresh }
+        prefetchNext()
     }
 }
 
@@ -125,6 +143,8 @@ struct DiscoverView: View {
     @AppStorage("jur.picksSeenDay") private var picksSeenDay = ""
     @State private var fling: DeckFling?
     @State private var openEvent: EventItem?
+    @State private var showFilters = false
+    @State private var boostPaywall = false
     @Binding var showPicks: Bool
     var openEvents: () -> Void = {}
     var openChat: (UUID) -> Void = { _ in }
@@ -173,7 +193,9 @@ struct DiscoverView: View {
                             .accessibilityLabel(t("picks.title"))
                     }
                 }
-                ToolbarItem(placement: .topBarTrailing) { BoostButton { model.paywall = true } }
+                ToolbarItem(placement: .topBarTrailing) {
+                    FiltersButton(narrowed: session.profile.map { DiscoverFilters($0).narrowed } ?? false) { showFilters = true }
+                }
             }
             .navigationDestination(item: $openEvent) { e in EventDetailView(eventId: e.id, initial: e) }
             .navigationDestination(isPresented: $showPicks) { PicksView() }
@@ -194,7 +216,11 @@ struct DiscoverView: View {
         .sheet(item: $noteFor) { card in
             NoteSheet(card: card) { note in fling = DeckFling(kind: .like, note: note) }
         }
-        .sheet(isPresented: $model.paywall) { PaywallView() }
+        .sheet(isPresented: $model.paywall) { PaywallView(context: model.paywallContext) }
+        .sheet(isPresented: $boostPaywall) { PaywallView(context: .boost) }
+        .sheet(isPresented: $showFilters) {
+            FiltersSheet { Task { await model.reload() } }
+        }
         #if DEBUG
         .fullScreenCover(isPresented: $previewOnboarding) {
             OnboardingView(preview: true) { previewOnboarding = false }
@@ -239,7 +265,8 @@ struct DiscoverView: View {
     }
 
     private var actions: some View {
-        HStack(spacing: Sp.lg) {
+        // Five, like the classic dating bar: undo, pass, super like, like, boost.
+        HStack(spacing: Sp.md) {
             RoundAction(symbol: "arrow.uturn.backward", size: 48, label: t("undo.title")) {
                 Task { await model.undo(toasts: toasts) }
             }
@@ -249,6 +276,7 @@ struct DiscoverView: View {
             }
             RoundAction(symbol: "heart.fill", tint: .white, fill: Color.q.blue, size: 64, label: t("discover.like")) { fling = DeckFling(kind: .like) }
                 .simultaneousGesture(LongPressGesture(minimumDuration: 0.5).onEnded { _ in noteFor = model.current })
+            BoostButton(round: true) { boostPaywall = true }
         }
         .opacity(dealt ? 1 : 0)
         .scaleEffect(dealt || Motion.reduceMotion ? 1 : 0.8)

@@ -26,11 +26,20 @@ enum Media {
         return try await uploadProfilePhoto(jpeg, userId: userId)
     }
 
+    /// The photo plus a 480 px copy beside it (`<id>_t.jpg`) for avatars, grids and lists.
+    /// Names are never reused, so both are cached for a year.
     static func uploadProfilePhoto(_ jpeg: Data, userId: UUID) async throws -> String {
-        let path = "\(userId.uuidString.lowercased())/\(UUID().uuidString.lowercased()).jpg"
-        _ = try await supabase.storage.from("photos")
-            .upload(path, data: jpeg, options: FileOptions(contentType: "image/jpeg"))
-        return try supabase.storage.from("photos").getPublicURL(path: path).absoluteString
+        let id = "\(userId.uuidString.lowercased())/\(UUID().uuidString.lowercased())"
+        let bucket = supabase.storage.from("photos")
+        let options = FileOptions(cacheControl: "31536000", contentType: "image/jpeg")
+        _ = try await bucket.upload("\(id).jpg", data: jpeg, options: options)
+        if let thumb = Media.jpeg(from: jpeg, maxSide: 480) {
+            // A missing copy only means the original is used; never fail the upload for it.
+            _ = try? await bucket.upload("\(id)_t.jpg", data: thumb, options: options)
+        }
+        let url = try bucket.getPublicURL(path: "\(id).jpg")
+        ImageLoader.shared.seed(jpeg, for: url)
+        return url.absoluteString
     }
 
     static func uploadSelfie(_ jpeg: Data, userId: UUID) async throws -> String {

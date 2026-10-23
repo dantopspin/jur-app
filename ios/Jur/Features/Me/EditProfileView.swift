@@ -40,13 +40,9 @@ struct EditProfileView: View {
                 Picker(t("onboarding.cityTitle"), selection: $city) {
                     ForEach(Cities.all, id: \.self) { Text(Cities.label($0)).tag($0) }
                 }
-                Picker(t("onboarding.interestedTitle"), selection: $interested) {
-                    Text(t("onboarding.women")).tag(InterestedIn.women)
-                    Text(t("onboarding.men")).tag(InterestedIn.men)
-                    Text(t("onboarding.everyone")).tag(InterestedIn.everyone)
-                }
-                Stepper(t("edit.ageRange", ["min": ageMin, "max": ageMax]) + " ↓", value: $ageMin, in: 18...ageMax)
-                Stepper(t("edit.ageRange", ["min": ageMin, "max": ageMax]) + " ↑", value: $ageMax, in: ageMin...99)
+            } footer: {
+                // Who to show and their age moved to the filter button on Discover.
+                Text(t("edit.filtersMoved")).qText(.footnote).foregroundStyle(Color.q.muted)
             }
         }
         .scrollContentBackground(.hidden)

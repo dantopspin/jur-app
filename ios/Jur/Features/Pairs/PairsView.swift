@@ -4,9 +4,10 @@ import SwiftUI
 @MainActor
 @Observable
 final class PairsModel {
-    var rows: [MatchRow] = []
-    var likes = 0
-    var loaded = false
+    /// Last time's lists first, so the tab never opens empty.
+    var rows: [MatchRow] = DataCache.get(CacheKey.matches, as: [MatchRow].self) ?? []
+    var likes = DataCache.get(CacheKey.likes, as: LikesReceived.self)?.count ?? 0
+    var loaded = DataCache.get(CacheKey.matches, as: [MatchRow].self) != nil
     var failed = false
     var unread: Int { rows.reduce(0) { $0 + $1.unread } }
 
@@ -18,6 +19,7 @@ final class PairsModel {
             let (rows, likes) = try await (m, l)
             self.rows = rows
             self.likes = likes.count
+            ImageLoader.shared.prefetch(rows.compactMap { $0.other.photoURLs.first }, .thumb)
         } catch {
             failed = rows.isEmpty
         }
@@ -63,7 +65,8 @@ struct PairsView: View {
                 } else if model.failed {
                     ErrorStateView(retry: { await model.load() })
                 } else if !model.loaded {
-                    ProgressView()
+                    AfterABlink { SkeletonRows() }
+                        .frame(maxHeight: .infinity, alignment: .top)
                 }
             }
             .navigationTitle(t("tabs.matches"))

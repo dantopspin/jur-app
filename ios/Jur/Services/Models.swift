@@ -36,6 +36,11 @@ struct MyProfile: Decodable, Identifiable, Equatable {
     /// Set once a friend's invite code was used.
     let referredBy: UUID?
     let createdAt: String?
+    /// Discover filters (the sheet on Discover). Optional until the filters migration is run.
+    let filterSports: [String]?
+    let filterVerified: Bool?
+    let filterAttended: Bool?
+    let filterActiveDays: Int?
 }
 
 struct Limits: Decodable, Equatable {

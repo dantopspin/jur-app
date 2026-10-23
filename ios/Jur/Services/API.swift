@@ -95,6 +95,11 @@ extension Backend {
         try await rpc("get_profile", ["p_id": .uuid(id)], as: ProfileCard?.self)
     }
 
+    /// Your own card (stamps, prompts), kept for next time.
+    static func myCard(_ id: UUID) async throws -> ProfileCard? {
+        try await rpc("get_profile", ["p_id": .uuid(id)], cacheAs: CacheKey.card, as: ProfileCard?.self)
+    }
+
     static func requestVerification(selfiePath: String) async throws {
         try await call("request_verification", ["p_selfie_path": .string(selfiePath)])
     }
@@ -108,7 +113,30 @@ extension Backend {
     }
 
     static func rewind() async throws -> RewindResult { try await rpc("rewind") }
-    static func likesReceived() async throws -> LikesReceived { try await rpc("likes_received") }
+
+    // MARK: discover filters
+
+    private static func filterParams(_ f: DiscoverFilters) -> [String: AnyJSON] {
+        [
+            "p_interested": .string(f.interested.rawValue),
+            "p_age_min": .integer(f.ageMin), "p_age_max": .integer(f.ageMax),
+            "p_sports": .array(f.sports.sorted().map { .string($0) }),
+            "p_verified": .bool(f.verified), "p_attended": .bool(f.attended),
+            "p_active_days": f.activeDays.map { .integer($0) } ?? .null,
+        ]
+    }
+
+    /// How many people these filters would show (before saving them). Capped at 999.
+    static func discoverCount(_ f: DiscoverFilters) async throws -> Int {
+        var params = filterParams(f)
+        params["p_clear_active"] = .bool(f.activeDays == nil)
+        return try await rpc("discover_count", params)
+    }
+
+    static func saveDiscoverFilters(_ f: DiscoverFilters) async throws -> OkResult {
+        try await rpc("set_discover_filters", filterParams(f))
+    }
+    static func likesReceived() async throws -> LikesReceived { try await rpc("likes_received", cacheAs: CacheKey.likes) }
     /// How many people you've liked so far (a total only).
     static func likesSent() async throws -> Int { try await rpc("my_likes_sent") }
 
@@ -152,7 +180,7 @@ extension Backend {
 
     // MARK: matches and chat
 
-    static func matches() async throws -> [MatchRow] { try await rpc("my_matches") }
+    static func matches() async throws -> [MatchRow] { try await rpc("my_matches", cacheAs: CacheKey.matches) }
 
     /// Newest first from the server; returned oldest first for display.
     static func messages(_ match: UUID) async throws -> [Message] {
@@ -220,7 +248,7 @@ extension Backend {
     // MARK: events
 
     static func upcomingEvents() async throws -> [EventItem] {
-        let list: [EventItem] = try await rpc("upcoming_events")
+        let list: [EventItem] = try await rpc("upcoming_events", cacheAs: CacheKey.events)
         return list.sorted { $0.start < $1.start }
     }
     static func event(_ id: UUID) async throws -> EventItem? { try await rpc("get_event", ["p_id": .uuid(id)], as: EventItem?.self) }
@@ -250,6 +278,8 @@ extension Backend {
     // MARK: Pro
 
     static func createGift() async throws -> GiftResult { try await rpc("create_pro_gift") }
+    /// Pro members in your city, rounded to tens; nil below 100 (then the paywall says nothing).
+    static func proMembersInCity() async throws -> Int? { try await rpc("pro_members_in_city", as: Int?.self) }
     static func redeemGift(_ code: String) async throws -> GiftResult {
         try await rpc("redeem_pro_gift", ["p_code": .string(code.trimmingCharacters(in: .whitespaces).uppercased())])
     }
@@ -285,7 +315,15 @@ extension Backend {
         if !rows.isEmpty { try await supabase.from("profile_prompts").insert(Array(rows)).execute() }
     }
 
-    static func dailyPicks() async throws -> [ProfileCard] { try await rpc("daily_picks") }
+    static func dailyPicks() async throws -> [ProfileCard] { try await rpc("daily_picks", cacheAs: CacheKey.picks(Backend.today)) }
+
+    /// Almaty's date, for things that change daily (picks).
+    static var today: String {
+        var cal = Calendar(identifier: .gregorian)
+        cal.timeZone = TimeZone(identifier: "Asia/Almaty") ?? .current
+        let c = cal.dateComponents([.year, .month, .day], from: .now)
+        return "\(c.year ?? 0)-\(c.month ?? 0)-\(c.day ?? 0)"
+    }
 
     struct TravelResult: Decodable { let ok: Bool; let error: String?; let until: String? }
     static func setTravel(city: String, days: Int) async throws -> TravelResult {

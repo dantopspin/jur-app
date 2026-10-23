@@ -33,10 +33,12 @@ enum Backend {
 
     static func myProfile(userId: UUID) async throws -> MyProfile? {
         let response = try await supabase.from("profiles").select().eq("id", value: userId.uuidString).limit(1).execute()
-        return try decoder.decode([MyProfile].self, from: response.data).first
+        let rows = try decoder.decode([MyProfile].self, from: response.data)
+        if !rows.isEmpty { DataCache.put(response.data, CacheKey.me) }
+        return rows.first
     }
 
-    static func limits() async throws -> Limits { try await rpc("my_limits") }
+    static func limits() async throws -> Limits { try await rpc("my_limits", cacheAs: CacheKey.limits) }
 
     static func recordActivity() async throws { try await call("record_activity") }
 

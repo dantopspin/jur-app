@@ -12,7 +12,7 @@ struct MeView: View {
     @State private var previewing = false
 
     /// Your own card (stamps, prompts) and sports, loaded alongside the profile.
-    @State private var card: ProfileCard?
+    @State private var card: ProfileCard? = DataCache.get(CacheKey.card, as: ProfileCard?.self) ?? nil
     @State private var sports: [String: Level] = [:]
     /// Local copies so the controls answer at once; saved, then the profile refreshes.
     @State private var mode: ProfileMode = .dating
@@ -238,7 +238,7 @@ struct MeView: View {
             paused = p.paused ?? false
         }
         async let s = try? Backend.mySports(userId: id)
-        let c = try? await Backend.profile(id)
+        let c = try? await Backend.myCard(id)
         let loadedSports = await s
         withMotion(Motion.fade) {
             if let c { card = c }
@@ -288,21 +288,21 @@ struct MeView: View {
 /// Your own passport page (from get_profile, which includes your stamps).
 struct MyPassportView: View {
     @Environment(SessionStore.self) private var session
-    @State private var card: ProfileCard?
+    @State private var card: ProfileCard? = DataCache.get(CacheKey.card, as: ProfileCard?.self) ?? nil
 
     var body: some View {
         ScrollView {
             if let card {
                 PassportPage(card: card).padding(Layout.margin)
             } else {
-                ProgressView().padding(.top, Sp.xxl)
+                AfterABlink { MarkLoader().padding(.top, Sp.xxl) }
             }
         }
         .background(Color.q.bg)
         .navigationTitle(t("passport.title"))
         .navigationBarTitleDisplayMode(.inline)
         .task {
-            if let id = session.userId { card = try? await Backend.profile(id) }
+            if let id = session.userId, let fresh = try? await Backend.myCard(id) { card = fresh }
         }
     }
 }
@@ -313,15 +313,8 @@ struct Avatar: View {
     var size: CGFloat = 44
 
     var body: some View {
-        AsyncImage(url: url, transaction: Transaction(animation: Motion.fade)) { phase in
-            switch phase {
-            case .success(let image): image.resizable().scaledToFill()
-            case .failure: Image(systemName: "person.fill").font(.q(.title2)).foregroundStyle(Color.q.hint)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity).background(Color.q.line)
-            default: Color.q.line
-            }
-        }
-        .frame(width: size, height: size)
+        QPhoto(url: url, size: size > 140 ? .full : .thumb)
+            .frame(width: size, height: size)
         .clipShape(Circle())
         .accessibilityHidden(true)
     }

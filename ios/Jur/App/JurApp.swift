@@ -17,6 +17,8 @@ struct JurApp: App {
                 .environment(\.locale, (AppLanguage(rawValue: language) ?? .ru).locale)
                 .overlay(alignment: .top) { ToastOverlay().environment(toasts) }
                 .tint(Color.q.blueText)
+                // Terms and Privacy open in the app, not the browser.
+                .legalLinks()
                 // jur://event/<id> (the lock-screen countdown) and other in-app links.
                 .onOpenURL { url in
                     guard url.scheme == "jur" else { return }

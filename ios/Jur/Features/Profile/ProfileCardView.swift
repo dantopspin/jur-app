@@ -53,11 +53,14 @@ struct ProfileCardView: View {
             if urls.isEmpty {
                 Image(systemName: "person.fill").font(.system(size: IconSize.hero)).foregroundStyle(Color.q.blueMist)
             } else {
-                QPhoto(url: urls[min(page, urls.count - 1)]) { ProgressView().tint(.white) }
+                // The deep-blue ground shows while a photo loads; the card's other photos are
+                // fetched in the background so tapping through them is instant.
+                QPhoto(url: urls[min(page, urls.count - 1)], placeholder: Color.clear)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .clipped()
                     .id(page)
                     .transition(.opacity)
+                    .task(id: card.id) { ImageLoader.shared.prefetch(urls, .full) }
             }
             // Page bars + tap zones (left half back, right half forward).
             if urls.count > 1 {
@@ -181,7 +184,7 @@ struct ProfileView: View {
             } else if failed {
                 ErrorStateView(retry: { await load() })
             } else {
-                ProgressView().padding(.top, Sp.xxl)
+                AfterABlink { MarkLoader().padding(.top, Sp.xxl) }
             }
         }
         .background(Color.q.bg)

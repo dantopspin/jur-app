@@ -320,7 +320,7 @@ struct OnboardingView: View {
         let shape = RoundedRectangle(cornerRadius: Radius.md, style: .continuous)
         if slot < d.photos.count {
             let url = d.photos[slot]
-            QPhoto(url: URL(string: url))
+            QPhoto(url: URL(string: url), size: .thumb)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .clipShape(shape)
                 .overlay(alignment: .topTrailing) {

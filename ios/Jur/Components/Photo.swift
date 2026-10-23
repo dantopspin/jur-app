@@ -1,26 +1,48 @@
 // Remote photos that fade in once loaded, and the loading shimmer for skeletons.
 import SwiftUI
 
-/// A remote image, scaled to fill, that fades in when it arrives instead of popping.
+/// A remote photo, scaled to fill. Drawn in the first frame when it's already in memory;
+/// otherwise it fades in once loaded (from disk or the network) instead of popping.
+/// `.thumb` for small places (avatars, grids, lists), `.full` for cards and full screen.
 struct QPhoto<Placeholder: View>: View {
     let url: URL?
+    var size: ImageLoader.Size = .full
     @ViewBuilder var placeholder: () -> Placeholder
+    @State private var image: UIImage?
+    @State private var shown: URL?
+
+    init(url: URL?, size: ImageLoader.Size = .full, @ViewBuilder placeholder: @escaping () -> Placeholder) {
+        self.url = url
+        self.size = size
+        self.placeholder = placeholder
+        let hit = url.flatMap { ImageLoader.shared.cached($0, size) }
+        _image = State(initialValue: hit)
+        _shown = State(initialValue: hit == nil ? nil : url)
+    }
 
     var body: some View {
-        AsyncImage(url: url, transaction: Transaction(animation: Motion.fade)) { phase in
-            if let image = phase.image {
-                image.resizable().scaledToFill().transition(.opacity)
+        ZStack {
+            if let image {
+                Image(uiImage: image).resizable().scaledToFill().transition(.opacity)
             } else {
                 placeholder()
             }
+        }
+        .task(id: url) {
+            guard let url else { image = nil; shown = nil; return }
+            if shown == url, image != nil { return }
+            if let hit = ImageLoader.shared.cached(url, size) { image = hit; shown = url; return }
+            if shown != url { image = nil }
+            let loaded = await ImageLoader.shared.image(url, size)
+            guard !Task.isCancelled else { return }
+            withAnimation(Motion.adaptive(Motion.fade)) { image = loaded; shown = url }
         }
     }
 }
 
 extension QPhoto where Placeholder == Color {
-    init(url: URL?, placeholder: Color = Color.q.line) {
-        self.url = url
-        self.placeholder = { placeholder }
+    init(url: URL?, size: ImageLoader.Size = .full, placeholder: Color = Color.q.line) {
+        self.init(url: url, size: size) { placeholder }
     }
 }
 

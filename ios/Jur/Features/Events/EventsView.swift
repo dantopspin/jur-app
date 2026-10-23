@@ -8,9 +8,12 @@ struct EventsView: View {
     @Environment(SessionStore.self) private var session
     @Environment(ToastCenter.self) private var toasts
     @Environment(SportsCatalog.self) private var catalog
-    @State private var events: [EventItem] = []
-    @State private var loaded = false
+    /// Last time's list, so the board draws at once and refreshes behind.
+    @State private var events: [EventItem] = EventsView.saved ?? []
+    @State private var loaded = EventsView.saved != nil
     @State private var failed = false
+    /// The placeholder board appears only if the answer takes longer than a blink.
+    @State private var slow = false
     @State private var range: Window = .today
     @State private var creating = false
     @Binding var path: [UUID]
@@ -45,37 +48,38 @@ struct EventsView: View {
                     .pickerStyle(.segmented)
                     .sensoryFeedback(.selection, trigger: range)
 
-                    if failed {
+                    if failed && events.isEmpty {
                         ErrorStateView(retry: { await load() }).frame(minHeight: 300)
                     } else if !loaded {
-                        DepartureBoard(departures: (0..<3).map { _ in
-                            Departure(id: UUID(), time: "19:00", title: "Падел · парная игра", place: "Padel Club", status: .onTime)
-                        }, showsColumns: true)
-                        .redacted(reason: .placeholder)
-                        .qShimmer()
+                        if slow {
+                            // One row, the size an answer most often is: nothing collapses after.
+                            DepartureBoard(departures: [Departure(id: UUID(), time: "19:00", title: "Падел · парная игра",
+                                                                  place: "Padel Club", status: .onTime)])
+                                .redacted(reason: .placeholder)
+                                .qShimmer()
+                                .transition(.opacity)
+                        }
+                    } else if !shown.isEmpty {
+                        DepartureBoard(departures: shown.map(\.departure), showsColumns: true) { d in path.append(d.id) }
+                            .transition(.opacity)
+                    } else if let next = nextUp {
+                        dayEmpty(next)
                     } else {
-                        DepartureBoard(departures: shown.map(\.departure), showsColumns: !shown.isEmpty,
-                                       emptyText: t("board.empty")) { d in path.append(d.id) }
-                        if let next = nextUp {
-                            nextUpBoard(next)
-                        }
-                        if shown.isEmpty && canHost {
-                            Button(t("board.create")) { creating = true }.buttonStyle(.q(.accent))
-                        }
+                        allQuiet
                     }
                 }
                 .padding(.horizontal, Layout.margin)
                 .padding(.bottom, Sp.xl)
             }
             .animation(Motion.adaptive(Motion.smooth), value: range)
+            .animation(Motion.adaptive(Motion.fade), value: loaded)
+            .animation(Motion.adaptive(Motion.fade), value: slow)
             .background(Color.q.bg)
             .navigationTitle(t("tabs.events"))
             .toolbarTitleDisplayMode(.inlineLarge)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        if canHost { creating = true } else { toasts.show(t("events.verifyToHost")) }
-                    } label: {
+                    Button { create() } label: {
                         Image(systemName: "plus").accessibilityLabel(t("events.create"))
                     }
                 }
@@ -84,7 +88,11 @@ struct EventsView: View {
                 EventDetailView(eventId: id, initial: events.first { $0.id == id }) { Task { await load() } }
             }
             .refreshable { await load() }
-            .task { await load() }
+            .task {
+                let waiting = Task { try? await Task.sleep(for: .milliseconds(350)); if !Task.isCancelled { slow = true } }
+                await load()
+                waiting.cancel()
+            }
             .sheet(isPresented: $creating) {
                 NewEventView { id in
                     Task { await load(); path.append(id) }
@@ -120,20 +128,91 @@ struct EventsView: View {
         return Fmt.day(day)
     }
 
-    /// "Next up · tomorrow": up to three of that day's events, with a jump to its tab.
-    private func nextUpBoard(_ next: (day: Date, events: [EventItem])) -> some View {
+    /// The chosen day is empty but others aren't: one line saying so, then the nearest day's
+    /// board right under it, then a quiet way to start your own. No gaps, no lone empty board.
+    private func dayEmpty(_ next: (day: Date, events: [EventItem])) -> some View {
         let target = window(for: next.day)
-        return DepartureBoard(departures: next.events.prefix(3).map(\.departure),
-                              header: t("empty.nextTitle", ["day": dayLabel(next.day)]),
-                              showsColumns: true,
-                              seeAll: target.map { w in { range = w } }) { d in path.append(d.id) }
-            .transition(.opacity)
+        let first = next.events[0]
+        return VStack(alignment: .leading, spacing: Sp.md) {
+            HStack(spacing: Sp.md) {
+                MarkView(size: 24, color: Color.q.blueText)
+                    .frame(width: 40, height: 40)
+                    .background(Color.q.blueTint, in: RoundedRectangle(cornerRadius: Radius.md, style: .continuous))
+                VStack(alignment: .leading, spacing: Sp.xxs) {
+                    Text(t("events2.empty\(range.rawValue.capitalized)")).qText(.headline).foregroundStyle(Color.q.ink)
+                    Text(t("events2.nearest", ["when": dayLabel(next.day) + " · " + Fmt.time(first.start)]))
+                        .qText(.footnote).foregroundStyle(Color.q.muted)
+                }
+                Spacer(minLength: 0)
+            }
+            .qCard(padding: Sp.md)
+            .accessibilityElement(children: .combine)
+
+            DepartureBoard(departures: next.events.prefix(3).map(\.departure),
+                           header: t("empty.nextTitle", ["day": dayLabel(next.day)]),
+                           seeAll: target.map { w in { range = w } }) { d in path.append(d.id) }
+
+            HStack(spacing: Sp.md) {
+                Text(t("events2.makeYourOwn")).qText(.callout).foregroundStyle(Color.q.inkSoft)
+                Spacer(minLength: Sp.sm)
+                Button(t("events2.create")) { create() }
+                    .buttonStyle(.q(.secondary, compact: true))
+                    .fixedSize()
+            }
+            .padding(.horizontal, Sp.xs)
+        }
+        .transition(.opacity)
+    }
+
+    /// Nothing anywhere: one calm empty state in the middle of the free space.
+    private var allQuiet: some View {
+        VStack(spacing: Sp.md) {
+            VStack(spacing: Sp.xs) {
+                Text(verbatim: "—:—").qText(.display).foregroundStyle(Color.q.gold)
+                Text(t("events2.noDepartures")).qText(.label).foregroundStyle(Color.q.blueMist)
+                    .padding(.bottom, Sp.md)
+                ZStack {
+                    RidgeShape(layer: .far).fill(Color.q.boardRidge)
+                    SnowCaps().fill(.white.opacity(0.92))
+                    RidgeShape(layer: .near).fill(Color.q.boardShade.opacity(0.6))
+                }
+                .frame(height: 44)
+            }
+            .padding(.top, Sp.lg)
+            .frame(width: 220)
+            .background(Color.q.boardGround)
+            .clipShape(RoundedRectangle(cornerRadius: Radius.lg, style: .continuous))
+            .accessibilityHidden(true)
+
+            Text(t("events2.quietTitle", ["city": Cities.label(session.profile?.city ?? "")]))
+                .qText(.title3).foregroundStyle(Color.q.ink).multilineTextAlignment(.center)
+                .padding(.top, Sp.xs)
+            Text(t("events2.quietBody")).qText(.callout).foregroundStyle(Color.q.inkSoft)
+                .multilineTextAlignment(.center).frame(maxWidth: 300)
+            Button(t("board.create")) { create() }
+                .buttonStyle(.qPrimary)
+                .frame(maxWidth: 300)
+                .padding(.top, Sp.xs)
+        }
+        .frame(maxWidth: .infinity)
+        // Centred in the space under the day switch, clear of the tab bar.
+        .containerRelativeFrame(.vertical) { height, _ in height * 0.72 }
+        .transition(.opacity)
+    }
+
+    private func create() {
+        if canHost { creating = true } else { toasts.show(t("events.verifyToHost")) }
+    }
+
+    private static var saved: [EventItem]? {
+        DataCache.get(CacheKey.events, as: [EventItem].self)?.sorted { $0.start < $1.start }
     }
 
     private func load() async {
         failed = false
-        do { events = try await Backend.upcomingEvents() } catch { failed = events.isEmpty }
+        do { events = try await Backend.upcomingEvents() } catch { failed = true }
         loaded = true
+        slow = false
         LiveDepartures.sync(events) { catalog.sport($0)?.emoji ?? "" }
     }
 }
@@ -181,7 +260,7 @@ struct EventDetailView: View {
                 }
                 .padding(Layout.margin)
             } else {
-                ProgressView().padding(.top, Sp.xxl)
+                AfterABlink { MarkLoader().padding(.top, Sp.xxl) }
             }
         }
         .background(Color.q.bg)

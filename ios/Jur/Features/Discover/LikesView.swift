@@ -5,7 +5,7 @@ import SwiftUI
 struct LikesView: View {
     @Environment(SessionStore.self) private var session
     @Environment(ToastCenter.self) private var toasts
-    @State private var likes: LikesReceived?
+    @State private var likes: LikesReceived? = DataCache.get(CacheKey.likes, as: LikesReceived.self)
     @State private var failed = false
     @State private var paywall = false
     @Namespace private var zoom
@@ -36,7 +36,7 @@ struct LikesView: View {
             } else if failed {
                 ErrorStateView(retry: { await load() }).frame(minHeight: 420)
             } else {
-                ProgressView().padding(.top, Sp.xxl)
+                AfterABlink { SkeletonTiles() }
             }
         }
         .background(Color.q.bg)
@@ -44,13 +44,13 @@ struct LikesView: View {
         .navigationBarTitleDisplayMode(.inline)
         .refreshable { await load() }
         .task { await load() }
-        .sheet(isPresented: $paywall) { PaywallView() }
+        .sheet(isPresented: $paywall) { PaywallView(context: .likes(count: likes?.count ?? 0)) }
     }
 
     private func tile(_ p: ProfileCard) -> some View {
         Color.q.line
             .aspectRatio(3 / 4, contentMode: .fit)
-            .overlay { QPhoto(url: p.photoURLs.first) }
+            .overlay { QPhoto(url: p.photoURLs.first, size: .thumb) }
             .overlay(alignment: .bottomLeading) {
                 VStack(alignment: .leading, spacing: Sp.xxs) {
                     if p.superLikedMe == true { QTag(label: t("discover.superLikedYou"), tone: .gold, systemImage: "star.fill") }

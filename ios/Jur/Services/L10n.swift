@@ -55,3 +55,20 @@ enum L10n {
 
 /// Shorthand used in views: `Text(t("discover.empty"))`.
 func t(_ key: String, _ args: [String: CustomStringConvertible] = [:]) -> String { L10n.t(key, args) }
+
+/// A counted string: "48 анкет", "1 анкету", "3 анкеты". Looks up `key_one`, `key_few` or
+/// `key_many` by the language's rule (Russian has three forms; English and Kazakh use
+/// `_one` for 1 and `_many` for the rest) and fills `{n}`.
+func tn(_ key: String, _ n: Int, _ args: [String: CustomStringConvertible] = [:]) -> String {
+    let form: String
+    switch L10n.current {
+    case .ru:
+        let m10 = n % 10, m100 = n % 100
+        form = m10 == 1 && m100 != 11 ? "one" : (2...4).contains(m10) && !(12...14).contains(m100) ? "few" : "many"
+    default:
+        form = n == 1 ? "one" : "many"
+    }
+    var all = args
+    all["n"] = n
+    return t("\(key)_\(form)", all)
+}
