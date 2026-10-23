@@ -42,8 +42,11 @@ enum Haptics {
 enum Sounds {
     enum Name: String { case match, like, `super`, checkin, message }
     private static var players: [Name: AVAudioPlayer] = [:]
+    /// Settings → Sounds (on unless turned off).
+    static let enabledKey = "jur.sounds"
 
     static func play(_ name: Name) {
+        guard UserDefaults.standard.object(forKey: enabledKey) as? Bool ?? true else { return }
         // Don't take the session from a voice note that's playing.
         if VoicePlayer.shared.playingPath == nil {
             try? AVAudioSession.sharedInstance().setCategory(.ambient, options: [.mixWithOthers])

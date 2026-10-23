@@ -48,6 +48,10 @@ struct EventsView: View {
                     .pickerStyle(.segmented)
                     .sensoryFeedback(.selection, trigger: range)
 
+                    // One slot for whatever shows under the switch. While one view fades out and
+                    // the next fades in they overlap here instead of stacking, so the page
+                    // never grows for a moment and snaps back.
+                    ZStack(alignment: .top) {
                     if failed && events.isEmpty {
                         ErrorStateView(retry: { await load() }).frame(minHeight: 300)
                     } else if !loaded {
@@ -67,6 +71,8 @@ struct EventsView: View {
                     } else {
                         allQuiet
                     }
+                    }
+                    .frame(maxWidth: .infinity)
                 }
                 .padding(.horizontal, Layout.margin)
                 .padding(.bottom, Sp.xl)
@@ -89,6 +95,8 @@ struct EventsView: View {
             }
             .refreshable { await load() }
             .task {
+                // Coming back to the tab: the list on screen is fresh enough for a minute.
+                if loaded, let last = Self.lastLoad, Date.now.timeIntervalSince(last) < 60 { return }
                 let waiting = Task { try? await Task.sleep(for: .milliseconds(350)); if !Task.isCancelled { slow = true } }
                 await load()
                 waiting.cancel()
@@ -208,9 +216,22 @@ struct EventsView: View {
         DataCache.get(CacheKey.events, as: [EventItem].self)?.sorted { $0.start < $1.start }
     }
 
+    /// When the list last came from the server (shared across visits to the tab).
+    @MainActor private static var lastLoad: Date?
+
     private func load() async {
         failed = false
-        do { events = try await Backend.upcomingEvents() } catch { failed = true }
+        do {
+            let fresh = try await Backend.upcomingEvents()
+            Self.lastLoad = .now
+            // Same as on screen (usually, after the saved copy): nothing to redraw.
+            // Different: swap without row animations, so nothing slides or collapses.
+            if fresh != events {
+                var quiet = Transaction()
+                quiet.disablesAnimations = true
+                withTransaction(quiet) { events = fresh }
+            }
+        } catch { failed = true }
         loaded = true
         slow = false
         LiveDepartures.sync(events) { catalog.sport($0)?.emoji ?? "" }

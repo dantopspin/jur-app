@@ -684,6 +684,7 @@ const en = {
     badCode: "Wrong code. Ask the host for the current one.",
   },
   passport: {
+    number: "Passport no.",
     title: "Member passport · JÜR",
     city: "City",
     since: "Member since",
@@ -910,6 +911,40 @@ const en = {
     noteTitle: "Add a note to a like",
     noteBody: "Hold the heart to write a few words. A note gets more replies.",
     photosTitle: "Tap the right side for the next photo",
+  },
+  me3: {
+    passport: "Passport and stamps",
+    settings: "Settings",
+    edit: "Edit",
+    safety: "Safety",
+    complete: "Profile: {done} of {all} done",
+    connect: "Get Pro",
+    likes: "likes today",
+    supers: "super likes",
+    boosts: "boosts",
+    inviteSub: "2 verified friends = 7 days of Pro",
+  },
+  settings2: {
+    dating: "Dating",
+    off: "Off",
+    app: "App",
+    notifications: "Notifications",
+    subscription: "Subscription",
+    support: "Support and legal",
+  },
+  edit2: {
+    tabEdit: "Edit",
+    tabPreview: "Preview",
+    photosHint: "Tap a photo to open it. Hold and drag to reorder: the first one is your main photo.",
+    about: "About you",
+    prompts: "Prompts · {n} of 3",
+    promptsEdit: "Edit answers",
+    trust: "Trust",
+    previewUnsaved: "This is the saved version. Save to see your changes.",
+    makeMain: "Make main",
+  },
+  viewer: {
+    of: "{i} of {n}",
   },
 };
 

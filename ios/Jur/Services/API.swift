@@ -178,6 +178,13 @@ extension Backend {
         try await rpc("redeem_referral", ["p_code": .string(code.trimmingCharacters(in: .whitespaces).uppercased())])
     }
 
+    private struct CityUpdate: Encodable { let city: String }
+
+    static func setCity(userId: UUID, _ city: String) async throws {
+        try await supabase.from("profiles").update(CityUpdate(city: city))
+            .eq("id", value: userId.uuidString).execute()
+    }
+
     static func setMode(userId: UUID, _ mode: ProfileMode) async throws {
         try await supabase.from("profiles").update(ModeUpdate(mode: mode.rawValue))
             .eq("id", value: userId.uuidString).execute()

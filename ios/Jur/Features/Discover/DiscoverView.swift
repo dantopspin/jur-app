@@ -239,6 +239,10 @@ struct DiscoverView: View {
             LiveDepartures.sync(model.tonight) { catalog.sport($0)?.emoji ?? "" }
         }
         .animation(Motion.adaptive(Motion.fade), value: model.loaded)
+        // Filters or city changed somewhere else (Settings): start the deck over.
+        .onChange(of: session.profile.map { DeckKey($0) }) { old, new in
+            if old != nil, old != new { Task { await model.reload() } }
+        }
         .task {
             let today = Fmt.calendar.startOfDay(for: .now).formatted(.iso8601.year().month().day())
             guard picksSeenDay != today else { return }
@@ -252,7 +256,8 @@ struct DiscoverView: View {
         .sheet(isPresented: $model.paywall) { PaywallView(context: model.paywallContext) }
         .sheet(isPresented: $boostPaywall) { PaywallView(context: .boost) }
         .sheet(isPresented: $showFilters) {
-            FiltersSheet { Task { await model.reload() } }
+            // Saving refreshes the profile; the onChange below starts the deck over.
+            FiltersSheet {}
         }
         #if DEBUG
         .fullScreenCover(isPresented: $previewOnboarding) {
@@ -321,6 +326,13 @@ struct DiscoverView: View {
         .padding(.bottom, Sp.lg)
     }
 
+}
+
+/// What the deck depends on: change any of it and the deck starts over.
+private struct DeckKey: Equatable {
+    let filters: DiscoverFilters
+    let city: String
+    init(_ p: MyProfile) { filters = DiscoverFilters(p); city = p.effectiveCity }
 }
 
 /// On pause nobody sees you in Discover, and likes you send wait until you're back.

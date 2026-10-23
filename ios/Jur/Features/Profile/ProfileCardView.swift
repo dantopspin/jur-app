@@ -44,7 +44,9 @@ struct ProfileCardView: View {
     }
 
     private var meta: String {
-        var parts = [formatMemberNo(card.memberNo), Cities.label(card.travelCity ?? card.city)]
+        // No member number here: a low one only tells strangers the app is new.
+        // It stays on the passport, where the "founding" stamp explains what early means.
+        var parts = [Cities.label(card.travelCity ?? card.city)]
         if let n = card.eventsAttended, n > 0, Config.eventsEnabled { parts.append(t("passport.departures") + " " + String(n)) }
         return parts.joined(separator: " · ")
     }

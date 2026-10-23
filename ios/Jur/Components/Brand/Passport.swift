@@ -165,7 +165,12 @@ struct PassportPage: View {
                     .accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: Sp.sm) {
                     Text(name).qText(.title2).lineLimit(2)
-                    Text(memberNo).qText(.display).minimumScaleFactor(0.6).lineLimit(1)
+                    // Labelled, so it reads as the passport's serial number, not a rank.
+                    VStack(alignment: .leading, spacing: 0) {
+                        Text(t("passport.number")).qText(.overline).foregroundStyle(Color.q.feltLabel)
+                        Text(memberNo).qText(.display).minimumScaleFactor(0.6).lineLimit(1)
+                    }
+                    .accessibilityElement(children: .combine)
                 }
             }
             HStack(alignment: .top) {

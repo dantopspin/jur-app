@@ -1,4 +1,5 @@
-// Edit profile: photos, words, sports, who you want to meet.
+// Your profile, two tabs: Edit (photos, words, sports, prompts, verification) and
+// Preview (your card as others see it). Tap a photo to look at it; hold and drag to reorder.
 import AVFoundation
 import PhotosUI
 import SwiftUI
@@ -26,6 +27,14 @@ struct EditProfileView: View {
     /// What was loaded, to tell whether anything changed.
     @State private var original: Snapshot?
     @State private var confirmLeave = false
+    @State private var tab: Tab = .edit
+    @State private var preview: ProfileCard?
+    @State private var prompts: [PromptAnswer] = []
+    /// The photo open full screen.
+    @State private var viewing: PhotoIndex?
+
+    private enum Tab: Hashable { case edit, preview }
+    struct PhotoIndex: Identifiable { let id: Int }
 
     private enum Field { case name, challenge, bio }
 
@@ -42,50 +51,20 @@ struct EditProfileView: View {
 
     var body: some View {
         Form {
-            Section(t("onboarding.photosTitle")) {
-                PhotoGrid(photos: $photos, pickerItems: $pickerItems, uploading: uploading)
-                    .listRowInsets(EdgeInsets(top: Sp.md, leading: Sp.md, bottom: Sp.md, trailing: Sp.md))
-            }
             Section {
-                // Return walks name → goal → about; "about" keeps Return for new lines.
-                field(count: name.count, limit: 40) {
-                    TextField(t("onboarding.namePlaceholder"), text: $name)
-                        .textContentType(.givenName)
-                        .textInputAutocapitalization(.words)
-                        .autocorrectionDisabled()
-                        .submitLabel(.next)
-                        .focused($focus, equals: .name)
-                        .limited($name, to: 40)
-                        .returnGoesNext($name) { focus = .challenge }
+                Picker("", selection: $tab) {
+                    Text(t("edit2.tabEdit")).tag(Tab.edit)
+                    Text(t("edit2.tabPreview")).tag(Tab.preview)
                 }
-                field(count: challenge.count, limit: 80) {
-                    TextField(t("onboarding.challengePlaceholder"), text: $challenge, axis: .vertical)
-                        .lineLimit(1...2)
-                        .submitLabel(.next)
-                        .focused($focus, equals: .challenge)
-                        .limited($challenge, to: 80)
-                        .returnGoesNext($challenge) { focus = .bio }
-                }
-                field(count: bio.count, limit: 500) {
-                    TextField(t("onboarding.bioPlaceholder"), text: $bio, axis: .vertical)
-                        .lineLimit(3...6)
-                        .focused($focus, equals: .bio)
-                        .limited($bio, to: 500)
-                }
+                .pickerStyle(.segmented)
+                .sensoryFeedback(.selection, trigger: tab)
+                .listRowBackground(Color.clear)
+                .listRowInsets(EdgeInsets())
             }
-            Section(t("onboarding.sportsTitle")) {
-                SportPicker(picked: $sports)
-                    .listRowInsets(EdgeInsets(top: Sp.md, leading: Sp.md, bottom: Sp.md, trailing: Sp.md))
-            }
-            Section {
-                Picker(t("onboarding.cityTitle"), selection: $city) {
-                    ForEach(Cities.all, id: \.self) { Text(Cities.label($0)).tag($0) }
-                }
-            } footer: {
-                // Who to show and their age moved to the filter button on Discover.
-                Text(t("edit.filtersMoved")).qText(.footnote).foregroundStyle(Color.q.muted)
-            }
+            if tab == .edit { editSections } else { previewSection }
         }
+        .animation(Motion.adaptive(Motion.fade), value: tab)
+        .fullScreenCover(item: $viewing) { v in PhotoViewer(photos: $photos, index: v.id) }
         .scrollContentBackground(.hidden)
         .scrollDismissesKeyboard(.interactively)
         .background(Color.q.bg)
@@ -120,6 +99,9 @@ struct EditProfileView: View {
             }
         }
         .task { await load() }
+        // Also when coming back from the prompts editor.
+        .onAppear { Task { await loadPrompts() } }
+        .task(id: tab) { if tab == .preview { await loadPreview() } }
         .onChange(of: pickerItems) { _, items in
             guard !items.isEmpty, let id = session.userId else { return }
             Task {
@@ -136,6 +118,109 @@ struct EditProfileView: View {
                 }
             }
         }
+    }
+
+    // MARK: tabs
+
+    @ViewBuilder private var editSections: some View {
+        Section {
+            PhotoGrid(photos: $photos, pickerItems: $pickerItems, uploading: uploading) { viewing = PhotoIndex(id: $0) }
+                .listRowInsets(EdgeInsets(top: Sp.md, leading: Sp.md, bottom: Sp.md, trailing: Sp.md))
+        } header: {
+            Text(t("onboarding.photosTitle"))
+        } footer: {
+            Text(t("edit2.photosHint")).qText(.footnote).foregroundStyle(Color.q.muted)
+        }
+        Section(t("edit2.about")) {
+            // Return walks name → goal → about; "about" keeps Return for new lines.
+            field(count: name.count, limit: 40) {
+                TextField(t("onboarding.namePlaceholder"), text: $name)
+                    .textContentType(.givenName)
+                    .textInputAutocapitalization(.words)
+                    .autocorrectionDisabled()
+                    .submitLabel(.next)
+                    .focused($focus, equals: .name)
+                    .limited($name, to: 40)
+                    .returnGoesNext($name) { focus = .challenge }
+            }
+            field(count: challenge.count, limit: 80) {
+                TextField(t("onboarding.challengePlaceholder"), text: $challenge, axis: .vertical)
+                    .lineLimit(1...2)
+                    .submitLabel(.next)
+                    .focused($focus, equals: .challenge)
+                    .limited($challenge, to: 80)
+                    .returnGoesNext($challenge) { focus = .bio }
+            }
+            field(count: bio.count, limit: 500) {
+                TextField(t("onboarding.bioPlaceholder"), text: $bio, axis: .vertical)
+                    .lineLimit(3...6)
+                    .focused($focus, equals: .bio)
+                    .limited($bio, to: 500)
+            }
+        }
+        Section(t("onboarding.sportsTitle")) {
+            SportPicker(picked: $sports)
+                .listRowInsets(EdgeInsets(top: Sp.md, leading: Sp.md, bottom: Sp.md, trailing: Sp.md))
+        }
+        Section {
+            ForEach(prompts, id: \.key) { p in
+                VStack(alignment: .leading, spacing: Sp.xxs) {
+                    Text(t("prompts.\(p.key)")).qText(.footnote).foregroundStyle(Color.q.muted)
+                    Text(p.answer).qText(.body).foregroundStyle(Color.q.ink)
+                }
+                .padding(.vertical, Sp.xxs)
+            }
+            NavigationLink { PromptsEditor() } label: {
+                Label(t(prompts.isEmpty ? "prompts.add" : "edit2.promptsEdit"), systemImage: prompts.isEmpty ? "plus" : "text.quote")
+                    .foregroundStyle(Color.q.blueText)
+            }
+        } header: {
+            Text(t("edit2.prompts", ["n": prompts.count]))
+        }
+        if let p = session.profile {
+            Section(t("edit2.trust")) { verificationRow(p.verificationStatus) }
+        }
+    }
+
+    @ViewBuilder private var previewSection: some View {
+        Section {
+            if let preview {
+                ProfileCardView(card: preview)
+                    .listRowInsets(EdgeInsets())
+                    .listRowBackground(Color.clear)
+            } else {
+                AfterABlink {
+                    ProfileCardView(card: .placeholder).redacted(reason: .placeholder).qShimmer()
+                }
+                .listRowInsets(EdgeInsets())
+                .listRowBackground(Color.clear)
+            }
+        } footer: {
+            Text(t(dirty ? "edit2.previewUnsaved" : "me2.previewNote")).qText(.footnote).foregroundStyle(Color.q.muted)
+        }
+    }
+
+    @ViewBuilder private func verificationRow(_ status: Verification) -> some View {
+        switch status {
+        case .approved:
+            Label(t("me.verified"), systemImage: "checkmark.seal.fill").foregroundStyle(Color.q.good)
+        case .pending:
+            Label(t("me.verifyPending"), systemImage: "clock").foregroundStyle(Color.q.muted)
+        case .rejected:
+            NavigationLink { VerifyView() } label: { Label(t("me.verifyRejected"), systemImage: "exclamationmark.triangle") }
+        case .unverified:
+            NavigationLink { VerifyView() } label: { Label(t("me.verify"), systemImage: "checkmark.seal") }
+        }
+    }
+
+    private func loadPrompts() async {
+        guard let id = session.userId, let p = try? await Backend.myPrompts(userId: id) else { return }
+        prompts = p
+    }
+
+    private func loadPreview() async {
+        guard let id = session.userId, let c = try? await Backend.myCard(id) else { return }
+        withMotion(Motion.fade) { preview = c }
     }
 
     private func load() async {

@@ -1,287 +1,255 @@
-// Me: your header (opens your passport, shows your latest stamps), how others see you,
-// what's left to fill in, your sports, what you're looking for, Pro and your balance,
-// invites, help and safety, and pausing.
+// Me: a small hub, like the big dating apps. Your photo with how complete the profile
+// is, three round buttons (Settings · Edit · Safety), Pro and your balance, and invites.
+// Everything else lives one step in: the editor (with a preview tab) and Settings
+// (dating preferences, travel, pause, app, subscription, account).
 import SwiftUI
 
 struct MeView: View {
     @Environment(SessionStore.self) private var session
-    @Environment(ToastCenter.self) private var toasts
     @State private var paywall = false
     @State private var proWelcome = false
-    @State private var redeeming = false
-    @State private var previewing = false
-
-    /// Your own card (stamps, prompts) and sports, loaded alongside the profile.
+    /// Your own card (for the checklist's prompts item), loaded alongside the profile.
     @State private var card: ProfileCard? = DataCache.get(CacheKey.card, as: ProfileCard?.self) ?? nil
-    @State private var sports: [String: Level] = [:]
-    /// Local copies so the controls answer at once; saved, then the profile refreshes.
-    @State private var mode: ProfileMode = .dating
-    @State private var buddyWith: InterestedIn = .everyone
-    @State private var paused = false
-    @State private var saving = false
     @State private var opened: ProfileStrength.Kind?
 
     var body: some View {
         NavigationStack {
-            List {
-                if let p = session.profile {
-                    header(p)
-                    previewRow
-                    strength(p)
-
-                    Section {
-                        NavigationLink { EditProfileView() } label: { Label(t("me.editProfile"), systemImage: "pencil") }
-                        NavigationLink { PromptsEditor() } label: { Label(t("prompts.title"), systemImage: "text.quote") }
-                        NavigationLink { TravelView() } label: { Label(t("travel.title"), systemImage: "airplane") }
-                        verificationRow(p.verificationStatus)
+            ScrollView {
+                VStack(spacing: Sp.xl) {
+                    if let p = session.profile {
+                        header(p)
+                        actions
+                        nextStep(p)
                     }
-
-                    Section(t("me2.sports")) {
-                        NavigationLink { EditProfileView() } label: { SportsGlance(sports: sports) }
-                            .accessibilityHint(t("me2.edit"))
-                    }
-
-                    lookingFor
+                    proCard
+                    balance
+                    NavigationLink { InviteView() } label: { inviteRow }
+                        .buttonStyle(.qPressCard)
                 }
-
-                proAndBalance
-
-                Section {
-                    NavigationLink { InviteView() } label: { Label(t("me2.invite"), systemImage: "gift") }
-                    NavigationLink { HelpSafetyView() } label: { Label(t("me2.help"), systemImage: "shield") }
-                }
-
-                if session.profile != nil {
-                    Section {
-                        Toggle(isOn: Binding(get: { paused }, set: { new in Task { await setPaused(new) } })) {
-                            Label(t("me2.pause"), systemImage: "pause.circle")
-                        }
-                        .disabled(saving)
-                    } footer: {
-                        Text(t("me2.pauseFooter")).qText(.footnote).foregroundStyle(Color.q.muted)
-                    }
-                }
+                .padding(.horizontal, Layout.margin)
+                .padding(.top, Sp.sm)
+                .padding(.bottom, Sp.xxl)
             }
-            .scrollContentBackground(.hidden)
             .background(Color.q.bg)
             .navigationTitle(t("tabs.me"))
             .toolbarTitleDisplayMode(.inlineLarge)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    NavigationLink { SettingsView() } label: {
-                        Image(systemName: "gearshape").accessibilityLabel(t("me.settings"))
-                    }
-                }
-            }
             .refreshable {
                 await session.refreshProfile()
                 await session.refreshLimits()
             }
             // Runs on first show and again whenever the profile changes (after an edit).
-            .task(id: session.profile) { await loadExtras() }
+            .task(id: session.profile) { await loadCard() }
             .navigationDestination(item: $opened) { $0.destination }
             .sheet(isPresented: $paywall) { PaywallView() }
-            .sheet(isPresented: $previewing) {
-                if let card { ProfilePreviewSheet(card: card) }
-            }
             .fullScreenCover(isPresented: $proWelcome) { ProWelcomeView { proWelcome = false } }
-            .sheet(isPresented: $redeeming) { RedeemGiftSheet() }
         }
     }
 
-    // MARK: sections
+    private var strength: ProfileStrength? {
+        guard let p = session.profile else { return nil }
+        return ProfileStrength(profile: p, hasPrompts: !(card?.prompts ?? []).isEmpty)
+    }
+
+    // MARK: header
 
     private func header(_ p: MyProfile) -> some View {
-        NavigationLink { MyPassportView() } label: {
-            HStack(spacing: Sp.lg) {
-                Avatar(url: p.photos.first.flatMap { URL(string: $0) }, size: 72)
-                VStack(alignment: .leading, spacing: Sp.sm) {
-                    Text(p.name).qText(.title2).foregroundStyle(Color.q.ink).lineLimit(2)
-                    FlowLayout(spacing: Sp.xs) {
-                        QTag(label: formatMemberNo(p.memberNo), tone: .neutral)
-                        if p.verificationStatus == .approved {
-                            QTag(label: t("card.verified"), tone: .blue, systemImage: "checkmark.seal.fill")
-                        }
-                        if paused {
-                            QTag(label: t("me2.paused"), tone: .clay, systemImage: "pause.fill")
-                        }
-                    }
-                    if let card {
-                        StampStrip(stamps: card.stamps)
-                            .transition(.opacity)
+        let s = strength
+        let share = s.map { Double($0.done) / Double($0.items.count) } ?? 1
+        return VStack(spacing: Sp.sm) {
+            NavigationLink { MyPassportView() } label: {
+                ZStack {
+                    Circle().stroke(Color.q.line, lineWidth: 5)
+                    Circle().trim(from: 0, to: share)
+                        .stroke(Color.q.good, style: StrokeStyle(lineWidth: 5, lineCap: .round))
+                        .rotationEffect(.degrees(-90))
+                        .animation(Motion.adaptive(Motion.smooth), value: share)
+                    Avatar(url: p.photos.first.flatMap { URL(string: $0) }, size: 112)
+                }
+                .frame(width: 128, height: 128)
+                .overlay(alignment: .bottom) {
+                    if share < 1 {
+                        Text(verbatim: "\(Int((share * 100).rounded()))%")
+                            .qText(.label).foregroundStyle(.white)
+                            .padding(.horizontal, Sp.sm).padding(.vertical, Sp.xxs)
+                            .background(Color.q.good, in: Capsule())
+                            .offset(y: 8)
                     }
                 }
-                Spacer(minLength: 0)
             }
-        }
-        .listRowBackground(Color.clear)
-        .listRowInsets(EdgeInsets(top: Sp.sm, leading: 0, bottom: Sp.sm, trailing: Sp.md))
-        .accessibilityHint(t("passport.title"))
-    }
+            .buttonStyle(.qPress)
+            .accessibilityLabel(t("me3.passport"))
 
-    private var previewRow: some View {
-        Button { previewing = true } label: {
-            Label(t("me2.preview"), systemImage: "eye")
-                .frame(maxWidth: .infinity)
-        }
-        .buttonStyle(.q(.secondary))
-        .disabled(card == nil)
-        .listRowBackground(Color.clear)
-        .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: Sp.sm, trailing: 0))
-    }
-
-    /// The checklist, only while something is left to do.
-    @ViewBuilder private func strength(_ p: MyProfile) -> some View {
-        if let card {
-            let s = ProfileStrength(profile: p, hasPrompts: !(card.prompts ?? []).isEmpty)
-            if !s.complete {
-                ProfileStrengthCard(strength: s) { opened = $0 }
-                    .listRowBackground(Color.clear)
-                    .listRowInsets(EdgeInsets(top: Sp.sm, leading: 0, bottom: Sp.sm, trailing: 0))
-            }
-        }
-    }
-
-    private var lookingFor: some View {
-        Section {
-            Picker(t("mode.title"), selection: Binding(get: { mode }, set: { new in Task { await setMode(new) } })) {
-                Text(t("mode.dating")).tag(ProfileMode.dating)
-                Text(t("mode.buddy")).tag(ProfileMode.buddy)
-                Text(t("mode.both")).tag(ProfileMode.both)
-            }
-            if mode != .dating {
-                Picker(t("mode.buddyWith"), selection: Binding(get: { buddyWith }, set: { new in Task { await setBuddyWith(new) } })) {
-                    Text(t("onboarding.women")).tag(InterestedIn.women)
-                    Text(t("onboarding.men")).tag(InterestedIn.men)
-                    Text(t("onboarding.everyone")).tag(InterestedIn.everyone)
+            HStack(spacing: Sp.xs) {
+                Text(verbatim: age(p).map { "\(p.name), \($0)" } ?? p.name)
+                    .qText(.title2).foregroundStyle(Color.q.ink).lineLimit(1)
+                if p.verificationStatus == .approved {
+                    Image(systemName: "checkmark.seal.fill").foregroundStyle(Color.q.blue)
+                        .accessibilityLabel(t("card.verified"))
                 }
             }
-        } footer: {
-            if mode != .dating {
-                Text(t("mode.buddyHint")).qText(.footnote).foregroundStyle(Color.q.muted)
+            .padding(.top, Sp.sm)
+            if p.paused == true {
+                QTag(label: t("me2.paused"), tone: .clay, systemImage: "pause.fill")
             }
-        }
-        .pickerStyle(.menu)
-        .tint(Color.q.inkSoft)
-        .disabled(saving)
-    }
-
-    private var proAndBalance: some View {
-        Section {
-            Button {
-                if session.limits?.pro == true { proWelcome = true } else { paywall = true }
-            } label: {
-                HStack {
-                    VStack(alignment: .leading, spacing: Sp.xxs) {
-                        Text(t("me.pro")).qText(.headline).foregroundStyle(Color.q.ink)
-                        if let l = session.limits {
-                            Text(l.pro ? t("me.proActive", ["date": shortDate(l.proUntil)]) : "\(t("paywall.f1")) · \(t("paywall.f2"))")
-                                .qText(.footnote).foregroundStyle(Color.q.muted)
-                        }
-                    }
-                    Spacer()
-                    if session.limits?.pro != true {
-                        QTag(label: t("me.getPro"), tone: .gold).fixedSize()
-                    }
-                    Image(systemName: "chevron.right").font(.q(.footnote).weight(.semibold)).foregroundStyle(Color.q.hint)
-                }
-                .contentShape(Rectangle())
+            NavigationLink { MyPassportView() } label: {
+                Text(verbatim: "\(Cities.label(p.effectiveCity)) · \(t("me3.passport")) ›")
+                    .qText(.footnote).foregroundStyle(Color.q.muted)
             }
             .buttonStyle(.plain)
+        }
+        .frame(maxWidth: .infinity)
+    }
 
-            if let l = session.limits {
-                balanceRow(t("me2.likesToday"), symbol: "heart",
-                           value: l.likesLeft.map(String.init) ?? t("me2.unlimited"))
-                balanceRow(t("me2.supersToday"), symbol: "star", value: "\(l.supersLeft)")
-                balanceRow(t("me2.boosts"), symbol: "bolt",
-                           value: "\(l.boostCredits + (l.freeBoostAvailable ? 1 : 0))")
+    // MARK: the three buttons
+
+    private var actions: some View {
+        HStack(alignment: .top, spacing: Sp.xl) {
+            NavigationLink { SettingsView() } label: { RoundHubButton(symbol: "gearshape", title: t("me3.settings")) }
+            NavigationLink { EditProfileView() } label: { RoundHubButton(symbol: "pencil", title: t("me3.edit"), primary: true) }
+            NavigationLink { HelpSafetyView() } label: { RoundHubButton(symbol: "shield", title: t("me3.safety")) }
+        }
+        .buttonStyle(.qPress)
+        .frame(maxWidth: .infinity)
+    }
+
+    /// While something is missing: one line with the next thing to do, not a whole checklist.
+    @ViewBuilder private func nextStep(_ p: MyProfile) -> some View {
+        if let s = strength, card != nil, let next = s.items.first(where: { !$0.done }) {
+            Button { opened = next.kind } label: {
+                HStack(spacing: Sp.md) {
+                    Image(systemName: next.symbol).foregroundStyle(Color.q.blueText).frame(width: 24)
+                        .accessibilityHidden(true)
+                    VStack(alignment: .leading, spacing: Sp.xxs) {
+                        Text(next.title).qText(.callout).foregroundStyle(Color.q.ink)
+                        Text(t("me3.complete", ["done": s.done, "all": s.items.count]))
+                            .qText(.footnote).foregroundStyle(Color.q.muted)
+                    }
+                    Spacer(minLength: Sp.sm)
+                    Image(systemName: "chevron.right").font(.q(.footnote).weight(.semibold)).foregroundStyle(Color.q.hint)
+                        .accessibilityHidden(true)
+                }
+                .padding(Sp.lg)
+                .background(Color.q.card, in: RoundedRectangle(cornerRadius: Radius.lg, style: .continuous))
+                .contentShape(Rectangle())
             }
-            Button { redeeming = true } label: { Label(t("cover.redeemTitle"), systemImage: "gift") }
-        } footer: {
-            if session.limits != nil {
-                Text(t("me2.balanceFooter")).qText(.footnote).foregroundStyle(Color.q.muted)
+            .buttonStyle(.qPressCard)
+            .transition(.opacity)
+        }
+    }
+
+    // MARK: Pro and balance
+
+    private var proCard: some View {
+        Button {
+            if session.limits?.pro == true { proWelcome = true } else { paywall = true }
+        } label: {
+            HStack(spacing: Sp.md) {
+                VStack(alignment: .leading, spacing: Sp.xxs) {
+                    (Text(verbatim: "JÜR ") + Text(verbatim: "Pro").foregroundStyle(Color.q.gold))
+                        .qText(.headline).foregroundStyle(.white)
+                    Text(session.limits?.pro == true
+                         ? t("me.proActive", ["date": shortDate(session.limits?.proUntil)])
+                         : "\(t("paywall.f1")) · \(t("paywall.f2"))")
+                        .qText(.footnote).foregroundStyle(Color.q.blueMist)
+                        .multilineTextAlignment(.leading)
+                }
+                Spacer(minLength: Sp.sm)
+                if session.limits?.pro != true {
+                    Text(t("me3.connect")).qText(.callout).fontWeight(.bold)
+                        .foregroundStyle(Color.q.onGold)
+                        .padding(.horizontal, Sp.md).padding(.vertical, Sp.sm)
+                        .background(Color.q.gold, in: Capsule())
+                        .fixedSize()
+                } else {
+                    Image(systemName: "chevron.right").font(.q(.footnote).weight(.semibold)).foregroundStyle(Color.q.blueMist)
+                }
+            }
+            .padding(Sp.lg)
+            .background(Color.q.blueNight, in: RoundedRectangle(cornerRadius: Radius.lg, style: .continuous))
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.qPressCard)
+    }
+
+    @ViewBuilder private var balance: some View {
+        if let l = session.limits {
+            VStack(spacing: Sp.xs) {
+                HStack(spacing: Sp.sm) {
+                    tile(symbol: "heart.fill", tint: Color.q.blue, value: l.likesLeft.map(String.init) ?? "∞", label: t("me3.likes"))
+                    tile(symbol: "star.fill", tint: Color.q.gold, value: "\(l.supersLeft)", label: t("me3.supers"))
+                    tile(symbol: "bolt.fill", tint: Color.q.blueText,
+                         value: "\(l.boostCredits + (l.freeBoostAvailable ? 1 : 0))", label: t("me3.boosts"))
+                }
+                Text(t("me2.balanceFooter")).qText(.caption).foregroundStyle(Color.q.muted)
             }
         }
     }
 
-    private func balanceRow(_ title: String, symbol: String, value: String) -> some View {
-        HStack {
-            Label(title, systemImage: symbol).foregroundStyle(Color.q.ink)
-            Spacer()
-            Text(value).qText(.number).foregroundStyle(Color.q.blueText)
+    private func tile(symbol: String, tint: Color, value: String, label: String) -> some View {
+        VStack(spacing: Sp.xxs) {
+            Image(systemName: symbol).foregroundStyle(tint).accessibilityHidden(true)
+            Text(verbatim: value).qText(.number).foregroundStyle(Color.q.ink)
                 .contentTransition(.numericText())
-                .fixedSize()
+            Text(label).qText(.caption).foregroundStyle(Color.q.muted).lineLimit(1).minimumScaleFactor(0.8)
         }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, Sp.md)
+        .background(Color.q.card, in: RoundedRectangle(cornerRadius: Radius.md, style: .continuous))
         .accessibilityElement(children: .combine)
     }
 
-    @ViewBuilder private func verificationRow(_ status: Verification) -> some View {
-        switch status {
-        case .approved:
-            Label(t("me.verified"), systemImage: "checkmark.seal.fill").foregroundStyle(Color.q.blueText)
-        case .pending:
-            Label(t("me.verifyPending"), systemImage: "clock").foregroundStyle(Color.q.muted)
-        case .rejected:
-            NavigationLink { VerifyView() } label: { Label(t("me.verifyRejected"), systemImage: "exclamationmark.triangle") }
-        case .unverified:
-            NavigationLink { VerifyView() } label: { Label(t("me.verify"), systemImage: "checkmark.seal") }
+    private var inviteRow: some View {
+        HStack(spacing: Sp.md) {
+            Image(systemName: "gift").foregroundStyle(Color.q.blueText).frame(width: 24).accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: Sp.xxs) {
+                Text(t("me2.invite")).qText(.callout).foregroundStyle(Color.q.ink)
+                Text(t("me3.inviteSub")).qText(.footnote).foregroundStyle(Color.q.muted)
+                    .multilineTextAlignment(.leading)
+            }
+            Spacer(minLength: Sp.sm)
+            Image(systemName: "chevron.right").font(.q(.footnote).weight(.semibold)).foregroundStyle(Color.q.hint)
+                .accessibilityHidden(true)
         }
+        .padding(Sp.lg)
+        .background(Color.q.card, in: RoundedRectangle(cornerRadius: Radius.lg, style: .continuous))
+        .contentShape(Rectangle())
     }
 
-    // MARK: loading and saving
+    // MARK: loading
 
-    private func loadExtras() async {
-        guard let p = session.profile, let id = session.userId else { return }
-        if !saving {
-            mode = p.mode ?? .dating
-            buddyWith = p.buddyWith ?? .everyone
-            paused = p.paused ?? false
+    private func loadCard() async {
+        guard let id = session.userId, let c = try? await Backend.myCard(id) else { return }
+        withMotion(Motion.fade) { card = c }
+    }
+
+    private func age(_ p: MyProfile) -> Int? {
+        let f = DateFormatter()
+        f.dateFormat = "yyyy-MM-dd"
+        f.locale = Locale(identifier: "en_US_POSIX")
+        guard let d = f.date(from: String(p.birthdate.prefix(10))) else { return nil }
+        return Calendar.current.dateComponents([.year], from: d, to: .now).year
+    }
+}
+
+/// One of the three round buttons under your photo; the middle one (Edit) is bigger and blue.
+struct RoundHubButton: View {
+    let symbol: String
+    let title: String
+    var primary = false
+
+    var body: some View {
+        VStack(spacing: Sp.sm) {
+            Image(systemName: symbol)
+                .font(.system(size: primary ? 24 : 20, weight: .semibold))
+                .foregroundStyle(primary ? .white : Color.q.inkSoft)
+                .frame(width: primary ? 64 : 56, height: primary ? 64 : 56)
+                .background(primary ? Color.q.blue : Color.q.card, in: Circle())
+                .qElevated()
+            Text(title).qText(.caption).fontWeight(primary ? .bold : .semibold).foregroundStyle(Color.q.ink)
         }
-        async let s = try? Backend.mySports(userId: id)
-        let c = try? await Backend.myCard(id)
-        let loadedSports = await s
-        withMotion(Motion.fade) {
-            if let c { card = c }
-            if let loadedSports { sports = loadedSports }
-        }
-    }
-
-    private func setMode(_ new: ProfileMode) async {
-        guard let id = session.userId, new != mode else { return }
-        let old = mode
-        withMotion(Motion.smooth) { mode = new }
-        await save(revert: { mode = old }) { try await Backend.setMode(userId: id, new) }
-    }
-
-    private func setBuddyWith(_ new: InterestedIn) async {
-        guard let id = session.userId, new != buddyWith else { return }
-        let old = buddyWith
-        buddyWith = new
-        await save(revert: { buddyWith = old }) { try await Backend.setBuddyWith(userId: id, new) }
-    }
-
-    private func setPaused(_ new: Bool) async {
-        guard new != paused else { return }
-        paused = new
-        let ok = await save(revert: { paused = !new }) { try await Backend.setPaused(new) }
-        if ok { toasts.show(t(new ? "me2.paused" : "me2.resumed"), symbol: new ? "pause.circle.fill" : "eye.fill") }
-    }
-
-    /// Saves, then refreshes the profile; on failure puts the control back and says so.
-    @discardableResult
-    private func save(revert: () -> Void, _ op: () async throws -> Void) async -> Bool {
-        saving = true
-        defer { saving = false }
-        do {
-            try await op()
-            Haptics.tick()
-            await session.refreshProfile()
-            return true
-        } catch {
-            revert()
-            toasts.show(error)
-            return false
-        }
+        .padding(.top, primary ? 0 : Sp.md)
+        .frame(minWidth: 72)
+        .contentShape(Rectangle())
     }
 }
 
