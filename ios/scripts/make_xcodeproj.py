@@ -42,7 +42,7 @@ release_project = dict(common_project, **{
 target_settings = {
     'ASSETCATALOG_COMPILER_APPICON_NAME': 'AppIcon', 'ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME': 'AccentColor',
     'CODE_SIGN_ENTITLEMENTS': 'Jur/Jur.entitlements', 'CODE_SIGN_STYLE': 'Automatic',
-    'CURRENT_PROJECT_VERSION': '1', 'DEVELOPMENT_TEAM': '"$(JUR_TEAM_ID)"', 'ENABLE_PREVIEWS': 'YES',
+    'CURRENT_PROJECT_VERSION': '2', 'DEVELOPMENT_TEAM': '"$(JUR_TEAM_ID)"', 'ENABLE_PREVIEWS': 'YES',
     'GENERATE_INFOPLIST_FILE': 'NO', 'INFOPLIST_FILE': 'Jur/Info.plist',
     'LD_RUNPATH_SEARCH_PATHS': '("$(inherited)", "@executable_path/Frameworks")',
     'MARKETING_VERSION': '1.0', 'PRODUCT_BUNDLE_IDENTIFIER': 'kz.jur.app', 'PRODUCT_NAME': '"$(TARGET_NAME)"',
@@ -50,7 +50,7 @@ target_settings = {
 }
 # The widget extension. Same version numbers as the app (App Store requires it).
 widget_settings = {
-    'CODE_SIGN_STYLE': 'Automatic', 'CURRENT_PROJECT_VERSION': '1', 'DEVELOPMENT_TEAM': '"$(JUR_TEAM_ID)"',
+    'CODE_SIGN_STYLE': 'Automatic', 'CURRENT_PROJECT_VERSION': '2', 'DEVELOPMENT_TEAM': '"$(JUR_TEAM_ID)"',
     'GENERATE_INFOPLIST_FILE': 'NO', 'INFOPLIST_FILE': 'JurWidgets/Info.plist',
     'LD_RUNPATH_SEARCH_PATHS': '("$(inherited)", "@executable_path/Frameworks", "@executable_path/../../Frameworks")',
     'MARKETING_VERSION': '1.0', 'PRODUCT_BUNDLE_IDENTIFIER': 'kz.jur.app.widgets', 'PRODUCT_NAME': '"$(TARGET_NAME)"',
