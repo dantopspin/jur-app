@@ -9529,19 +9529,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Same pace! You and Daniyar liked each other."
+            "value": "Same pace! You liked each other."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "В одном темпе! Вы с Данияром понравились друг другу."
+            "value": "В одном темпе! Вы понравились друг другу."
           }
         },
         "kk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Бір қарқында! Сіз бен Данияр бір-біріңізге ұнадыңыздар."
+            "value": "Бір қарқында! Бір-біріңізге ұнадыңыздар."
           }
         }
       }
@@ -16291,19 +16291,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Five people chosen for the sports, events and clubs you share. New ones every evening."
+            "value": "Up to five people chosen for the sports, events and clubs you share. New ones every evening."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Пять человек, с которыми у вас общие виды спорта, события и клубы. Новые — каждый вечер."
+            "value": "До пяти человек, с которыми у вас общие виды спорта, события и клубы. Новые — каждый вечер."
           }
         },
         "kk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ортақ спорт, іс-шара мен клубтарыңыз бар бес адам. Әр кеш жаңалары."
+            "value": "Ортақ спорт, іс-шара мен клубтарыңыз бар бес адамға дейін. Әр кеш жаңалары."
           }
         }
       }
@@ -16314,19 +16314,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Five people chosen for the sports you share. New ones every evening."
+            "value": "Up to five people chosen for the sports you share. New ones every evening."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Пять человек, подобранных по общим видам спорта. Каждый вечер — новые."
+            "value": "До пяти человек, подобранных по общим видам спорта. Каждый вечер — новые."
           }
         },
         "kk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ортақ спорт түрлеріне қарай таңдалған бес адам. Күн сайын кешке жаңалары."
+            "value": "Ортақ спорт түрлеріне қарай таңдалған бес адамға дейін. Күн сайын кешке жаңалары."
           }
         }
       }

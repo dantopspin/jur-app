@@ -1,4 +1,4 @@
-// Today's picks: five people chosen for what you share, refreshed every evening.
+// Today's picks: up to five people chosen for what you share, refreshed every evening.
 import SwiftUI
 
 struct PicksView: View {
