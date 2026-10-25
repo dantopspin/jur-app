@@ -13,9 +13,8 @@ enum Motion {
     static let bouncy = Animation.spring(duration: 0.45, bounce: 0.2)
     /// Once-per-moment entrances: match, Pro cover, passport flip.
     static let hero = Animation.spring(duration: 0.6, bounce: 0.25)
-    /// Anything under the finger: card drag, snap-back after release.
-    static let follow = Animation.interactiveSpring(response: 0.3, dampingFraction: 0.8)
-    /// Things leaving for good: a card flung off screen.
+    /// Things leaving for good that no finger threw (the passport turning edge-on).
+    /// A thrown card uses `throwOut` instead, which keeps the throw's speed.
     static let exit = Animation.easeIn(duration: 0.18)
     /// Opacity-only changes, and the Reduce Motion fallback for everything else.
     static let fade = Animation.easeOut(duration: 0.2)
@@ -43,6 +42,25 @@ enum Motion {
     static let flip = Animation.spring(duration: 0.7, bounce: 0.15)
     /// A card leaving upward on purpose (a like with a note), after lifting.
     static let liftOff = Animation.easeIn(duration: 0.32)
+
+    /// A card thrown off screen: a spring that starts at the finger's speed, so a hard flick
+    /// leaves fast and the motion never restarts from zero when the finger lets go.
+    /// `speed` is points per second towards the target; `distance` is points left to travel.
+    static func throwOut(speed: CGFloat, distance: CGFloat) -> Animation {
+        .interpolatingSpring(duration: 0.4, bounce: 0, initialVelocity: relative(speed, over: distance, cap: 20))
+    }
+
+    /// A card let go before the line, settling back from where and how fast it was released.
+    static func settle(speed: CGFloat, distance: CGFloat) -> Animation {
+        .interpolatingSpring(duration: 0.3, bounce: 0.15, initialVelocity: relative(speed, over: distance, cap: 8))
+    }
+
+    /// SwiftUI springs take velocity as "distance left per second": points per second ÷ points.
+    /// Capped, so a tiny remaining distance can't turn into a jolt.
+    private static func relative(_ speed: CGFloat, over distance: CGFloat, cap: Double) -> Double {
+        guard abs(distance) > 1 else { return 0 }
+        return min(max(Double(speed / distance), -cap), cap)
+    }
 
     /// Delay between items that arrive together (board rows, staggered titles).
     static let stagger: Double = 0.03

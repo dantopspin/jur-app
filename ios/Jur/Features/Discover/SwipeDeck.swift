@@ -97,17 +97,30 @@ struct SwipeDeck: View {
                 let thrown = v.predictedEndTranslation.width
                 // A quick flick counts even if the finger didn't travel the whole way.
                 if w > line || thrown > line * 2.5 {
-                    fly(.like)
+                    fly(.like, velocity: v.velocity)
                 } else if w < -line || thrown < -line * 2.5 {
-                    fly(.pass)
+                    fly(.pass, velocity: v.velocity)
                 } else {
-                    withAnimation(Motion.adaptive(Motion.follow)) { drag = .zero }
+                    settle(velocity: v.velocity)
                 }
             }
     }
 
+    /// Below this a throw is topped up, so a slow drag past the line still leaves briskly.
+    private let minThrowSpeed: CGFloat = 1400
+
+    /// Let go before the line: the card returns to the middle, starting at the speed it was
+    /// moving towards the middle (or away from it), instead of from a standstill.
+    private func settle(velocity: CGSize) {
+        let length = (drag.width * drag.width + drag.height * drag.height).squareRoot()
+        // The finger's speed along the way back to the middle (positive = already heading home).
+        let towardsHome = length > 0 ? -(velocity.width * drag.width + velocity.height * drag.height) / length : 0
+        withAnimation(Motion.adaptive(Motion.settle(speed: towardsHome, distance: length))) { drag = .zero }
+    }
+
     /// Sends the top card off screen in the decision's direction, then commits it.
-    private func fly(_ kind: SwipeKind, note: String? = nil) {
+    /// `velocity` is the finger's at release; buttons and VoiceOver pass none and get a brisk default.
+    private func fly(_ kind: SwipeKind, note: String? = nil, velocity: CGSize? = nil) {
         guard !leaving, !cards.isEmpty else { return }
         if reduceMotion {
             drag = .zero
@@ -121,12 +134,24 @@ struct SwipeDeck: View {
         }
         var target = drag
         var up: CGFloat = 0
+        let animation: Animation
         switch kind {
-        case .like: target.width = 700
-        case .pass: target.width = -700
-        case .super: target = .zero; up = -1100
+        case .like, .pass:
+            let side: CGFloat = kind == .like ? 1 : -1
+            target.width = 700 * side
+            let distance = target.width - drag.width
+            let thrown = (velocity?.width ?? 0) * side
+            // Keep the throw's angle: thrown up-and-right, the card keeps going up-and-right.
+            if let velocity, thrown > 0 {
+                target.height = drag.height + min(max(distance * velocity.height / velocity.width, -400), 400)
+            }
+            animation = Motion.throwOut(speed: max(thrown, minThrowSpeed) * side, distance: distance)
+        case .super:
+            target = .zero
+            up = -1100
+            animation = Motion.throwOut(speed: -minThrowSpeed, distance: up - lift)
         }
-        withAnimation(Motion.exit) {
+        withAnimation(animation) {
             drag = target
             lift = up
         } completion: {
