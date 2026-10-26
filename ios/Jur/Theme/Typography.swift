@@ -101,15 +101,33 @@ extension Font {
 
     /// A specific brand face at a size, scaling with Dynamic Type like `relativeTo`.
     /// Unbounded and Manrope lack several Kazakh letters (ә ғ қ ң ұ, and ө ү һ in Unbounded),
-    /// so the Kazakh interface uses the system faces instead of mixing two fonts in one word.
-    /// `latinOnly` text (the wordmark, "PRO") keeps the brand face in every language.
+    /// so the Kazakh interface uses Medeo Sans, which has all of them and ₸, rather than
+    /// mixing two fonts inside one word. `latinOnly` text (the wordmark, "PRO") keeps the
+    /// brand face in every language.
     static func qFont(_ name: String, size: CGFloat, relativeTo style: Font.TextStyle = .body,
                       weight: Font.Weight = .regular, latinOnly: Bool = false) -> Font {
-        if latinOnly || L10n.current != .kk, UIFont(name: name, size: size) != nil {
-            return .custom(name, size: size, relativeTo: style)
+        let face = brandFace(name, latinOnly: latinOnly)
+        if UIFont(name: face, size: size) != nil {
+            return .custom(face, size: size, relativeTo: style)
         }
         let design: Font.Design = name.hasPrefix("Unbounded") ? .rounded : .default
         return .system(style, design: design).weight(weight)
+    }
+
+    /// The PostScript name actually drawn for a brand face in the current language.
+    /// Headlines (Unbounded) become Medeo Sans at its display optical size; Manrope weights
+    /// map one to one. Anything unknown falls through to the original name.
+    static func brandFace(_ name: String, latinOnly: Bool = false) -> String {
+        if latinOnly || L10n.current != .kk { return name }
+        switch name {
+        case "Unbounded-ExtraBold": return "MedeoSans-DisplayExtraBold"
+        case "Unbounded-Bold": return "MedeoSans-DisplayBold"
+        case "Manrope-Regular", "Manrope-Medium": return "MedeoSans-Medium"
+        case "Manrope-SemiBold": return "MedeoSans-SemiBold"
+        case "Manrope-Bold": return "MedeoSans-Bold"
+        case "Manrope-ExtraBold": return "MedeoSans-ExtraBold"
+        default: return name
+        }
     }
 }
 
@@ -132,15 +150,15 @@ extension View {
 
 /// The parts UIKit draws need the brand faces set separately: navigation titles (Unbounded
 /// ExtraBold large, Manrope ExtraBold inline), bar buttons, segmented controls, tab labels.
-/// Kazakh uses the system faces, as in `Font.qFont`. Bars created after a language change
+/// Kazakh uses Medeo Sans, as in `Font.qFont`. Bars created after a language change
 /// pick up the new style (the root view is rebuilt on a change).
 @MainActor
 enum QNavBar {
     static func apply() {
         let bar = UINavigationBar.appearance()
-        let brand = L10n.current != .kk
-        if brand, let large = UIFont(name: "Unbounded-ExtraBold", size: 30),
-           let inline = UIFont(name: "Manrope-ExtraBold", size: 17) {
+        let large = UIFont(name: Font.brandFace("Unbounded-ExtraBold"), size: 30)
+        let inline = UIFont(name: Font.brandFace("Manrope-ExtraBold"), size: 17)
+        if let large, let inline {
             bar.largeTitleTextAttributes = [
                 .font: UIFontMetrics(forTextStyle: .largeTitle).scaledFont(for: large, maximumPointSize: 40),
                 .kern: -0.3,
@@ -154,7 +172,7 @@ enum QNavBar {
         }
 
         let face = { (name: String, size: CGFloat, style: UIFont.TextStyle, weight: UIFont.Weight) -> UIFont in
-            if brand, let f = UIFont(name: name, size: size) {
+            if let f = UIFont(name: Font.brandFace(name), size: size) {
                 return UIFontMetrics(forTextStyle: style).scaledFont(for: f, maximumPointSize: size * 1.4)
             }
             return UIFont.systemFont(ofSize: size, weight: weight)
