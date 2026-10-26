@@ -70,6 +70,12 @@
 		<string>Manrope-SemiBold.ttf</string>
 		<string>Manrope-Bold.ttf</string>
 		<string>Manrope-ExtraBold.ttf</string>
+		<string>MedeoSans-Medium.ttf</string>
+		<string>MedeoSans-SemiBold.ttf</string>
+		<string>MedeoSans-Bold.ttf</string>
+		<string>MedeoSans-ExtraBold.ttf</string>
+		<string>MedeoSans-DisplayBold.ttf</string>
+		<string>MedeoSans-DisplayExtraBold.ttf</string>
 	</array>
 	<key>UILaunchScreen</key>
 	<dict>
