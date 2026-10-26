@@ -20,13 +20,23 @@ enum Backend {
 
     /// Calls a database function and decodes its JSON result.
     static func rpc<T: Decodable>(_ fn: String, _ params: [String: AnyJSON] = [:], as type: T.Type = T.self) async throws -> T {
-        let response = try await supabase.rpc(fn, params: params).execute()
-        return try decoder.decode(T.self, from: response.data)
+        do {
+            let response = try await supabase.rpc(fn, params: params).execute()
+            return try decoder.decode(T.self, from: response.data)
+        } catch {
+            Diagnostics.shared.report(error, in: fn)
+            throw error
+        }
     }
 
     /// Calls a database function that returns nothing useful.
     static func call(_ fn: String, _ params: [String: AnyJSON] = [:]) async throws {
-        _ = try await supabase.rpc(fn, params: params).execute()
+        do {
+            _ = try await supabase.rpc(fn, params: params).execute()
+        } catch {
+            Diagnostics.shared.report(error, in: fn)
+            throw error
+        }
     }
 
     // MARK: profile and limits

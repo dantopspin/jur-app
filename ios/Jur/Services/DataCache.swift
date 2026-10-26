@@ -53,9 +53,14 @@ extension Backend {
     /// A database function whose answer is also kept for next time under `key`.
     static func rpc<T: Decodable>(_ fn: String, _ params: [String: AnyJSON] = [:], cacheAs key: String,
                                   as type: T.Type = T.self) async throws -> T {
-        let response = try await supabase.rpc(fn, params: params).execute()
-        let value = try decoder.decode(T.self, from: response.data)
-        DataCache.put(response.data, key)
-        return value
+        do {
+            let response = try await supabase.rpc(fn, params: params).execute()
+            let value = try decoder.decode(T.self, from: response.data)
+            DataCache.put(response.data, key)
+            return value
+        } catch {
+            Diagnostics.shared.report(error, in: fn)
+            throw error
+        }
     }
 }

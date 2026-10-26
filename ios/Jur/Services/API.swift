@@ -200,9 +200,15 @@ extension Backend {
 
     static func matches() async throws -> [MatchRow] { try await rpc("my_matches", cacheAs: CacheKey.matches) }
 
-    /// Newest first from the server; returned oldest first for display.
-    static func messages(_ match: UUID) async throws -> [Message] {
-        let list: [Message] = try await rpc("chat_messages", ["p_match": .uuid(match)])
+    /// How many messages the server sends per page.
+    static let messagePage = 50
+
+    /// Newest first from the server; returned oldest first for display. `before`: the
+    /// createdAt of the oldest message on screen, for the page above it.
+    static func messages(_ match: UUID, before: String? = nil) async throws -> [Message] {
+        var params: [String: AnyJSON] = ["p_match": .uuid(match)]
+        if let before { params["p_before"] = .string(before) }
+        let list: [Message] = try await rpc("chat_messages", params)
         return list.reversed()
     }
 
