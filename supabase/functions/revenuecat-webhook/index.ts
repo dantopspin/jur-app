@@ -50,5 +50,10 @@ Deno.serve(async (req) => {
     return new Response("db error", { status: 500 });
   }
   console.log(`revenuecat ${event.type} ${event.product_id ?? ""} → ${data}`);
+  // The account doesn't exist yet (bought between sign-in and profile creation):
+  // a non-2xx answer makes RevenueCat send the same event again later.
+  if (typeof data === "string" && data.startsWith("retry:")) {
+    return new Response(data, { status: 503 });
+  }
   return Response.json({ result: data });
 });
