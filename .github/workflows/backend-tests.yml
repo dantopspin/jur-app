@@ -1,0 +1,54 @@
+# Every change to the server is tested before it can reach the live database:
+# all migrations on a fresh Postgres, the behavioural tests (including the race test),
+# the rollback scripts, and a type check of the Edge Functions.
+name: Backend tests
+
+on:
+  pull_request:
+    paths: ['supabase/**', '.github/workflows/backend-tests.yml']
+  push:
+    branches: [main]
+    paths: ['supabase/**']
+
+permissions:
+  contents: read
+
+jobs:
+  database:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      PGHOST: localhost
+      PGUSER: postgres
+      PGPASSWORD: postgres
+    steps:
+      - uses: actions/checkout@v4
+      - name: Migrations and tests
+        run: bash supabase/tests/run.sh
+      - name: Rollback scripts undo cleanly
+        working-directory: supabase
+        run: |
+          set -euo pipefail
+          PSQL="psql -v ON_ERROR_STOP=1 -q"
+          createdb rollback_check
+          $PSQL -d rollback_check -f tests/supabase_stub.sql
+          for f in migrations/*.sql; do $PSQL -d rollback_check -f "$f"; done
+          for f in $(ls rollback/*_down.sql | sort -r); do $PSQL -d rollback_check -f "$f"; done
+          $PSQL -d rollback_check -f tests/backend_test.sql
+
+  functions:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Type check Edge Functions
+        run: for f in supabase/functions/*/index.ts; do deno check "$f"; done

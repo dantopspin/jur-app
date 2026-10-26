@@ -13,6 +13,9 @@ final class ChatModel {
     var other: ProfileCard?
     var loaded = false
     var gone = false
+    /// More history above what's on screen (the server sends 50 at a time).
+    var hasOlder = false
+    var loadingOlder = false
     private var channel: RealtimeChannelV2?
 
     init(matchId: UUID, other: ProfileCard?) {
@@ -21,14 +24,21 @@ final class ChatModel {
     }
 
     /// New messages animate in once the first load is done; the first load doesn't.
+    /// The server sends the newest page; anything older already loaded above it stays.
     private func apply(_ fresh: [Message]) {
-        guard fresh != messages else { return }
-        if loaded { withMotion(Motion.smooth) { messages = fresh } } else { messages = fresh }
+        var merged = fresh
+        if let oldestFresh = fresh.first?.createdAt {
+            merged = messages.filter { $0.createdAt < oldestFresh } + fresh
+        }
+        guard merged != messages else { return }
+        if loaded { withMotion(Motion.smooth) { messages = merged } } else { messages = merged }
     }
 
     func load() async {
         do {
-            apply(try await Backend.messages(matchId))
+            let page = try await Backend.messages(matchId)
+            if !loaded { hasOlder = page.count >= Backend.messagePage }
+            apply(page)
             try? await Backend.markRead(matchId)
             if other == nil {
                 other = try await Backend.matches().first { $0.matchId == matchId }?.other
@@ -38,6 +48,17 @@ final class ChatModel {
             if messages.isEmpty { gone = true }
         }
         loaded = true
+    }
+
+    /// The page above the oldest message on screen.
+    func loadOlder() async {
+        guard hasOlder, !loadingOlder, let oldest = messages.first else { return }
+        loadingOlder = true
+        defer { loadingOlder = false }
+        guard let page = try? await Backend.messages(matchId, before: oldest.createdAt) else { return }
+        let have = Set(messages.map(\.id))
+        messages = page.filter { !have.contains($0.id) } + messages
+        hasOlder = page.count >= Backend.messagePage
     }
 
     func listen() async {
@@ -59,12 +80,13 @@ final class ChatModel {
         channel = nil
     }
 
-    func send(_ text: String, me: UUID, replyTo: UUID? = nil) async -> Bool {
+    /// nil when sent; otherwise what went wrong.
+    func send(_ text: String, me: UUID, replyTo: UUID? = nil) async -> Error? {
         do {
             let m = try await Backend.send(text, match: matchId, from: me, replyTo: replyTo)
             if !messages.contains(where: { $0.id == m.id }) { withMotion(Motion.smooth) { messages.append(m) } }
-            return true
-        } catch { return false }
+            return nil
+        } catch { return error }
     }
 
     /// The reaction shows at once (same one again takes it off); the server's list follows.
@@ -221,6 +243,22 @@ struct ChatView: View {
         ScrollViewReader { proxy in
             ScrollView {
                 LazyVStack(spacing: Sp.xs) {
+                    if model.hasOlder {
+                        Button {
+                            let anchor = model.messages.first?.id
+                            Task {
+                                await model.loadOlder()
+                                // Stay where you were: the message that was on top stays on top.
+                                if let anchor { proxy.scrollTo(anchor, anchor: .top) }
+                            }
+                        } label: {
+                            if model.loadingOlder { ProgressView() } else { Text(t("chat2.earlier")) }
+                        }
+                        .qText(.footnote)
+                        .foregroundStyle(Color.q.blueText)
+                        .frame(maxWidth: .infinity, minHeight: Layout.rowMin)
+                        .disabled(model.loadingOlder)
+                    }
                     if model.loaded && model.messages.isEmpty, let o = model.other {
                         Text(t("chat.start", ["name": o.name]))
                             .qText(.callout).foregroundStyle(Color.q.muted).multilineTextAlignment(.center)
@@ -575,9 +613,11 @@ struct ChatView: View {
         replyingTo = nil
         sending = true
         defer { sending = false }
-        if !(await model.send(text, me: me, replyTo: reply)) {
+        if let error = await model.send(text, me: me, replyTo: reply) {
             draft = text
-            toasts.show(t("chat.sendFailed"), error: true)
+            // Sending too fast is a pause, not a failure: say so.
+            let limited = String(describing: error).contains("rate_limited")
+            toasts.show(limited ? t("err.tooFast") : t("chat.sendFailed"), error: true)
         }
     }
 

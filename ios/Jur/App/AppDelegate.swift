@@ -9,6 +9,8 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         UNUserNotificationCenter.current().delegate = self
         QNavBar.apply()
         Hints.configure()
+        // Crash and hang reports from the last session arrive now (MetricKit).
+        Diagnostics.shared.start()
         return true
     }
 

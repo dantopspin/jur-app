@@ -8,12 +8,17 @@
 // tokens, and both can be in the table at once. APNS_ENV only picks which server is
 // tried first: a token the first server calls BadDeviceToken is retried on the other,
 // and dropped only if neither accepts it.
+//
+// Apple being busy (429) or down (5xx), or the network failing, is retried twice with a
+// short wait. The reply lists every token's result; Postgres reads it back
+// (record_push_delivery) and counts failures, so a broken push setup shows up in ops_health.
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 
 const env = (k: string) => Deno.env.get(k) ?? '';
 const PRODUCTION = 'https://api.push.apple.com';
 const SANDBOX = 'https://api.sandbox.push.apple.com';
 const hosts = env('APNS_ENV') === 'development' ? [SANDBOX, PRODUCTION] : [PRODUCTION, SANDBOX];
+const RETRY_WAIT_MS = [300, 1200];
 
 let cached: { jwt: string; at: number } | null = null;
 
@@ -23,6 +28,15 @@ function b64url(data: ArrayBuffer | Uint8Array | string): string {
   for (const b of bytes) s += String.fromCharCode(b);
   return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 }
+
+function timingSafeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return diff === 0;
+}
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 async function providerToken(): Promise<string> {
   // Apple accepts a token for up to an hour; refresh every 50 minutes.
@@ -39,42 +53,74 @@ async function providerToken(): Promise<string> {
 }
 
 Deno.serve(async (req) => {
-  if (req.headers.get('Authorization') !== `Bearer ${env('PUSH_SECRET')}` || !env('PUSH_SECRET')) {
+  const secret = env('PUSH_SECRET');
+  if (!secret || !timingSafeEqual(req.headers.get('Authorization') ?? '', `Bearer ${secret}`)) {
     return new Response('forbidden', { status: 403 });
   }
-  const { tokens, title, body, sound, thread, data } = await req.json();
+  let input: { tokens?: unknown; title?: string; body?: string; sound?: string; thread?: string; data?: Record<string, unknown> };
+  try {
+    input = await req.json();
+  } catch {
+    return new Response('bad json', { status: 400 });
+  }
+  const tokens = Array.isArray(input.tokens) ? input.tokens.filter((t): t is string => typeof t === 'string') : [];
+  if (tokens.length === 0) return Response.json({ sent: [] });
+
   const payload = JSON.stringify({
-    aps: { alert: { title, body }, sound: sound ?? 'default', 'thread-id': thread ?? 'jur' },
-    ...(data ?? {}),
+    aps: { alert: { title: input.title, body: input.body }, sound: input.sound ?? 'default', 'thread-id': input.thread ?? 'jur' },
+    ...(input.data ?? {}),
   });
-  const jwt = await providerToken();
+  let jwt: string;
+  try {
+    jwt = await providerToken();
+  } catch (e) {
+    console.error('apns: provider token failed (check APNS_PRIVATE_KEY / KEY_ID / TEAM_ID)', e);
+    return new Response('provider token failed', { status: 500 });
+  }
   const admin = createClient(env('SUPABASE_URL'), env('SUPABASE_SERVICE_ROLE_KEY'));
-  const send = (host: string, token: string) => fetch(`${host}/3/device/${token}`, {
-    method: 'POST',
-    headers: {
-      authorization: `bearer ${jwt}`,
-      'apns-topic': env('APNS_TOPIC') || 'kz.jur.app',
-      'apns-push-type': 'alert',
-      'apns-priority': '10',
-    },
-    body: payload,
-  });
-  const results = await Promise.all((tokens as string[]).map(async (token) => {
-    let status = 0;
-    let reason: string | undefined;
+
+  /** One attempt; network errors become status 0 so they're retried like a 5xx. */
+  const send = async (host: string, token: string): Promise<{ status: number; reason?: string }> => {
+    try {
+      const r = await fetch(`${host}/3/device/${token}`, {
+        method: 'POST',
+        headers: {
+          authorization: `bearer ${jwt}`,
+          'apns-topic': env('APNS_TOPIC') || 'kz.jur.app',
+          'apns-push-type': 'alert',
+          'apns-priority': '10',
+        },
+        body: payload,
+      });
+      const reason = r.status === 200 ? undefined : (await r.json().catch(() => ({}))).reason;
+      return { status: r.status, reason };
+    } catch (e) {
+      return { status: 0, reason: e instanceof Error ? e.message : 'network' };
+    }
+  };
+
+  /** Busy, down or unreachable: worth trying again in a moment. */
+  const transient = (s: number) => s === 0 || s === 429 || s >= 500;
+
+  const results = await Promise.all(tokens.map(async (token) => {
+    let res = { status: 0 } as { status: number; reason?: string };
     for (const host of hosts) {
-      const r = await send(host, token);
-      status = r.status;
-      reason = r.status === 200 ? undefined : (await r.json().catch(() => ({}))).reason;
+      res = await send(host, token);
+      for (let i = 0; i < RETRY_WAIT_MS.length && transient(res.status); i++) {
+        await sleep(RETRY_WAIT_MS[i]);
+        res = await send(host, token);
+      }
       // A token from the other environment: try the other server before giving up on it.
-      if (r.status === 400 && reason === 'BadDeviceToken') continue;
+      if (res.status === 400 && res.reason === 'BadDeviceToken') continue;
       break;
     }
     // 410: the app was removed. BadDeviceToken on both servers: the token is junk.
-    if (status === 410 || (status === 400 && reason === 'BadDeviceToken')) {
+    if (res.status === 410 || (res.status === 400 && res.reason === 'BadDeviceToken')) {
       await admin.rpc('drop_push_token', { p_token: token });
+    } else if (res.status !== 200) {
+      console.error(`apns: ${token.slice(0, 8)}… ${res.status} ${res.reason ?? ''}`);
     }
-    return { token: token.slice(0, 8), status, reason };
+    return { token: token.slice(0, 8), status: res.status, reason: res.reason };
   }));
   return Response.json({ sent: results });
 });

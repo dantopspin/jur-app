@@ -1,0 +1,41 @@
+# Once a day (09:00 Almaty) asks the live database whether anything needs attention:
+# app crashes, failing pushes, purchases stuck waiting for an account, failed scheduled
+# jobs. When it does, this run fails and GitHub emails you.
+#
+# Setup: Settings → Secrets and variables → Actions → add SUPABASE_URL
+# (https://<ref>.supabase.co) and SUPABASE_SERVICE_ROLE_KEY. Until then it skips.
+# This repository is public, so the log only says ok / not ok and how many problems;
+# the numbers themselves stay in Supabase (select ops_health(); and the ops_events table).
+name: Ops health
+
+on:
+  schedule:
+    - cron: '7 4 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ask ops_health()
+        env:
+          URL: ${{ secrets.SUPABASE_URL }}
+          KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          set -euo pipefail
+          if [ -z "${URL:-}" ] || [ -z "${KEY:-}" ]; then
+            echo "::notice::SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY not set; skipping."
+            exit 0
+          fi
+          body=$(curl -sS --fail-with-body -X POST "$URL/rest/v1/rpc/ops_health" \
+                   -H "apikey: $KEY" -H "Authorization: Bearer $KEY" -H "Content-Type: application/json" -d '{}')
+          ok=$(echo "$body" | jq -r '.ok')
+          n=$(echo "$body" | jq -r '.reasons | length')
+          if [ "$ok" != "true" ]; then
+            echo "::error::JÜR needs attention: $n problem(s). In the Supabase SQL editor run: select ops_health();"
+            exit 1
+          fi
+          echo "All good."

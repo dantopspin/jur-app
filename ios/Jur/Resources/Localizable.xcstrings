@@ -1680,6 +1680,29 @@
         }
       }
     },
+    "chat2.earlier": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Earlier messages"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ранние сообщения"
+          }
+        },
+        "kk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ертеректегі хабарламалар"
+          }
+        }
+      }
+    },
     "chat2.hold": {
       "extractionState": "manual",
       "localizations": {
@@ -6529,6 +6552,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "Файл тым үлкен. Кішірегін көріңіз."
+          }
+        }
+      }
+    },
+    "err.tooFast": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Too many in a row. Try again in a minute."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Слишком часто. Попробуйте через минуту."
+          }
+        },
+        "kk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Тым жиі. Бір минуттан соң қайталаңыз."
           }
         }
       }

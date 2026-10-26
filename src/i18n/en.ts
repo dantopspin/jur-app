@@ -578,6 +578,7 @@ const en = {
     privacy: "Numbers and emails are turned into one-way codes on your phone. Only the codes are sent.",
   },
   chat2: {
+    earlier: "Earlier messages",
     micFailed: "Couldn't start recording. Try again.",
     newMessages: "NEW MESSAGES",
     jumpNew: "{n} new, jump to latest",
@@ -930,6 +931,7 @@ const en = {
     session: "Your session expired. Sign in again.",
     tooBig: "That file is too large. Try a smaller one.",
     generic: "Something went wrong. Try again.",
+    tooFast: "Too many in a row. Try again in a minute.",
   },
   tips: {
     swipeTitle: "Swipe to decide",

@@ -1,0 +1,74 @@
+# A nightly copy of the database, kept 30 days as an encrypted workflow artifact: a
+# second copy outside Supabase (their own backups live in the same account as the data).
+#
+# THIS REPOSITORY IS PUBLIC: artifacts can be downloaded by other GitHub users, so the
+# dump is encrypted with `age` before upload and the job refuses to run without a key.
+# Only the holder of the private key can read it.
+#
+# Setup (once):
+#   1. On your Mac: brew install age && age-keygen -o ~/jur-backup.key
+#      Keep that file safe (password manager + one offline copy). It prints a public
+#      key "age1…".
+#   2. Settings → Secrets and variables → Actions:
+#        BACKUP_AGE_RECIPIENT  = the age1… public key
+#        SUPABASE_DB_URL       = Supabase → Connect → Session pooler connection string
+#                                (the direct one needs IPv6, which GitHub runners lack)
+# Restore drill (do it once now, then every few months):
+#   gh run download <run-id> -n jur-db-<date>
+#   age -d -i ~/jur-backup.key jur-<date>.dump.age > jur.dump
+#   pg_restore --no-owner -d "<a scratch database URL>" jur.dump
+# Storage files (photos, chat media) are not in this dump: see ops/RUNBOOK.md.
+name: Database backup
+
+on:
+  schedule:
+    - cron: '41 21 * * *'   # 02:41 Almaty
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  dump:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check setup
+        id: setup
+        env:
+          DB: ${{ secrets.SUPABASE_DB_URL }}
+          AGE: ${{ secrets.BACKUP_AGE_RECIPIENT }}
+        run: |
+          if [ -z "$DB" ] || [ -z "$AGE" ]; then
+            echo "::notice::SUPABASE_DB_URL / BACKUP_AGE_RECIPIENT not set; no backup made."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Install pg_dump 17 and age
+        if: steps.setup.outputs.ready == 'true'
+        run: |
+          sudo install -d /usr/share/postgresql-common/pgdg
+          sudo curl -fsSo /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc https://www.postgresql.org/media/keys/ACCC4CF8.asc
+          echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" | sudo tee /etc/apt/sources.list.d/pgdg.list
+          sudo apt-get update -qq && sudo apt-get install -y -qq postgresql-client-17 age
+      - name: Dump and encrypt
+        if: steps.setup.outputs.ready == 'true'
+        env:
+          DB: ${{ secrets.SUPABASE_DB_URL }}
+          AGE: ${{ secrets.BACKUP_AGE_RECIPIENT }}
+        run: |
+          set -euo pipefail
+          day=$(date -u +%F)
+          # The app's data: public (tables, functions), auth (accounts), storage (file index).
+          # Never written to disk unencrypted.
+          /usr/lib/postgresql/17/bin/pg_dump "$DB" -Fc --no-owner --no-privileges \
+            -n public -n auth -n storage | age -r "$AGE" -o "jur-$day.dump.age"
+          test -s "jur-$day.dump.age"
+          echo "DAY=$day" >> "$GITHUB_ENV"
+      - uses: actions/upload-artifact@v4
+        if: steps.setup.outputs.ready == 'true'
+        with:
+          name: jur-db-${{ env.DAY }}
+          path: jur-*.dump.age
+          retention-days: 30
+          if-no-files-found: error

@@ -150,6 +150,8 @@ func errorText(_ error: Error) -> String {
         if t(key) != key { return t(key) }
     }
     let text = String(describing: error).lowercased()
+    // The server's rate limits (messages, swipes, reports…): a pause, not a failure.
+    if text.contains("rate_limited") { return t("err.tooFast") }
     if text.contains("jwt") || text.contains("not authenticated") || text.contains("401") { return t("err.session") }
     if text.contains("payload too large") || text.contains("413") { return t("err.tooBig") }
     return t("err.generic")
